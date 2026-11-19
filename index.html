@@ -97,6 +97,10 @@ button.bar:active,button.lg:active{opacity:.6}
 .lrow label{margin:0;font-size:17px;color:var(--tx);flex:none}
 .lrow input{flex:1;min-width:0;border:0;background:none;text-align:right;font-size:17px;padding:15px 0;outline:0}
 .go.save{display:block;width:calc(100% - 48px);margin:32px auto 0;border-radius:999px;font-size:20px;padding:16px;box-shadow:0 8px 20px rgba(0,0,0,.18)}
+.addrow{display:flex;align-items:center;gap:6px;margin-top:10px;background:var(--sf);border:1.5px solid var(--ln);border-radius:999px;padding:4px 4px 4px 16px}
+.addrow:focus-within{border-color:var(--ac)}
+.addrow input{flex:1;min-width:0;border:0;background:none;outline:0;font-size:16px;padding:8px 0}
+.addrow button{flex:none;border:0;background:var(--ac);color:var(--on);font-weight:700;border-radius:999px;padding:9px 20px;font-size:15px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -134,7 +138,7 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 const pad=n=>String(n).padStart(2,'0');
 const today=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
 let ym=today().slice(0,7);
-let F={method:'paypay',cat:'餐饮',manual:false,type:'out'},PF=null,EI=null,RC=[],DK='',OPEN={},T5='single',OUI=false;
+let F={method:'paypay',cat:'餐饮',manual:false,type:'out'},PF=null,EI=null,RC=[],DK='',OPEN={},T5='single',OUI=false,ECAT=false;
 const hv=()=>(location.hash||'#'+((typeof UI!=='undefined'&&UI.home)||'add')).split('?')[0];
 let pending=null,E=null;
 const $=id=>document.getElementById(id);
@@ -190,7 +194,7 @@ function addView(){
  const av=cur?cur.amt:(pf&&pf.amt)||'',nv=cur?(cur.note||''):(pf&&pf.note)||'',dv=cur?cur.date:today(),rc=recentNotes(inn);
  return `<div class="strip"><input id="amt" class="amtin" inputmode="numeric" pattern="[0-9]*" placeholder="金额(日元)" autocomplete="off" aria-label="金额" value="${esc(av)}"></div>
  ${inn?'':`<div class="sec"><div class="sech"><span>支付方式</span></div><div class="grid4" id="ms">${MT.map(m=>`<button class="chip" data-mt="${m[0]}" aria-pressed="${F.method===m[0]}">${m[1]}</button>`).join('')}</div></div>
- <div class="sec"><div class="sech"><span>分类</span><button data-gocat="1">添加/编辑</button></div><div class="grid4" id="cs">${CATS.map(c=>`<button class="chip" data-ct="${c}" aria-pressed="${F.cat===c}">${c}</button>`).join('')}</div></div>`}
+ <div class="sec"><div class="sech"><span>分类</span><button data-ecat="1">${ECAT?'完成':'添加/编辑'}</button></div><div class="grid4" id="cs">${CATS.map(c=>`<button class="chip" data-ct="${c}" aria-pressed="${F.cat===c}">${c}</button>`).join('')}</div>${ECAT?`<div class="addrow"><input id="ccn" placeholder="新分类名称(最多 8 个字)" maxlength="8" autocomplete="off"><button id="ccadd">添加</button></div>${CC.length?`<p class="sub" style="margin:12px 0 6px">自定义分类(点 × 删除)</p><div class="chips">${CC.map(c=>`<button class="chip" data-ccdel="${esc(c)}" style="padding:6px 12px;font-size:14px">${esc(c)} ×</button>`).join('')}</div>`:''}`:''}</div>`}
  <div class="lrow"><label for="note">备注</label><input id="note" placeholder="${inn?'工资、奖金、副业':'商户或品名'}" autocomplete="off" value="${esc(nv)}"></div>
  ${rc.length?`<div class="sec" style="padding-top:12px"><div class="sech"><span>最近常用</span></div><div class="chips">${rc.map((r,i)=>`<button class="chip" data-rc="${i}" style="padding:6px 12px;font-size:14px">${esc(r.note)}</button>`).join('')}</div></div>`:''}
  <div class="lrow"><label for="dt">日期</label><input id="dt" type="date" value="${dv}"></div>
@@ -257,7 +261,7 @@ document.addEventListener('click',async e=>{
  if(t.dataset.si!==undefined){Q={t:t.dataset.si==='收入'?'':t.dataset.si,c:'',m:'',k:'in'};location.hash='#list';return}
  if(t.dataset.sn!==undefined){Q={t:t.dataset.sn,c:'',m:'',k:'out'};location.hash='#list';return}
  if(t.dataset.t5){T5=t.dataset.t5;return render()}
- if(t.dataset.gocat){OUI=true;location.hash='#more';return}
+ if(t.dataset.ecat){if($('amt'))PF={amt:$('amt').value,note:$('note').value};ECAT=!ECAT;return render()}
  if(t.dataset.qk!==undefined){Q.k=t.dataset.qk;if(Q.k==='in'){Q.c='';Q.m=''}return render()}
  if(t.dataset.qclear){Q={t:'',c:'',m:'',k:''};return render()}
  if(t.dataset.edit){const x=D.find(z=>z.id===+t.dataset.edit);if(x){E=x.id;EI=null;F={method:x.method,cat:x.cat,manual:true,type:'out'};location.hash='#add'}return}
@@ -289,7 +293,7 @@ document.addEventListener('click',async e=>{
 document.addEventListener('input',e=>{
  if(e.target.id==='note'&&!F.manual){const c=guess(e.target.value);if(c){F.cat=c;document.querySelectorAll('[data-ct]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.ct===c))}}
 });
-window.addEventListener('hashchange',()=>{pending=null;clrc=false;SEL={on:false,ids:[],cf:false};if(hv()!=='#add'){E=null;EI=null;PF=null;DK=''}OPEN={};if(OUI){OPEN.ui=true;OUI=false}render()});
+window.addEventListener('hashchange',()=>{pending=null;clrc=false;SEL={on:false,ids:[],cf:false};if(hv()!=='#add'){E=null;EI=null;PF=null;DK='';ECAT=false}OPEN={};if(OUI){OPEN.ui=true;OUI=false}render()});
 
 const AK='kakeibo.assets.v1';
 let A={rate:150,cash:0,stock:0,cur:'JPY',inc:[],start:'',snaps:[],assets:[],disp:'JPY'};
@@ -424,7 +428,7 @@ function moreView(){
  let h='';
  const TH={auto:'跟随系统',light:'浅色',dark:'深色'},HM={add:'记一笔',list:'明细',stats:'统计',assets:'资产'};
  h+=`<div class='box'><h2>自定义界面</h2><p class='sub' style='margin:0'>主题 ${TH[UI.theme]} · 强调色 ${ACC[UI.accent][0]} · 打开时进入「${HM[UI.home]}」${CC.length?' · 自定义分类 '+CC.length+' 个':''}</p>`
- +(OPEN.ui?`<label>主题</label><div class='chips'>${Object.entries(TH).map(([k,v])=>`<button class='chip' data-th='${k}' aria-pressed='${UI.theme===k}'>${v}</button>`).join('')}</div><label>强调色</label><div class='chips'>${Object.entries(ACC).map(([k,v])=>`<button class='chip' data-ac='${k}' aria-pressed='${UI.accent===k}' style='display:inline-flex;align-items:center;gap:6px'><i class='dot' style='background:${v[1]||"#0e7a68"}'></i>${v[0]}</button>`).join('')}</div><label>打开时进入的页面</label><div class='chips'>${Object.entries(HM).map(([k,v])=>`<button class='chip' data-hm='${k}' aria-pressed='${UI.home===k}'>${v}</button>`).join('')}</div><label for='ccn'>自定义分类</label>`+CC.map(c=>`<div class='row'><div class='rm'><div>${esc(c)}</div></div><button class='del' data-ccdel='${esc(c)}'>删除</button></div>`).join('')+`<div style='display:flex;gap:8px'><input id='ccn' class='f' style='flex:1;min-width:0' placeholder='新分类名称(最多 8 个字)' maxlength='8' autocomplete='off'><button class='go alt' id='ccadd' style='margin:0;flex:0 0 auto;padding:12px 16px'>添加</button></div><button class='go alt' data-open='ui' style='margin-top:12px'>收起</button>`:`<button class='go alt' data-open='ui'>自定义界面</button>`)+`</div>`;
+ +(OPEN.ui?`<label>主题</label><div class='chips'>${Object.entries(TH).map(([k,v])=>`<button class='chip' data-th='${k}' aria-pressed='${UI.theme===k}'>${v}</button>`).join('')}</div><label>强调色</label><div class='chips'>${Object.entries(ACC).map(([k,v])=>`<button class='chip' data-ac='${k}' aria-pressed='${UI.accent===k}' style='display:inline-flex;align-items:center;gap:6px'><i class='dot' style='background:${v[1]||"#df8540"}'></i>${v[0]}</button>`).join('')}</div><label>打开时进入的页面</label><div class='chips'>${Object.entries(HM).map(([k,v])=>`<button class='chip' data-hm='${k}' aria-pressed='${UI.home===k}'>${v}</button>`).join('')}</div>`+`<button class='go alt' data-open='ui' style='margin-top:12px'>收起</button>`:`<button class='go alt' data-open='ui'>自定义界面</button>`)+`</div>`;
  const bks=Object.keys(B.cats),bleft=CATS.filter(c=>!B.cats[c]);
  const bud=!!OPEN.bud,fix=!!OPEN.fix;
  h+=`<div class='box'><h2>预算</h2><p class='sub' style='margin:0'>${B.total>0?'每月总预算 '+yen(B.total):'未设置总预算'}${bks.length?' · 分类预算 '+bks.length+' 项':''}</p>`
@@ -472,8 +476,8 @@ document.addEventListener('click',e=>{
  if(t.dataset.th){UI.theme=t.dataset.th;saveC();applyUI();render();return}
  if(t.dataset.ac){UI.accent=t.dataset.ac;saveC();applyUI();render();return}
  if(t.dataset.hm){UI.home=t.dataset.hm;saveC();render();return}
- if(t.id==='ccadd'){const n=$('ccn').value.trim();if(!n){toast('请输入分类名称');return}if(CATS.includes(n)){toast('已有同名分类');return}CC.push(n);applyCats();saveC();toast('已添加分类 '+n);render();return}
- if(t.dataset.ccdel){const c=t.dataset.ccdel;if(D.some(x=>x.cat===c)){toast('还有记录在使用「'+c+'」,无法删除');return}CC=CC.filter(x=>x!==c);delete B.cats[c];applyCats();saveC();toast('已删除分类');render();return}
+ if(t.id==='ccadd'){const n=$('ccn').value.trim();if(!n){toast('请输入分类名称');return}if(CATS.includes(n)){toast('已有同名分类');return}CC.push(n);applyCats();saveC();toast('已添加分类 '+n);if($('amt'))PF={amt:$('amt').value,note:$('note').value};render();return}
+ if(t.dataset.ccdel){const c=t.dataset.ccdel;if(D.some(x=>x.cat===c)){toast('还有记录在使用「'+c+'」,无法删除');return}CC=CC.filter(x=>x!==c);delete B.cats[c];applyCats();saveC();toast('已删除分类');if($('amt'))PF={amt:$('amt').value,note:$('note').value};render();return}
  if(t.id==='badd'){const c=$('bcs').value,n=num($('bca').value);if(!(n>0)){toast('请输入预算金额');$('bca').focus();return}B.cats[c]=Math.round(n);saveC();toast('已添加 '+c+' 预算');render();return}
  if(t.dataset.bdel){delete B.cats[t.dataset.bdel];saveC();toast('已删除预算');render();return}
  if(t.id==='clr'){if(!clrc){clrc=true}else{const n=D.length;D=[];RV.unc=[];save();saveRV();clrc=false;toast('已清空 '+n+' 笔消费')}render()}
