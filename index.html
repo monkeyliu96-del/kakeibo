@@ -134,7 +134,116 @@ const MT=[['paypay','PayPay','--pp'],['card','PayPay卡','--cd'],['rakuten','乐
 const mname=k=>(MT.find(m=>m[0]===k)||MT[2])[1];
 const mcol=k=>(MT.find(m=>m[0]===k)||MT[2])[2];
 const yen=n=>'¥'+Math.round(n).toLocaleString('ja-JP');
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+/* ===== i18n: 中文 / English (DOM 后处理,数据始终保存为中文) ===== */
+const ZH2EN={
+"记账本":"Kakeibo","记一笔":"Add","明细":"History","统计":"Stats","资产":"Assets","更多":"More",
+"餐饮":"Food","日用品":"Daily","交通":"Transport","购物":"Shopping","娱乐":"Fun","居住":"Housing","医疗":"Medical","其他":"Other",
+"PayPay卡":"PayPay Card","乐天卡":"Rakuten Card","现金/存款":"Cash / deposits","现金 / 存款":"Cash / deposits","现金":"Cash",
+"保存失败:浏览器禁止了本地存储":"Save failed: the browser blocks local storage",
+"多选 / 批量删除":"Select / bulk delete","取消全选":"Deselect all","确认删除":"Confirm delete","删除所选":"Delete selected","完成":"Done",
+"筛选结果":"Filtered results","本月收入":"Income this month","本月支出":"Spending this month","已超出":"Over by","剩余":"Left",
+"没有符合条件的记录。":"No matching records.","这个月还没有记录。":"No records this month.","记第一笔":"Add your first entry","· 固定":"· recurring",
+"编辑收入":"Edit income","编辑记录":"Edit entry","编辑":"Edit","删除":"Delete","选择":"Select",
+"搜索来源、备注":"Search source or note","收入来源":"Income source","全部来源":"All sources","搜索商户、备注":"Search merchant or note",
+"全部分类":"All categories","全部支付":"All payments","全部":"All","清除筛选":"Clear filters","分类预算(按需添加,会显示在统计页)":"Category budgets (add as needed; shown on Stats)",
+"支付方式":"Payment","分类":"Category","金额(日元)":"Amount (JPY)","金额":"Amount","添加/编辑":"Add / edit","新分类名称(最多 8 个字)":"New category (max 8 chars)",
+"自定义分类(点 × 删除)":"Custom categories (tap × to delete)","工资、奖金、副业":"Salary, bonus, side job","商户或品名":"Merchant or item",
+"备注":"Note","最近常用":"Recent","日期":"Date","保存修改":"Save changes","保存":"Save","取消":"Cancel",
+"前五大消费":"Top 5 expenses","单笔最高":"largest single","单笔":"Single","按商户合计":"By merchant","这个月还没有数据可统计。":"No data to summarize this month.",
+"收支":"Income & spending","上月没有记录,无法对比。":"No records last month to compare.","总预算":"Total budget","近 6 个月":"Last 6 months",
+"导出本月(CSV)":"Export this month (CSV)","导出全部记录(CSV)":"Export all (CSV)","这个月还没有支出记录。":"No spending records this month.",
+"日均":"Daily avg","与上月对比":"vs. last month","每日支出":"Daily spending","上个月":"Previous month","下个月":"Next month","总资产走势":"Total assets trend",
+"已确认今日总资产":"Today's total assets confirmed","确认今日总资产":"Confirm today's total assets","重新确认今日总资产":"Re-confirm today's total assets","总资产按所选币种显示,汇率需要你自己更新。现金、消费、收入和投资资产都以日元记录,每天确认的数值也以日元保存。":"Total assets are shown in the selected currency; update the rates yourself. Cash, spending, income and investments are recorded in JPY, and daily confirmed values are saved in JPY.",
+"总资产":"Total assets","已删除分类":"Category deleted","已删除预算":"Budget deleted","已删除(已生成的记录会保留)":"Deleted (entries already created are kept)","已删除":"Deleted",
+"请先输入金额":"Enter an amount first","已修改收入":"Income updated","已记录收入":"Income recorded","同一天已有相同金额的记录,再点一次才会保存":"There is already an entry with the same amount today. Tap again to save anyway.","仍然保存":"Save anyway","已修改":"Updated","已记录":"Recorded",
+"投资资产(日元计,按券商或交易所显示的日元市值填写)":"Investments (in JPY; enter the JPY market value shown by your broker or exchange)","投资资产":"Investments",
+"币种与汇率":"Currency & rates","1 美元 = ?日元":"1 USD = ? JPY","1 人民币 = ?日元":"1 CNY = ? JPY","美元":"USD","人民币":"CNY","日元":"JPY",
+"市值(日元)":"Value (JPY)","还没有投资资产,在下面添加。":"No investments yet. Add one below.","添加投资资产":"Add investment","美股":"US stocks","日股":"JP stocks","比特币":"Bitcoin","基金":"Funds","名称":"Name","合计":"Total",
+"今天已确认:":"Confirmed today: ","起算时的余额(日元)":"Starting balance (JPY)","起算日":"Start date","当前余额":"Current balance","(起算余额 + 收入 − 支出)":" (starting balance + income − spending)",
+"收入请在「记一笔」里添加。":"Add income from the \"Add\" tab.","请填写名称和市值":"Enter a name and value","已添加固定支出":"Recurring expense added","已添加分类":"Category added","已添加":"Added","请先输入收入金额":"Enter an income amount first",
+"橙色":"Orange","青绿":"Green","蓝色":"Blue","紫色":"Purple","粉红":"Pink",
+"导出失败,请改用「复制备份内容」":"Export failed. Use \"Copy backup\" instead.","没有找到「取引日」列,请确认是 PayPay 导出的 CSV":"Column 取引日 not found. Make sure this is a PayPay CSV export.","没有找到「出金金額」列":"Column 出金金額 not found.",
+"疑似重复":"Possible duplicate","导入后需要确认":"Needs review after import","导入 PayPay 记录":"Import PayPay records","导入备份":"Import backup","导入":"Import","已导入":"Imported",
+"已自动忽略(不算消费):":"Ignored automatically (not spending): ","以下记录没有导入,请逐条决定。转到自己的账户或投资的,选「忽略」即可。":"These were not imported. Decide one by one. For transfers to your own account or investments, choose \"Ignore\".",
+"无备注":"no note","收到":"Received","送出":"Sent","是同一笔":"Same entry","不是,导入":"No, import it","记为收入":"Record as income","记为支出":"Record as spending","忽略":"Ignore",
+"以下支出分类不确定,请选择(之后同名商户会自动沿用):":"Category unsure for these. Pick one (the same merchant will reuse it):",
+"跟随系统":"System","浅色":"Light","深色":"Dark","自定义界面":"Customize","主题":"Theme","强调色":"Accent","打开时进入的页面":"Opening page","语言 / Language":"Language","收起":"Collapse",
+"未设置总预算":"No total budget set","每月总预算(日元)":"Monthly budget (JPY)","每月总预算":"Monthly budget","不设":"None","还没有分类预算。":"No category budgets yet.","添加分类预算":"Add category budget","修改预算":"Edit budget","设置预算":"Set budget","预算":"Budget",
+"固定支出":"Recurring expenses","每月自动记一笔,如房租、手机费、订阅。":"Logs one entry automatically every month, e.g. rent, phone, subscriptions.","例如 家賃":"e.g. Rent","每月几号":"Day of month","＋ 添加固定支出":"+ Add recurring expense","添加固定支出":"Add recurring expense",
+"在 PayPay 的交易履历里导出 CSV,选择文件或粘贴内容。只导入支出,充值会跳过,重复的会自动忽略。请避免同一笔既手动记过又导入。":"Export a CSV from PayPay's transaction history, then choose the file or paste its contents. Only spending is imported; top-ups are skipped and duplicates are ignored. Avoid entering the same payment both manually and by import.",
+"选择 CSV 文件":"Choose CSV file","或粘贴内容":"Or paste content","清空记录":"Clear records","确认清空":"Confirm clear","清空所有消费记录":"Clear all spending records",
+"删除全部消费记录(所有月份)。收入、资产、预算和固定支出不受影响。建议先导出备份。":"Deletes all spending records (all months). Income, assets, budgets and recurring items are not affected. Export a backup first.",
+"备份与恢复":"Backup & restore","包含消费、收入、资产、预算和固定支出。恢复会覆盖现有数据。":"Includes spending, income, assets, budgets and recurring items. Restoring overwrites current data.",
+"导出备份文件":"Export backup file","复制备份内容(换设备用)":"Copy backup (for switching devices)","恢复:选择备份文件":"Restore: choose a backup file","或粘贴备份内容":"Or paste backup content",
+"已记为收入":"Recorded as income","已记为支出":"Recorded as spending","已关联为同一笔,不会重复记账":"Linked as the same entry; no double counting","请填写名称和金额":"Enter a name and amount","请先选择文件或粘贴内容":"Choose a file or paste content first",
+"已复制备份内容":"Backup copied","已填入下方文本框,请长按全选后复制":"Filled into the box below; long-press to select all and copy","确认覆盖现有数据":"Confirm overwrite","已恢复备份":"Backup restored","备份内容无法识别":"Backup content not recognized",
+"请输入分类名称":"Enter a category name","已有同名分类":"Category already exists","请输入预算金额":"Enter a budget amount","已清空":"Cleared","已保存预算":"Budget saved",
+"结余":"Balance","收入":"Income","支出":"Spending","添加":"Add","完成 ":"Done ","确认的数值":"confirmed value","换算":"conversion","其他 ":"Other "
+};
+const ZK=Object.keys(ZH2EN).sort((a,b)=>b.length-a.length);
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],WDE=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const WDZ='日一二三四五六';
+const RX=[
+ [/(\d{4})年(\d+)月/g,(m,y,mo)=>MON[mo-1]+' '+y],
+ [/(\d+)月(\d+)日 周(.)/g,(m,mo,d,w)=>MON[mo-1]+' '+d+' '+WDE[WDZ.indexOf(w)]],
+ [/^(\d+)月$/,(m,mo)=>MON[mo-1]],
+ [/^(\d+)日$/,'$1'],
+ [/^(\d+)日 (¥.*)$/,'Day $1 $2'],
+ [/(\d{4}-\d\d) 收入 (¥[\d,]+) 支出 (¥[\d,]+)/,'$1 income $2, spending $3'],
+ [/导入 (\d+) 笔,重复 (\d+) 笔/,'Imported $1, duplicates $2'],[/,疑似重复 (\d+) 笔待确认/,', $1 possible duplicates to review'],
+ [/,?共 (\d+) 笔/g,(m,n)=>', '+n+(n==1?' item':' items')],
+ [/(\d+) 笔/g,(m,n)=>n+(n==1?' item':' items')],
+ [/共 (\d+) 项,每月自动记账/,(m,n)=>n+' recurring '+(n==1?'item':'items')+', logged automatically each month'],
+ [/每月 (\d+) 日/g,'Monthly on day $1'],
+ [/分类预算 (\d+) 项/g,'Category budgets: $1'],
+ [/^(.+)预算$/,'$1 budget'],[/^(.+)市值$/,'$1 value'],
+ [/上月合计 (¥[\d,]+),本月(多|少)花 (¥[\d,]+)/,(m,a,mo,b)=>'Last month '+a+'; this month you spent '+b+(mo==='多'?' more':' less')],
+ [/上月收入 (¥[\d,]+),本月(多|少) (¥[\d,]+)/,(m,a,mo,b)=>'Last month\'s income '+a+'; this month '+b+(mo==='多'?' more':' less')],
+ [/· 储蓄率 (\S+)/,'· Savings rate $1'],[/· 超出/g,'· over'],[/ · 结余 /,' · Balance '],
+ [/打开时进入「(.+?)」/,'Opens on $1'],[/自定义分类 (\d+) 个/,'Custom categories: $1'],
+ [/较 (\S+) 确认的数值 (\S+)/,'vs. $1 confirmed: $2'],
+ [/起算日以来:收入 (\S+),支出 (\S+)/,'Since start date: income $1, spending $2'],
+ [/按 1 (美元|人民币) = (¥[\d.,]+) 换算/,'Converted at 1 $1 = $2'],
+ [/^收 (¥\S+) · 支 (¥\S+)$/,'In $1 · Out $2'],
+ [/(\d+) 条/g,'$1'],
+ [/。需确认的项目见下方/,'. Items to review are listed below.'],
+ [/与手动记录「(.*?)」同日同金额/,'Same day and amount as manual entry "$1"'],
+ [/还有记录在使用「(.+?)」,无法删除/,'Entries still use "$1"; cannot delete'],
+ [/全选 \((\d+)\)/,'Select all ($1)'],[/删除所选 (\d+)/,'Delete selected $1'],[/确认删除 (\d+)/,'Confirm delete $1'],
+ [/已添加分类 (.+)/,'Category added: $1'],
+];
+function trx(t){
+ if(!/[　-〿一-鿿＀-￯]/.test(t))return t;
+ const m=t.match(/^(\s*)([\s\S]*?)(\s*)$/);let s=m[2];
+ if(ZH2EN[s]!==undefined)return m[1]+ZH2EN[s]+m[3];
+ for(const [r,f] of RX)s=s.replace(r,f);
+ for(const k of ZK)if(s.includes(k))s=s.split(k).join(ZH2EN[k]);
+ s=s.replace(/，/g,', ').replace(/、/g,', ').replace(/。/g,'. ').replace(/：/g,': ').replace(/「|」/g,'"').replace(/（/g,'(').replace(/）/g,')');
+ return m[1]+s.replace(/\s+$/,m[3]?'':'')+m[3];
+}
+function trs(t){
+ if(typeof UI==='undefined'||UI.lang!=='en')return t.replace(/[]/g,'');
+ return t.split(/([^]*)/).map(g=>g.charCodeAt(0)===0xE000?g.slice(1,-1):trx(g)).join('');
+}
+const esc=s=>{s=String(s);const r=s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));return ZH2EN[s]!==undefined?r:''+r+''};
+let i18nBusy=false;
+function i18nRun(){
+ if(i18nBusy)return;i18nBusy=true;if(i18nObs)i18nObs.disconnect();
+ try{
+  const en=typeof UI!=='undefined'&&UI.lang==='en';
+  ['band','app','toast'].forEach(id=>{const r=document.getElementById(id);if(!r)return;
+   const tw=document.createTreeWalker(r,4);let n;const L=[];while(n=tw.nextNode())L.push(n);
+   L.forEach(n=>{const v=n.nodeValue;if(/[　-〿一-鿿＀-￯]/.test(v)){const o=trs(v);if(o!==v)n.nodeValue=o}});
+   r.querySelectorAll('*').forEach(el=>{for(const a of Array.from(el.attributes)){const v=a.value;if(v.indexOf('')>=0||(en&&(a.name==='placeholder'||a.name==='aria-label'||a.name==='title')&&/[　-〿一-鿿＀-￯]/.test(v))){const o=trs(v);if(o!==v)el.setAttribute(a.name,o)}}})});
+  document.querySelectorAll('nav a').forEach(a=>{const n=a.lastChild;if(!n||n.nodeType!==3)return;if(!a.dataset.z)a.dataset.z=n.nodeValue.trim();const o=en?(ZH2EN[a.dataset.z]||a.dataset.z):a.dataset.z;if(n.nodeValue!==o)n.nodeValue=o});
+  document.title=en?'Kakeibo':'记账本';document.documentElement.lang=en?'en':'zh';
+ }catch(e){}
+ i18nBusy=false;if(i18nObs)i18nStart();
+}
+let i18nObs=null;
+function i18nStart(){if(!i18nObs)return;['band','app','toast'].forEach(id=>{const r=document.getElementById(id);if(r)i18nObs.observe(r,{childList:true,subtree:true,characterData:true})})}
+if(typeof MutationObserver!=='undefined'){i18nObs=new MutationObserver(()=>i18nRun());}
+
 const pad=n=>String(n).padStart(2,'0');
 const today=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
 let ym=today().slice(0,7);
@@ -205,7 +314,7 @@ function top5(a){
  if(T5==='single')top=a.slice().sort((p,q)=>q.amt-p.amt||q.date.localeCompare(p.date)).slice(0,5).map(x=>({nm:x.note||x.cat,sub:x.date.slice(5)+' · '+x.cat+' · '+mname(x.method),amt:x.amt,key:x.note||x.cat}));
  else{const g={};a.forEach(x=>{const k=x.note||x.cat;(g[k]=g[k]||{n:0,s:0,cat:x.cat});g[k].n++;g[k].s+=x.amt});top=Object.entries(g).sort((p,q)=>q[1].s-p[1].s).slice(0,5).map(([k,v])=>({nm:k,sub:v.n+' 笔 · '+v.cat,amt:v.s,key:k}))}
  const mx=top[0]?top[0].amt:1;
- return `<div class="box"><h2>前五大消费</h2><div class="chips" style="margin:6px 0 2px">${[['single','单笔'],['shop','按商户合计']].map(c=>`<button class="chip" data-t5="${c[0]}" aria-pressed="${T5===c[0]}" style="padding:6px 14px;font-size:14px">${c[1]}</button>`).join('')}</div>`+top.map((x,i)=>`<button class="bar" data-sn="${esc(x.key)}" style="align-items:flex-start;margin:12px 0"><span class="n" style="width:22px;color:var(--mu)">${i+1}</span><span style="flex:1;min-width:0"><span style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(x.nm)}</span><span style="display:block;font-size:13px;color:var(--mu)">${esc(x.sub)}</span><span class="pg" style="display:block"><i style="width:${x.amt/mx*100}%;background:var(--pp)"></i></span></span><span class="v">${yen(x.amt)}</span></button>`).join('')+`</div>`;
+ return `<div class="box"><h2>前五大消费</h2><div class="chips" style="margin:6px 0 2px">${[['single','单笔'],['shop','按商户合计']].map(c=>`<button class="chip" data-t5="${c[0]}" aria-pressed="${T5===c[0]}" style="padding:6px 14px;font-size:14px">${c[1]}</button>`).join('')}</div>`+top.map((x,i)=>`<button class="bar" data-sn="${esc(x.key)}" style="align-items:flex-start;margin:12px 0"><span class="n" style="width:22px;color:var(--mu)">${i+1}</span><span style="flex:1;min-width:0"><span style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(x.nm)}</span><span style="display:block;font-size:13px;color:var(--mu)">${x.sub}</span><span class="pg" style="display:block"><i style="width:${x.amt/mx*100}%;background:var(--pp)"></i></span></span><span class="v">${yen(x.amt)}</span></button>`).join('')+`</div>`;
 }
 function statsView(){
  const a=monthData(),tot=sum(a),inc=A.inc.filter(x=>x.date.startsWith(ym)),it=sum(inc);
@@ -428,7 +537,7 @@ function moreView(){
  let h='';
  const TH={auto:'跟随系统',light:'浅色',dark:'深色'},HM={add:'记一笔',list:'明细',stats:'统计',assets:'资产'};
  h+=`<div class='box'><h2>自定义界面</h2><p class='sub' style='margin:0'>主题 ${TH[UI.theme]} · 强调色 ${ACC[UI.accent][0]} · 打开时进入「${HM[UI.home]}」${CC.length?' · 自定义分类 '+CC.length+' 个':''}</p>`
- +(OPEN.ui?`<label>主题</label><div class='chips'>${Object.entries(TH).map(([k,v])=>`<button class='chip' data-th='${k}' aria-pressed='${UI.theme===k}'>${v}</button>`).join('')}</div><label>强调色</label><div class='chips'>${Object.entries(ACC).map(([k,v])=>`<button class='chip' data-ac='${k}' aria-pressed='${UI.accent===k}' style='display:inline-flex;align-items:center;gap:6px'><i class='dot' style='background:${v[1]||"#df8540"}'></i>${v[0]}</button>`).join('')}</div><label>打开时进入的页面</label><div class='chips'>${Object.entries(HM).map(([k,v])=>`<button class='chip' data-hm='${k}' aria-pressed='${UI.home===k}'>${v}</button>`).join('')}</div>`+`<button class='go alt' data-open='ui' style='margin-top:12px'>收起</button>`:`<button class='go alt' data-open='ui'>自定义界面</button>`)+`</div>`;
+ +(OPEN.ui?`<label>主题</label><div class='chips'>${Object.entries(TH).map(([k,v])=>`<button class='chip' data-th='${k}' aria-pressed='${UI.theme===k}'>${v}</button>`).join('')}</div><label>强调色</label><div class='chips'>${Object.entries(ACC).map(([k,v])=>`<button class='chip' data-ac='${k}' aria-pressed='${UI.accent===k}' style='display:inline-flex;align-items:center;gap:6px'><i class='dot' style='background:${v[1]||"#df8540"}'></i>${v[0]}</button>`).join('')}</div><label>打开时进入的页面</label><div class='chips'>${Object.entries(HM).map(([k,v])=>`<button class='chip' data-hm='${k}' aria-pressed='${UI.home===k}'>${v}</button>`).join('')}</div><label>语言 / Language</label><div class='chips'>${[['zh','中文'],['en','English']].map(([k,v])=>`<button class='chip' data-lg='${k}' aria-pressed='${(UI.lang==='en'?'en':'zh')===k}'>${v}</button>`).join('')}</div>`+`<button class='go alt' data-open='ui' style='margin-top:12px'>收起</button>`:`<button class='go alt' data-open='ui'>自定义界面</button>`)+`</div>`;
  const bks=Object.keys(B.cats),bleft=CATS.filter(c=>!B.cats[c]);
  const bud=!!OPEN.bud,fix=!!OPEN.fix;
  h+=`<div class='box'><h2>预算</h2><p class='sub' style='margin:0'>${B.total>0?'每月总预算 '+yen(B.total):'未设置总预算'}${bks.length?' · 分类预算 '+bks.length+' 项':''}</p>`
@@ -476,6 +585,7 @@ document.addEventListener('click',e=>{
  if(t.dataset.th){UI.theme=t.dataset.th;saveC();applyUI();render();return}
  if(t.dataset.ac){UI.accent=t.dataset.ac;saveC();applyUI();render();return}
  if(t.dataset.hm){UI.home=t.dataset.hm;saveC();render();return}
+ if(t.dataset.lg){UI.lang=t.dataset.lg;saveC();render();i18nRun();return}
  if(t.id==='ccadd'){const n=$('ccn').value.trim();if(!n){toast('请输入分类名称');return}if(CATS.includes(n)){toast('已有同名分类');return}CC.push(n);applyCats();saveC();toast('已添加分类 '+n);if($('amt'))PF={amt:$('amt').value,note:$('note').value};render();return}
  if(t.dataset.ccdel){const c=t.dataset.ccdel;if(D.some(x=>x.cat===c)){toast('还有记录在使用「'+c+'」,无法删除');return}CC=CC.filter(x=>x!==c);delete B.cats[c];applyCats();saveC();toast('已删除分类');if($('amt'))PF={amt:$('amt').value,note:$('note').value};render();return}
  if(t.id==='badd'){const c=$('bcs').value,n=num($('bca').value);if(!(n>0)){toast('请输入预算金额');$('bca').focus();return}B.cats[c]=Math.round(n);saveC();toast('已添加 '+c+' 预算');render();return}
@@ -497,6 +607,7 @@ document.addEventListener('change',e=>{
 (function(){try{const q=location.hash.split('?')[1]||location.search.slice(1),p=new URLSearchParams(q);
  if(p.get('a')||p.get('n')){PF={amt:(p.get('a')||'').replace(/[^0-9]/g,''),note:p.get('n')||''};const m=p.get('m');if(['paypay','card','cash'].includes(m))F.method=m;if(p.get('t')==='in')F.type='in';const c=guess(PF.note);if(c)F.cat=c}}catch(e){}})();
 render();
+i18nStart();i18nRun();
 </script>
 <script>if('serviceWorker' in navigator&&location.protocol==='https:'){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}</script>
 </body>
