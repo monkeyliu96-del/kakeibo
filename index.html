@@ -104,6 +104,7 @@ button.bar:active,button.lg:active{opacity:.6}
 .days .dc{flex:1;height:100%;display:flex;align-items:flex-end;border:0;background:none;padding:0;cursor:pointer}.days .dc i{width:100%;flex:none}.days .dc:active i{opacity:.5}
 .dro{min-height:26px;margin-top:6px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px}.dro button{border:0;background:none;color:var(--ac);font-size:14px;cursor:pointer;padding:0}.days .dc.on i{opacity:1;outline:2px solid var(--tx);outline-offset:0}
 .addrow button.dl{background:none;color:var(--pp);padding:9px 14px;font-weight:600}
+.rcrow{display:flex;align-items:center;gap:10px;padding:8px 20px}.rct{flex:none;font-size:14px;color:var(--mu)}.rcs{display:flex;gap:8px;overflow-x:auto;white-space:nowrap;flex:1;min-width:0;padding:2px 20px 2px 0;margin-right:-20px;scrollbar-width:none;-webkit-overflow-scrolling:touch}.rcs::-webkit-scrollbar{display:none}.rcs .chip{flex:none;padding:5px 12px;font-size:14px}
 </style>
 </head>
 <body>
@@ -322,7 +323,7 @@ if(!MT.some(m=>m[0]===F.method))F.method=MT[0][0];
  ${inn?'':`<div class="sec"><div class="sech"><span>支付方式</span><button data-epm="1">${EPM?'完成':'添加/编辑'}</button></div><div class="grid4" id="ms">${MT.map(m=>`<button class="chip" data-mt="${m[0]}" aria-pressed="${F.method===m[0]}">${m[1]}</button>`).join('')}</div>${EPM?`<p class="sub" style="margin:12px 0 0">改完名称后点别处即可保存。有记录在使用的支付方式不能删除。</p>${pmSrc().map(m=>`<div class="addrow" style="margin-top:8px"><input data-pmn="${esc(m[0])}" value="${esc(LG()==='en'&&ZH2EN[m[1]]?ZH2EN[m[1]]:m[1])}" maxlength="12" aria-label="支付方式"><button class="dl" data-pmdel="${esc(m[0])}">删除</button></div>`).join('')}<div class="addrow" style="margin-top:8px"><input id="pmnew" placeholder="新支付方式名称(最多 12 个字)" maxlength="12" autocomplete="off"><button id="pmadd">添加</button></div>`:''}</div>
  <div class="sec"><div class="sech"><span>分类</span><button data-ecat="1">${ECAT?'完成':'添加/编辑'}</button></div><div class="grid4" id="cs">${CATS.map(c=>`<button class="chip" data-ct="${c}" aria-pressed="${F.cat===c}">${c}</button>`).join('')}</div>${ECAT?`<div class="addrow"><input id="ccn" placeholder="新分类名称(最多 8 个字)" maxlength="8" autocomplete="off"><button id="ccadd">添加</button></div>${CC.length?`<p class="sub" style="margin:12px 0 6px">自定义分类(点 × 删除)</p><div class="chips">${CC.map(c=>`<button class="chip" data-ccdel="${esc(c)}" style="padding:6px 12px;font-size:14px">${esc(c)} ×</button>`).join('')}</div>`:''}`:''}</div>`}
  <div class="lrow"><label for="note">备注</label><input id="note" placeholder="${inn?'工资、奖金、副业':'商户或品名'}" autocomplete="off" value="${esc(nv)}"></div>
- ${rc.length?`<div class="sec" style="padding-top:12px"><div class="sech"><span>最近常用</span></div><div class="chips">${rc.map((r,i)=>`<button class="chip" data-rc="${i}" style="padding:6px 12px;font-size:14px">${esc(r.note)}</button>`).join('')}</div></div>`:''}
+ ${rc.length?`<div class="sec rcrow"><span class="rct">最近常用</span><div class="rcs">${rc.map((r,i)=>`<button class="chip" data-rc="${i}">${esc(r.note)}</button>`).join('')}</div></div>`:''}
  <div class="lrow"><label for="dt">日期</label><input id="dt" type="date" value="${dv}"></div>
  <button class="go save" id="save">${cur?'保存修改':'保存'}</button>${cur?'<button class="go alt" id="cancel" style="display:block;width:calc(100% - 48px);margin:12px auto 0">取消</button>':''}`;
 }
