@@ -182,7 +182,7 @@ function listView(){
 }
 function recentNotes(inn){
  const src=(inn?A.inc:D).slice().sort((p,q)=>q.date.localeCompare(p.date)||q.id-p.id),seen=new Set(),out=[];
- for(const x of src){const n=(x.note||'').trim();if(!n||seen.has(n))continue;seen.add(n);out.push(inn?{note:n,amt:x.amt}:{note:n,cat:x.cat,method:x.method});if(out.length>=8)break}
+ for(const x of src){const n=(x.note||'').trim();if(!n||seen.has(n))continue;seen.add(n);out.push(inn?{note:n,amt:x.amt}:{note:n,cat:x.cat,method:x.method});if(out.length>=5)break}
  RC=out;return out;
 }
 function addView(){
