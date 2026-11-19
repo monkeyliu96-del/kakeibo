@@ -55,6 +55,7 @@ label{display:block;font-size:13px;color:var(--mu);margin:14px 0 6px}
 .bar .v{width:92px;text-align:right;flex:none}
 .stack{display:flex;height:14px;border-radius:7px;overflow:hidden;margin:10px 0 8px;background:var(--bg)}
 .leg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--mu)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin:8px 0 4px}.cal .wk{text-align:center;font-size:12px;color:var(--mu);padding:2px 0}.cal button,.cal i.e{height:46px;border-radius:10px;border:1px solid transparent;background:var(--card);border-color:var(--ln);color:var(--tx);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:0;font:inherit;position:relative}.cal i.e{background:none}.cal button b{font-size:14px;font-weight:600;line-height:1}.cal button small{font-size:10px;color:var(--mu);line-height:1;min-height:10px}.cal button.td{border-color:var(--ac)}.cal button[aria-pressed=true]{background:var(--ac);color:#fff}.cal button[aria-pressed=true] small{color:#fff}.cal button em{position:absolute;top:4px;right:5px;width:5px;height:5px;border-radius:50%;background:var(--in)}
 .days{display:flex;align-items:flex-end;gap:2px;height:84px;margin-top:8px}
 .days i{flex:1;background:var(--ac);border-radius:2px 2px 0 0;min-height:2px;opacity:.85}
 .days i.z{background:var(--ln);opacity:1}
@@ -166,7 +167,7 @@ const ZH2EN={
 "前五大消费":"Top 5 expenses","单笔最高":"largest single","单笔":"Single","按商户合计":"By merchant","这个月还没有数据可统计。":"No data to summarize this month.",
 "收支":"Income & spending","上月没有记录,无法对比。":"No records last month to compare.","总预算":"Total budget","近 6 个月":"Last 6 months",
 "导出本月(CSV)":"Export this month (CSV)","导出全部记录(CSV)":"Export all (CSV)","这个月还没有支出记录。":"No spending records this month.",
-"日均":"Daily avg","与上月对比":"vs. last month","每日支出":"Daily spending","上个月":"Previous month","下个月":"Next month","总资产走势":"Total assets trend",
+"日均":"Daily avg","与上月对比":"vs. last month","每日支出":"Daily spending","日历":"Calendar","上个月":"Previous month","下个月":"Next month","总资产走势":"Total assets trend",
 "已确认今日总资产":"Today's total assets confirmed","确认今日总资产":"Confirm today's total assets","重新确认今日总资产":"Re-confirm today's total assets","总资产按所选币种显示,汇率需要你自己更新。现金、消费、收入和投资资产都以日元记录,每天确认的数值也以日元保存。":"Total assets are shown in the selected currency; update the rates yourself. Cash, spending, income and investments are recorded in JPY, and daily confirmed values are saved in JPY.",
 "总资产":"Total assets","已删除分类":"Category deleted","已删除预算":"Budget deleted","已删除(已生成的记录会保留)":"Deleted (entries already created are kept)","已删除":"Deleted",
 "请先输入金额":"Enter an amount first","已修改收入":"Income updated","已记录收入":"Income recorded","同一天已有相同金额的记录,再点一次才会保存":"There is already an entry with the same amount today. Tap again to save anyway.","仍然保存":"Save anyway","已修改":"Updated","已记录":"Recorded",
@@ -278,7 +279,7 @@ function filt(){const q=Q.t.trim().toLowerCase();return monthData().filter(x=>(!
 function listItems(){
  const q=Q.t.trim().toLowerCase();
  const ex=Q.k==='in'?[]:filt().map(x=>({...x,key:x.id}));
- const inc=(Q.c||Q.m||Q.k==='out')?[]:A.inc.filter(x=>x.date.startsWith(ym)&&(!q||(x.note||'').toLowerCase().includes(q)||'收入'.includes(q))).map(x=>({...x,inc:true,key:'i'+x.id}));
+ const inc=(Q.c||Q.m||Q.f||Q.k==='out')?[]:A.inc.filter(x=>x.date.startsWith(ym)&&(!Q.d||x.date===Q.d)&&(!q||(x.note||'').toLowerCase().includes(q)||'收入'.includes(q))).map(x=>({...x,inc:true,key:'i'+x.id}));
  return [...ex,...inc].sort((p,q)=>q.date.localeCompare(p.date)||q.id-p.id);
 }
 let SEL={on:false,ids:[],cf:false},clrc=false;
@@ -310,10 +311,23 @@ function listBody(){
  }
  return h;
 }
+let LV='list';
+function calHtml(){
+ const d0=Q.d;Q.d='';const base=Q.k==='in'?[]:filt();Q.d=d0;
+ const q=Q.t.trim().toLowerCase(),inc=(Q.c||Q.m||Q.k==='out'||Q.f)?[]:A.inc.filter(x=>x.date.startsWith(ym)&&(!q||(x.note||'').toLowerCase().includes(q)||'收入'.includes(q)));
+ const [y,m]=ym.split('-').map(Number),nd=new Date(y,m,0).getDate(),f0=new Date(y,m-1,1).getDay(),td=today();
+ const o={},n={};base.forEach(x=>o[x.date]=(o[x.date]||0)+x.amt);inc.forEach(x=>n[x.date]=(n[x.date]||0)+x.amt);
+ const cp=v=>v>=1000?(v/1000).toFixed(v>=10000?0:1).replace('.0','')+'k':String(Math.round(v));
+ const WK=LG()==='en'?['Su','Mo','Tu','We','Th','Fr','Sa']:['日','一','二','三','四','五','六'];
+ let h='<div class="cal">'+WK.map(w=>`<div class="wk">${w}</div>`).join('')+'<i class="e"></i>'.repeat(f0);
+ for(let i=1;i<=nd;i++){const d=ym+'-'+pad(i),v=Q.k==='in'?n[d]:o[d];
+  h+=`<button data-cd="${d}" aria-pressed="${Q.d===d}" class="${d===td?'td':''}" aria-label="${m}/${i}">${Q.k!=='in'&&n[d]?'<em></em>':''}<b>${i}</b><small>${v?cp(v):''}</small></button>`}
+ return h+'</div>';
+}
 function listView(){
  const o=(a,v)=>a.map(x=>`<option value="${x[0]}"${x[0]===v?' selected':''}>${x[1]}</option>`).join('');
  const LB=listSplit();const srcs=[...new Set(A.inc.map(x=>(x.note||'').trim()).filter(Boolean))];
- return head()+`<div class="lhead">${Q.k==='in'?`<div class="srch"><input id="qs" class="f" type="search" placeholder="搜索来源、备注" value="${esc(Q.t)}" style="flex:2"><select id="qsrc" class="f" style="flex:1" aria-label="收入来源"><option value="">全部来源</option>${srcs.map(n=>`<option value="${esc(n)}"${Q.t===n?' selected':''}>${esc(n)}</option>`).join('')}</select></div>`:`<div class="srch"><input id="qs" class="f" type="search" placeholder="搜索商户、备注" value="${esc(Q.t)}" style="flex:2"><select id="qc" class="f" style="flex:1" aria-label="分类"><option value="">全部分类</option>${o(CATS.map(c=>[c,c]),Q.c)}</select><select id="qm" class="f" style="flex:1" aria-label="支付方式"><option value="">全部支付</option>${o(MT.map(m=>[m[0],m[1]]),Q.m)}</select></div>`}<div class="chips" style="margin:8px 0 4px">${[['','全部'],['out','支出'],['in','收入']].map(c=>`<button class="chip" data-qk="${c[0]}" aria-pressed="${(Q.k||'')===c[0]}" style="padding:6px 14px;font-size:14px">${c[1]}</button>`).join('')}${Q.f?`<button class="chip" data-qf="1" aria-pressed="true" style="padding:6px 14px;font-size:14px">${Q.f==='fix'?'固定':'变动'} ×</button>`:''}${Q.d?`<button class="chip" data-qd="1" aria-pressed="true" style="padding:6px 14px;font-size:14px">${+Q.d.slice(5,7)}月${+Q.d.slice(8)}日 ×</button>`:''}${(Q.t||Q.c||Q.m||Q.k)?`<button class="chip" data-qclear="1" style="padding:6px 14px;font-size:14px">清除筛选</button>`:''}</div><div id="lsum">${LB[0]}</div></div><div id="lst">${LB[1]}</div>`;
+ return head()+`<div class="lhead">${Q.k==='in'?`<div class="srch"><input id="qs" class="f" type="search" placeholder="搜索来源、备注" value="${esc(Q.t)}" style="flex:2"><select id="qsrc" class="f" style="flex:1" aria-label="收入来源"><option value="">全部来源</option>${srcs.map(n=>`<option value="${esc(n)}"${Q.t===n?' selected':''}>${esc(n)}</option>`).join('')}</select></div>`:`<div class="srch"><input id="qs" class="f" type="search" placeholder="搜索商户、备注" value="${esc(Q.t)}" style="flex:2"><select id="qc" class="f" style="flex:1" aria-label="分类"><option value="">全部分类</option>${o(CATS.map(c=>[c,c]),Q.c)}</select><select id="qm" class="f" style="flex:1" aria-label="支付方式"><option value="">全部支付</option>${o(MT.map(m=>[m[0],m[1]]),Q.m)}</select></div>`}<div class="chips" style="margin:8px 0 4px">${[['','全部'],['out','支出'],['in','收入']].map(c=>`<button class="chip" data-qk="${c[0]}" aria-pressed="${(Q.k||'')===c[0]}" style="padding:6px 14px;font-size:14px">${c[1]}</button>`).join('')}<button class="chip" data-lv="${LV==='cal'?'list':'cal'}" aria-pressed="${LV==='cal'}" style="padding:6px 14px;font-size:14px;margin-left:auto">日历</button>${Q.f?`<button class="chip" data-qf="1" aria-pressed="true" style="padding:6px 14px;font-size:14px">${Q.f==='fix'?'固定':'变动'} ×</button>`:''}${Q.d&&LV!=='cal'?`<button class="chip" data-qd="1" aria-pressed="true" style="padding:6px 14px;font-size:14px">${+Q.d.slice(5,7)}月${+Q.d.slice(8)}日 ×</button>`:''}${(Q.t||Q.c||Q.m||Q.k)?`<button class="chip" data-qclear="1" style="padding:6px 14px;font-size:14px">清除筛选</button>`:''}</div><div id="lsum">${LB[0]}</div></div>${LV==='cal'?calHtml():''}<div id="lst">${LB[1]}</div>`;
 }
 function recentNotes(inn){
  const src=(inn?A.inc:D).slice().sort((p,q)=>q.date.localeCompare(p.date)||q.id-p.id),seen=new Set(),out=[];
@@ -413,6 +427,8 @@ document.addEventListener('click',async e=>{
  if(t.dataset.sd){if(LPT!=='mouse'&&!t.dataset.go){document.querySelectorAll('.dc.on').forEach(b=>b.classList.remove('on'));t.classList.add('on');showDay(t,true);return}
   Q={t:'',c:'',m:'',k:'out',d:t.dataset.sd};location.hash='#list';return}
  if(t.dataset.qd!==undefined){Q.d='';return render()}
+ if(t.dataset.lv){LV=t.dataset.lv;if(LV==='list')Q.d='';return render()}
+ if(t.dataset.cd){Q.d=Q.d===t.dataset.cd?'':t.dataset.cd;return render()}
  if(t.dataset.sc!==undefined){Q={t:'',c:t.dataset.sc,m:'',k:'out'};location.hash='#list';return}
  if(t.dataset.sm){Q={t:'',c:'',m:t.dataset.sm,k:'out'};location.hash='#list';return}
  if(t.dataset.si!==undefined){Q={t:t.dataset.si==='收入'?'':t.dataset.si,c:'',m:'',k:'in'};location.hash='#list';return}
