@@ -3,22 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0e7a68">
+<meta name="theme-color" content="#df8540">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="记账本">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
-<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
 <title>记账本</title>
 <style>
-:root{--bg:#f1f4f2;--sf:#fff;--tx:#14211d;--mu:#66756e;--ln:#dde4e0;--ac:#0e7a68;--on:#fff;--pp:#e0394a;--cd:#3a62d6;--cs:#b9820f;--cr:#8a4fd3;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);scroll-padding-top:env(safe-area-inset-top,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1714;--sf:#18221e;--tx:#e8f0ec;--mu:#8fa098;--ln:#2a3731;--ac:#3cc3a8;--on:#06231c;--pp:#ff6b78;--cd:#7a9cff;--cs:#e3b04a;--cr:#b48cff;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#0f1714;--sf:#18221e;--tx:#e8f0ec;--mu:#8fa098;--ln:#2a3731;--ac:#3cc3a8;--on:#06231c;--pp:#ff6b78;--cd:#7a9cff;--cs:#e3b04a;--cr:#b48cff;color-scheme:dark}
+:root{--bg:#fcf8ea;--sf:#fffdf7;--tx:#2f2a25;--mu:#8f887e;--ln:#e8e3d6;--ac:#df8540;--on:#fff;--sel:#eeeadf;--in:#2f8f5b;--pp:#d8444f;--cd:#3a62d6;--cs:#b9820f;--cr:#8a4fd3;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1814;--sf:#26211c;--tx:#f2ece3;--mu:#a39a8e;--ln:#3a332b;--ac:#f09a58;--on:#241508;--sel:#352d25;--in:#58c88a;--pp:#ff7a85;--cd:#7a9cff;--cs:#e3b04a;--cr:#b48cff;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1c1814;--sf:#26211c;--tx:#f2ece3;--mu:#a39a8e;--ln:#3a332b;--ac:#f09a58;--on:#241508;--sel:#352d25;--in:#58c88a;--pp:#ff7a85;--cd:#7a9cff;--cs:#e3b04a;--cr:#b48cff;color-scheme:dark}
 *{box-sizing:border-box}
 html,body{margin:0}
-body{background:var(--bg);color:var(--tx);font:16px/1.5 -apple-system,"Hiragino Sans","PingFang SC","Noto Sans JP",system-ui,sans-serif;padding-bottom:84px;font-variant-numeric:tabular-nums}
+body{background:var(--bg);color:var(--tx);font:16px/1.5 -apple-system,"Hiragino Sans","PingFang SC","Noto Sans JP",system-ui,sans-serif;padding-bottom:calc(104px + env(safe-area-inset-bottom,0px));font-variant-numeric:tabular-nums}
 main{max-width:520px;margin:0 auto;padding:12px 16px}
 h1{font-size:15px;font-weight:600;margin:0;color:var(--mu)}
 .top{display:flex;align-items:center;justify-content:space-between;padding:8px 0 4px}
@@ -29,7 +29,7 @@ button,input,select{font:inherit;color:inherit}
 .big{font-size:40px;font-weight:700;letter-spacing:-.02em;margin:10px 0 0}
 .big small{font-size:18px;font-weight:600;color:var(--mu);margin-right:4px}
 .sub{color:var(--mu);font-size:14px;margin:0 0 14px}
-.box{background:var(--sf);border-radius:16px;padding:14px 16px;margin:0 0 12px}
+.box{background:var(--sf);border:1px solid var(--ln);border-radius:18px;padding:14px 16px;margin:0 0 12px}
 .day{display:flex;justify-content:space-between;color:var(--mu);font-size:13px;margin:16px 4px 6px}
 .row{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--ln)}
 .row:first-child{border-top:0}
@@ -44,8 +44,8 @@ label{display:block;font-size:13px;color:var(--mu);margin:14px 0 6px}
 .f{width:100%;border:1px solid var(--ln);background:var(--bg);border-radius:12px;padding:12px;font-size:16px}
 .amtin{font-size:32px;font-weight:700;padding:10px 12px}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
-.chip{border:1px solid var(--ln);background:var(--bg);border-radius:999px;padding:8px 14px;cursor:pointer}
-.chip[aria-pressed="true"]{background:var(--ac);border-color:var(--ac);color:var(--on);font-weight:600}
+.chip{border:1.5px solid var(--ln);background:var(--sf);color:var(--mu);border-radius:14px;padding:8px 14px;cursor:pointer}
+.chip[aria-pressed="true"]{border-color:var(--ac);color:var(--ac);font-weight:600}
 .go{width:100%;margin-top:18px;border:0;border-radius:14px;background:var(--ac);color:var(--on);font-weight:700;font-size:17px;padding:14px;cursor:pointer}
 .go.alt{background:var(--sf);color:var(--tx);border:1px solid var(--ln);font-weight:500;margin-top:8px;font-size:15px}
 .bar{display:flex;align-items:center;gap:10px;margin:9px 0;font-size:14px}
@@ -63,26 +63,51 @@ h2{font-size:15px;margin:0 0 4px}
 .snp{width:100%;height:90px;margin-top:6px}
 .empty{text-align:center;color:var(--mu);padding:36px 12px}
 .empty a{color:var(--ac);font-weight:600}
-nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--sf);border-top:1px solid var(--ln);padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px))}
-nav a{flex:1;text-align:center;text-decoration:none;color:var(--mu);padding:8px 0;font-size:13px;border-radius:10px}
-nav a b{display:block;font-size:20px;line-height:1.2;font-weight:400}
-nav a.on{color:var(--ac);font-weight:700}
-.toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s}
+nav{position:fixed;left:50%;transform:translateX(-50%);width:calc(100% - 24px);max-width:496px;bottom:calc(10px + env(safe-area-inset-bottom,0px));display:flex;background:var(--sf);border:1px solid var(--ln);border-radius:30px;padding:6px;box-shadow:0 8px 28px rgba(0,0,0,.14);z-index:6}
+nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;text-decoration:none;color:var(--mu);padding:8px 0 6px;font-size:12px;border-radius:24px}
+nav a svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+nav a.on{background:var(--sel);color:var(--ac);font-weight:700}
+.toast{position:fixed;left:50%;bottom:112px;z-index:7;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s}
 .toast.on{opacity:1}
 :focus-visible{outline:2px solid var(--ac);outline-offset:2px}
 .pg{height:8px;background:var(--ln);border-radius:4px;overflow:hidden;margin:6px 0 4px}.pg i{display:block;height:100%}
 textarea.f{min-height:76px;font-size:13px}
 .srch{display:flex;gap:8px;margin:6px 0 2px}.srch .f{padding:9px 10px;font-size:15px;min-width:0}
+button.bar,button.lg{background:none;border:0;padding:0;text-align:left;cursor:pointer;font:inherit;color:inherit}
+button.bar{width:100%}
+button.lg{display:inline-flex;align-items:center;gap:4px;color:var(--mu);font-size:13px}
+button.bar:active,button.lg:active{opacity:.6}
+#band{background:var(--ac);color:#fff;padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 14px;position:sticky;top:0;z-index:5;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+#band .bi{max-width:520px;margin:0 auto;display:flex;align-items:center;justify-content:center;min-height:46px}
+.band-t{font-size:19px;font-weight:700;color:#fff}
+#band .mon{gap:8px}#band .mon b{color:#fff;font-size:18px;min-width:128px}
+#band .ib{background:rgba(255,255,255,.25);color:#fff}
+.seg{display:flex;background:var(--sf);border-radius:999px;padding:5px;width:100%;max-width:340px;box-shadow:0 4px 14px rgba(0,0,0,.12)}
+.seg button{flex:1;border:0;background:none;border-radius:999px;padding:10px 0;font-size:17px;font-weight:600;color:var(--mu);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--sel);color:var(--ac)}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.grid4 .chip{padding:14px 2px;font-size:15px;text-align:center;min-height:52px;display:flex;align-items:center;justify-content:center;line-height:1.2}
+.strip{margin:-12px -16px 0;padding:4px 20px;background:var(--sf);border-bottom:1px solid var(--ln)}
+.strip .amtin{display:block;width:100%;border:0;background:none;font-size:30px;font-weight:700;padding:12px 0;outline:0}
+.strip .amtin::placeholder{color:var(--mu);font-weight:400}
+.sec{margin:0 -16px;padding:14px 20px 16px;border-bottom:1px solid var(--ln)}
+.sech{display:flex;justify-content:space-between;align-items:center;font-size:14px;color:var(--mu);margin-bottom:10px}
+.sech button{background:none;border:0;color:var(--ac);font-size:15px;cursor:pointer;padding:0}
+.lrow{display:flex;align-items:center;gap:12px;margin:0 -16px;padding:0 20px;background:var(--sf);border-bottom:1px solid var(--ln)}
+.lrow label{margin:0;font-size:17px;color:var(--tx);flex:none}
+.lrow input{flex:1;min-width:0;border:0;background:none;text-align:right;font-size:17px;padding:15px 0;outline:0}
+.go.save{display:block;width:calc(100% - 48px);margin:32px auto 0;border-radius:999px;font-size:20px;padding:16px;box-shadow:0 8px 20px rgba(0,0,0,.18)}
 </style>
 </head>
 <body>
+<header id="band"></header>
 <main id="app"></main>
 <nav>
-<a href="#add" id="n-add"><b>＋</b>记一笔</a>
-<a href="#list" id="n-list"><b>☰</b>明细</a>
-<a href="#stats" id="n-stats"><b>◔</b>统计</a>
-<a href="#assets" id="n-assets"><b>¥</b>资产</a>
-<a href="#more" id="n-more"><b>⚙</b>更多</a>
+<a href="#add" id="n-add"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>记一笔</a>
+<a href="#list" id="n-list"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>明细</a>
+<a href="#stats" id="n-stats"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.2 15.9A10 10 0 118 2.8"/><path d="M22 12A10 10 0 0012 2v10z"/></svg>统计</a>
+<a href="#assets" id="n-assets"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 8l3 4 3-4M12 12v5M9.5 13h5M9.5 15h5"/></svg>资产</a>
+<a href="#more" id="n-more"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>更多</a>
 </nav>
 <div class="toast" id="toast" role="status"></div>
 <script>
@@ -91,6 +116,7 @@ let D=[];
 try{D=JSON.parse(localStorage.getItem(K)||'[]')}catch(e){D=[]}
 const save=()=>{try{localStorage.setItem(K,JSON.stringify(D))}catch(e){toast('保存失败:浏览器禁止了本地存储')}};
 const CATS=['餐饮','日用品','交通','购物','娱乐','居住','医疗','其他'];
+const BASE=CATS.slice();
 const KW={
  '餐饮':/コープ|ソムオー|レストラン|キッチン|[ヘへ]ジャンク|五右衛門|セブン|ローソン|ファミリーマート|ファミマ|マクド|マック|吉野家|すき家|松屋|サイゼリヤ|ガスト|コメダ|ドトール|スタバ|スターバックス|カフェ|ラーメン|食堂|居酒屋|弁当|パン/,
  '日用品':/ドン・キホーテ|ドンキ|ダイソー|ドラッグ|マツモトキヨシ|マツキヨ|ウエルシア|ニトリ|セリア|スーパー/,
@@ -108,19 +134,19 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 const pad=n=>String(n).padStart(2,'0');
 const today=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
 let ym=today().slice(0,7);
-let F={method:'paypay',cat:'餐饮',manual:false,type:'out'},PF=null,EI=null,RC=[],DK='',OPEN={};
-const hv=()=>(location.hash||'#add').split('?')[0];
+let F={method:'paypay',cat:'餐饮',manual:false,type:'out'},PF=null,EI=null,RC=[],DK='',OPEN={},T5='single',OUI=false;
+const hv=()=>(location.hash||'#'+((typeof UI!=='undefined'&&UI.home)||'add')).split('?')[0];
 let pending=null,E=null;
 const $=id=>document.getElementById(id);
 function toast(t){const e=$('toast');e.textContent=t;e.classList.add('on');setTimeout(()=>e.classList.remove('on'),1800)}
 function shift(n){const[y,m]=ym.split('-').map(Number);const d=new Date(y,m-1+n,1);ym=d.getFullYear()+'-'+pad(d.getMonth()+1);render()}
 const monthData=()=>D.filter(x=>x.date.startsWith(ym));
-function head(){const[y,m]=ym.split('-');return `<div class="top"><h1>记账本</h1><div class="mon"><button class="ib" data-m="-1" aria-label="上个月">‹</button><b>${y}年${+m}月</b><button class="ib" data-m="1" aria-label="下个月">›</button></div></div>`}
+function head(){return ''}
 function filt(){const q=Q.t.trim().toLowerCase();return monthData().filter(x=>(!Q.c||x.cat===Q.c)&&(!Q.m||x.method===Q.m)&&(!q||(x.note||'').toLowerCase().includes(q)||x.cat.includes(q)))}
 function listItems(){
  const q=Q.t.trim().toLowerCase();
- const ex=filt().map(x=>({...x,key:x.id}));
- const inc=(Q.c||Q.m)?[]:A.inc.filter(x=>x.date.startsWith(ym)&&(!q||(x.note||'').toLowerCase().includes(q)||'收入'.includes(q))).map(x=>({...x,inc:true,key:'i'+x.id}));
+ const ex=Q.k==='in'?[]:filt().map(x=>({...x,key:x.id}));
+ const inc=(Q.c||Q.m||Q.k==='out')?[]:A.inc.filter(x=>x.date.startsWith(ym)&&(!q||(x.note||'').toLowerCase().includes(q)||'收入'.includes(q))).map(x=>({...x,inc:true,key:'i'+x.id}));
  return [...ex,...inc].sort((p,q)=>q.date.localeCompare(p.date)||q.id-p.id);
 }
 let SEL={on:false,ids:[],cf:false},clrc=false;
@@ -131,9 +157,9 @@ function selBar(a){
 }
 function listBody(){
  const L=listItems(),a=L.filter(x=>!x.inc);
- const fl=Q.t||Q.c||Q.m,all=sum(monthData()),tot=sum(a);
+ const ia=L.filter(x=>x.inc),fl=Q.t||Q.c||Q.m||Q.k,all=sum(monthData()),tot=sum(a);
  SEL.ids=SEL.ids.filter(k=>L.some(x=>x.key===k));
- let h=`<p class="big"><small>¥</small>${Math.round(tot).toLocaleString('ja-JP')}</p><p class="sub">${fl?'筛选结果':'本月支出'},共 ${a.length} 笔${!fl&&inM(ym)?' · 收入 '+yen(inM(ym))+' · 结余 '+sgn(inM(ym)-all):''}</p>`;
+ let h=Q.k==='in'?`<p class="big" style="color:var(--in)"><small>+¥</small>${Math.round(sum(ia)).toLocaleString('ja-JP')}</p><p class="sub">${Q.t?'筛选结果':'本月收入'},共 ${ia.length} 笔</p>`:`<p class="big"><small>¥</small>${Math.round(tot).toLocaleString('ja-JP')}</p><p class="sub">${fl?'筛选结果':'本月支出'},共 ${a.length} 笔${!fl&&inM(ym)?' · 收入 '+yen(inM(ym))+' · 结余 '+sgn(inM(ym)-all):''}</p>`;
  if(!fl&&B.total>0)h+=`<div class="pg"><i style="width:${Math.min(100,all/B.total*100)}%;background:var(${all>B.total?'--pp':'--ac'})"></i></div><p class="sub">预算 ${yen(B.total)} · ${all>B.total?'已超出 '+yen(all-B.total):'剩余 '+yen(B.total-all)}</p>`;
  h+=selBar(L);
  if(!L.length)return h+`<div class="empty">${fl?'没有符合条件的记录。':'这个月还没有记录。<br><a href="#add">记第一笔</a>'}</div>`;
@@ -142,7 +168,7 @@ function listBody(){
   const dt=new Date(d+'T00:00:00'),wd='日一二三四五六'[dt.getDay()],ei=sum(g[d].filter(x=>x.inc)),eo=sum(g[d].filter(x=>!x.inc));
   h+=`<div class="day"><span>${+d.slice(5,7)}月${+d.slice(8)}日 周${wd}</span><span>${eo?yen(eo):''}${eo&&ei?' · ':''}${ei?'收入 +'+yen(ei):''}</span></div><div class="box">`;
   g[d].forEach(x=>{
-   const inf=x.inc?`<i class="dot" style="background:var(--ac)"></i><div class="rm"><div>${esc(x.note||'收入')}</div><span>收入</span></div><div class="amt" style="color:var(--ac)">+${yen(x.amt)}</div>`:`<i class="dot" style="background:var(${mcol(x.method)})"></i><div class="rm"><div>${esc(x.note||x.cat)}</div><span>${esc(x.cat)} · ${mname(x.method)}${x.rid?' · 固定':''}</span></div><div class="amt">${yen(x.amt)}</div>`;
+   const inf=x.inc?`<i class="dot" style="background:var(--in)"></i><div class="rm"><div>${esc(x.note||'收入')}</div><span>收入</span></div><div class="amt" style="color:var(--in)">+${yen(x.amt)}</div>`:`<i class="dot" style="background:var(${mcol(x.method)})"></i><div class="rm"><div>${esc(x.note||x.cat)}</div><span>${esc(x.cat)} · ${mname(x.method)}${x.rid?' · 固定':''}</span></div><div class="amt">${yen(x.amt)}</div>`;
    const btn=x.inc?`<button class="del" data-iedit="${x.id}">编辑</button><button class="del${ip===x.id?' on':''}" data-idel="${x.id}">${ip===x.id?'确认删除':'删除'}</button>`:`<button class="del" data-edit="${x.id}">编辑</button><button class="del${pending===x.id?' on':''}" data-del="${x.id}">${pending===x.id?'确认删除':'删除'}</button>`;
    h+=SEL.on?`<label class="row" style="cursor:pointer"><input type="checkbox" data-sel="${x.key}"${SEL.ids.includes(x.key)?' checked':''} style="width:22px;height:22px;flex:none;accent-color:var(--ac)" aria-label="选择">${inf}</label>`:`<div class="row">${inf}${btn}</div>`});
   h+='</div>';
@@ -151,7 +177,8 @@ function listBody(){
 }
 function listView(){
  const o=(a,v)=>a.map(x=>`<option value="${x[0]}"${x[0]===v?' selected':''}>${x[1]}</option>`).join('');
- return head()+`<div class="srch"><input id="qs" class="f" type="search" placeholder="搜索商户、备注" value="${esc(Q.t)}" style="flex:2"><select id="qc" class="f" style="flex:1" aria-label="分类"><option value="">全部分类</option>${o(CATS.map(c=>[c,c]),Q.c)}</select><select id="qm" class="f" style="flex:1" aria-label="支付方式"><option value="">全部支付</option>${o(MT.map(m=>[m[0],m[1]]),Q.m)}</select></div><div id="lst">${listBody()}</div>`;
+ const srcs=[...new Set(A.inc.map(x=>(x.note||'').trim()).filter(Boolean))];
+ return head()+`${Q.k==='in'?`<div class="srch"><input id="qs" class="f" type="search" placeholder="搜索来源、备注" value="${esc(Q.t)}" style="flex:2"><select id="qsrc" class="f" style="flex:1" aria-label="收入来源"><option value="">全部来源</option>${srcs.map(n=>`<option value="${esc(n)}"${Q.t===n?' selected':''}>${esc(n)}</option>`).join('')}</select></div>`:`<div class="srch"><input id="qs" class="f" type="search" placeholder="搜索商户、备注" value="${esc(Q.t)}" style="flex:2"><select id="qc" class="f" style="flex:1" aria-label="分类"><option value="">全部分类</option>${o(CATS.map(c=>[c,c]),Q.c)}</select><select id="qm" class="f" style="flex:1" aria-label="支付方式"><option value="">全部支付</option>${o(MT.map(m=>[m[0],m[1]]),Q.m)}</select></div>`}<div class="chips" style="margin:8px 0 4px">${[['','全部'],['out','支出'],['in','收入']].map(c=>`<button class="chip" data-qk="${c[0]}" aria-pressed="${(Q.k||'')===c[0]}" style="padding:6px 14px;font-size:14px">${c[1]}</button>`).join('')}${(Q.t||Q.c||Q.m||Q.k)?`<button class="chip" data-qclear="1" style="padding:6px 14px;font-size:14px">清除筛选</button>`:''}</div><div id="lst">${listBody()}</div>`;
 }
 function recentNotes(inn){
  const src=(inn?A.inc:D).slice().sort((p,q)=>q.date.localeCompare(p.date)||q.id-p.id),seen=new Set(),out=[];
@@ -161,15 +188,20 @@ function recentNotes(inn){
 function addView(){
  const e=E?D.find(x=>x.id===E):null,ei=EI?A.inc.find(x=>x.id===EI):null,cur=e||ei,inn=F.type==='in',pf=cur?null:PF;
  const av=cur?cur.amt:(pf&&pf.amt)||'',nv=cur?(cur.note||''):(pf&&pf.note)||'',dv=cur?cur.date:today(),rc=recentNotes(inn);
- return head()+`<div class="box">
- ${cur?'':`<div class="chips"><button class="chip" data-ty="out" aria-pressed="${!inn}">支出</button><button class="chip" data-ty="in" aria-pressed="${inn}">收入</button></div>`}
- <label for="amt">金额(日元)</label><input id="amt" class="f amtin" inputmode="numeric" pattern="[0-9]*" placeholder="0" autocomplete="off" value="${esc(av)}">
- ${inn?'':`<label>支付方式</label><div class="chips" id="ms">${MT.map(m=>`<button class="chip" data-mt="${m[0]}" aria-pressed="${F.method===m[0]}">${m[1]}</button>`).join('')}</div>`}
- <label for="note">${inn?'备注(例如 工资、奖金、副业)':'商户 / 备注'}</label><input id="note" class="f" placeholder="${inn?'例如 給与':'例如 セブン、Suica 充值'}" autocomplete="off" value="${esc(nv)}">
- ${rc.length?`<p class="sub" style="margin:10px 0 0">最近常用</p><div class="chips" style="margin-top:6px">${rc.map((r,i)=>`<button class="chip" data-rc="${i}" style="padding:6px 12px;font-size:14px">${esc(r.note)}</button>`).join('')}</div>`:''}
- ${inn?'':`<label>分类</label><div class="chips" id="cs">${CATS.map(c=>`<button class="chip" data-ct="${c}" aria-pressed="${F.cat===c}">${c}</button>`).join('')}</div>`}
- <label for="dt">日期</label><input id="dt" type="date" class="f" value="${dv}">
- <button class="go" id="save">${cur?'保存修改':(inn?'保存收入':'保存这笔')}</button>${cur?'<button class="go alt" id="cancel">取消</button>':''}</div>`;
+ return `<div class="strip"><input id="amt" class="amtin" inputmode="numeric" pattern="[0-9]*" placeholder="金额(日元)" autocomplete="off" aria-label="金额" value="${esc(av)}"></div>
+ ${inn?'':`<div class="sec"><div class="sech"><span>支付方式</span></div><div class="grid4" id="ms">${MT.map(m=>`<button class="chip" data-mt="${m[0]}" aria-pressed="${F.method===m[0]}">${m[1]}</button>`).join('')}</div></div>
+ <div class="sec"><div class="sech"><span>分类</span><button data-gocat="1">添加/编辑</button></div><div class="grid4" id="cs">${CATS.map(c=>`<button class="chip" data-ct="${c}" aria-pressed="${F.cat===c}">${c}</button>`).join('')}</div></div>`}
+ <div class="lrow"><label for="note">备注</label><input id="note" placeholder="${inn?'工资、奖金、副业':'商户或品名'}" autocomplete="off" value="${esc(nv)}"></div>
+ ${rc.length?`<div class="sec" style="padding-top:12px"><div class="sech"><span>最近常用</span></div><div class="chips">${rc.map((r,i)=>`<button class="chip" data-rc="${i}" style="padding:6px 12px;font-size:14px">${esc(r.note)}</button>`).join('')}</div></div>`:''}
+ <div class="lrow"><label for="dt">日期</label><input id="dt" type="date" value="${dv}"></div>
+ <button class="go save" id="save">${cur?'保存修改':'保存'}</button>${cur?'<button class="go alt" id="cancel" style="display:block;width:calc(100% - 48px);margin:12px auto 0">取消</button>':''}`;
+}
+function top5(a){
+ let top;
+ if(T5==='single')top=a.slice().sort((p,q)=>q.amt-p.amt||q.date.localeCompare(p.date)).slice(0,5).map(x=>({nm:x.note||x.cat,sub:x.date.slice(5)+' · '+x.cat+' · '+mname(x.method),amt:x.amt,key:x.note||x.cat}));
+ else{const g={};a.forEach(x=>{const k=x.note||x.cat;(g[k]=g[k]||{n:0,s:0,cat:x.cat});g[k].n++;g[k].s+=x.amt});top=Object.entries(g).sort((p,q)=>q[1].s-p[1].s).slice(0,5).map(([k,v])=>({nm:k,sub:v.n+' 笔 · '+v.cat,amt:v.s,key:k}))}
+ const mx=top[0]?top[0].amt:1;
+ return `<div class="box"><h2>前五大消费</h2><div class="chips" style="margin:6px 0 2px">${[['single','单笔'],['shop','按商户合计']].map(c=>`<button class="chip" data-t5="${c[0]}" aria-pressed="${T5===c[0]}" style="padding:6px 14px;font-size:14px">${c[1]}</button>`).join('')}</div>`+top.map((x,i)=>`<button class="bar" data-sn="${esc(x.key)}" style="align-items:flex-start;margin:12px 0"><span class="n" style="width:22px;color:var(--mu)">${i+1}</span><span style="flex:1;min-width:0"><span style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(x.nm)}</span><span style="display:block;font-size:13px;color:var(--mu)">${esc(x.sub)}</span><span class="pg" style="display:block"><i style="width:${x.amt/mx*100}%;background:var(--pp)"></i></span></span><span class="v">${yen(x.amt)}</span></button>`).join('')+`</div>`;
 }
 function statsView(){
  const a=monthData(),tot=sum(a),inc=A.inc.filter(x=>x.date.startsWith(ym)),it=sum(inc);
@@ -180,7 +212,7 @@ function statsView(){
  const bc={};a.forEach(x=>bc[x.cat]=(bc[x.cat]||0)+x.amt);
  const mxio=Math.max(it,tot,1),pi=sum(A.inc.filter(x=>x.date.startsWith(prevM(ym))));
  const src={};inc.forEach(x=>{const k=x.note||'收入';src[k]=(src[k]||0)+x.amt});
- h+=`<div class="box"><h2>收支</h2><div class="bar"><span class="n">收入</span><span class="t"><i style="width:${it/mxio*100}%"></i></span><span class="v">+${yen(it)}</span></div><div class="bar"><span class="n">支出</span><span class="t"><i style="width:${tot/mxio*100}%;background:var(--pp)"></i></span><span class="v">${yen(tot)}</span></div><p class="sub" style="margin:8px 0 0">结余 <b style="color:var(${it>=tot?'--ac':'--pp'})">${sgn(it-tot)}</b>${it>0?' · 储蓄率 '+Math.round((it-tot)/it*100)+'%':''}${pi?'<br>上月收入 '+yen(pi)+',本月'+(it>=pi?'多':'少')+' '+yen(Math.abs(it-pi)):''}</p>`+(inc.length?`<p class="sub" style="margin:12px 0 2px">收入来源</p>`+Object.entries(src).sort((p,q)=>q[1]-p[1]).map(([k,v])=>`<div class="bar"><span class="n" style="width:auto;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(k)}</span><span style="flex:1"></span><span class="v">+${yen(v)}</span></div>`).join(''):'')+`</div>`;
+ h+=`<div class="box"><h2>收支</h2><div class="bar"><span class="n">收入</span><span class="t"><i style="width:${it/mxio*100}%"></i></span><span class="v">+${yen(it)}</span></div><div class="bar"><span class="n">支出</span><span class="t"><i style="width:${tot/mxio*100}%;background:var(--pp)"></i></span><span class="v">${yen(tot)}</span></div><p class="sub" style="margin:8px 0 0">结余 <b style="color:var(${it>=tot?'--in':'--pp'})">${sgn(it-tot)}</b>${it>0?' · 储蓄率 '+Math.round((it-tot)/it*100)+'%':''}${pi?'<br>上月收入 '+yen(pi)+',本月'+(it>=pi?'多':'少')+' '+yen(Math.abs(it-pi)):''}</p>`+(inc.length?`<p class="sub" style="margin:12px 0 2px">收入来源</p>`+Object.entries(src).sort((p,q)=>q[1]-p[1]).map(([k,v])=>`<button class="bar" data-si="${esc(k)}"><span class="n" style="width:auto;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(k)}</span><span style="flex:1"></span><span class="v">+${yen(v)}</span></button>`).join(''):'')+`</div>`;
  const bk=Object.keys(B.cats);
  if(B.total>0||bk.length){
   const row=(nm,u,l)=>`<div style="margin:10px 0 0"><div style="display:flex;justify-content:space-between;font-size:14px"><span>${esc(nm)}</span><span style="color:var(${u>l?'--pp':'--mu'})">${yen(u)} / ${yen(l)}${u>l?' · 超出 '+yen(u-l):''}</span></div><div class="pg"><i style="width:${Math.min(100,u/l*100)}%;background:var(${u>l?'--pp':'--ac'})"></i></div></div>`;
@@ -188,24 +220,31 @@ function statsView(){
  }
  const ms=[];{let mm=ym;for(let i=0;i<6;i++){ms.unshift(mm);mm=prevM(mm)}}
  const tr=ms.map(mm=>({mm,o:sum(D.filter(x=>x.date.startsWith(mm))),i:sum(A.inc.filter(x=>x.date.startsWith(mm)))})),tm=Math.max(1,...tr.map(x=>Math.max(x.o,x.i)));
- if(tr.some(x=>x.o||x.i))h+=`<div class="box"><h2>近 6 个月</h2><div style="display:flex;gap:6px;align-items:flex-end;height:96px;margin-top:8px">${tr.map(x=>`<div style="flex:1;display:flex;gap:2px;align-items:flex-end;height:100%" title="${x.mm} 收入 ${yen(x.i)} 支出 ${yen(x.o)}"><i style="flex:1;height:${x.i?Math.max(3,x.i/tm*100):1}%;background:var(--ac);border-radius:2px 2px 0 0"></i><i style="flex:1;height:${x.o?Math.max(3,x.o/tm*100):1}%;background:var(--pp);border-radius:2px 2px 0 0"></i></div>`).join('')}</div><div style="display:flex;gap:6px;margin-top:4px">${tr.map(x=>`<span style="flex:1;text-align:center;font-size:12px;color:var(--mu)">${+x.mm.slice(5)}月</span>`).join('')}</div><div class="leg" style="margin:8px 0 4px"><span><i class="dot" style="display:inline-block;background:var(--ac)"></i> 收入</span><span><i class="dot" style="display:inline-block;background:var(--pp)"></i> 支出</span></div>${tr.slice().reverse().filter(x=>x.o||x.i).map(x=>`<div class="bar"><span class="n">${+x.mm.slice(5)}月</span><span style="flex:1;font-size:13px;color:var(--mu)">收 ${yen(x.i)} · 支 ${yen(x.o)}</span><span class="v" style="color:var(${x.i>=x.o?'--ac':'--pp'})">${sgn(x.i-x.o)}</span></div>`).join('')}</div>`;
+ if(tr.some(x=>x.o||x.i))h+=`<div class="box"><h2>近 6 个月</h2><div style="display:flex;gap:6px;align-items:flex-end;height:96px;margin-top:8px">${tr.map(x=>`<div style="flex:1;display:flex;gap:2px;align-items:flex-end;height:100%" title="${x.mm} 收入 ${yen(x.i)} 支出 ${yen(x.o)}"><i style="flex:1;height:${x.i?Math.max(3,x.i/tm*100):1}%;background:var(--in);border-radius:2px 2px 0 0"></i><i style="flex:1;height:${x.o?Math.max(3,x.o/tm*100):1}%;background:var(--pp);border-radius:2px 2px 0 0"></i></div>`).join('')}</div><div style="display:flex;gap:6px;margin-top:4px">${tr.map(x=>`<span style="flex:1;text-align:center;font-size:12px;color:var(--mu)">${+x.mm.slice(5)}月</span>`).join('')}</div><div class="leg" style="margin:8px 0 4px"><span><i class="dot" style="display:inline-block;background:var(--in)"></i> 收入</span><span><i class="dot" style="display:inline-block;background:var(--pp)"></i> 支出</span></div>${tr.slice().reverse().filter(x=>x.o||x.i).map(x=>`<div class="bar"><span class="n">${+x.mm.slice(5)}月</span><span style="flex:1;font-size:13px;color:var(--mu)">收 ${yen(x.i)} · 支 ${yen(x.o)}</span><span class="v" style="color:var(${x.i>=x.o?'--in':'--pp'})">${sgn(x.i-x.o)}</span></div>`).join('')}</div>`;
  const exb=`<button class="go alt" id="expm">导出本月(CSV)</button><button class="go alt" id="exp">导出全部记录(CSV)</button>`;
  if(!a.length)return h+`<div class="empty">这个月还没有支出记录。</div>`+exb;
  h+=`<div class="box"><h2>本月支出</h2><p class="big" style="margin-top:4px"><small>¥</small>${Math.round(tot).toLocaleString('ja-JP')}</p><p class="sub" style="margin:0">日均 ${yen(tot/elapsed)} · 单笔最高 ${yen(Math.max(...a.map(x=>x.amt)))}</p></div>`;
  const cs=Object.entries(bc).sort((p,q)=>q[1]-p[1]),mx=cs[0][1];
- h+=`<div class="box"><h2>分类</h2>`+cs.map(([c,v])=>`<div class="bar"><span class="n">${esc(c)}</span><span class="t"><i style="width:${v/mx*100}%${B.cats[c]&&v>B.cats[c]?';background:var(--pp)':''}"></i></span><span class="v">${yen(v)} <span style="color:var(--mu)">${Math.round(v/tot*100)}%</span></span></div>`).join('')+`</div>`;
+ h+=`<div class="box"><h2>分类</h2>`+cs.map(([c,v])=>`<button class="bar" data-sc="${esc(c)}"><span class="n">${esc(c)}</span><span class="t"><i style="width:${v/mx*100}%${B.cats[c]&&v>B.cats[c]?';background:var(--pp)':''}"></i></span><span class="v">${yen(v)} <span style="color:var(--mu)">${Math.round(v/tot*100)}%</span></span></button>`).join('')+`</div>`;
+ h+=top5(a);
  const pm=prevM(ym),pa=D.filter(x=>x.date.startsWith(pm)),pt=sum(pa),pc={};pa.forEach(x=>pc[x.cat]=(pc[x.cat]||0)+x.amt);
- h+=`<div class="box"><h2>与上月对比</h2>`+(pt?`<p class="sub" style="margin:0 0 6px">上月合计 ${yen(pt)},本月${tot>=pt?'多':'少'}花 ${yen(Math.abs(tot-pt))}</p>`+CATS.filter(c=>bc[c]||pc[c]).map(c=>{const d=(bc[c]||0)-(pc[c]||0);return `<div class="bar"><span class="n">${c}</span><span style="flex:1;color:var(--mu);font-size:13px">${yen(pc[c]||0)} → ${yen(bc[c]||0)}</span><span class="v" style="color:var(${d>0?'--pp':'--ac'})">${sgn(d)}</span></div>`}).join(''):`<p class="sub" style="margin:0">上月没有记录,无法对比。</p>`)+`</div>`;
+ h+=`<div class="box"><h2>与上月对比</h2>`+(pt?`<p class="sub" style="margin:0 0 6px">上月合计 ${yen(pt)},本月${tot>=pt?'多':'少'}花 ${yen(Math.abs(tot-pt))}</p>`+CATS.filter(c=>bc[c]||pc[c]).map(c=>{const d=(bc[c]||0)-(pc[c]||0);return `<button class="bar" data-sc="${esc(c)}"><span class="n">${c}</span><span style="flex:1;color:var(--mu);font-size:13px">${yen(pc[c]||0)} → ${yen(bc[c]||0)}</span><span class="v" style="color:var(${d>0?'--pp':'--in'})">${sgn(d)}</span></button>`}).join(''):`<p class="sub" style="margin:0">上月没有记录,无法对比。</p>`)+`</div>`;
  const bm={};a.forEach(x=>bm[x.method]=(bm[x.method]||0)+x.amt);
- h+=`<div class="box"><h2>支付方式</h2><div class="stack">${MT.filter(k=>bm[k[0]]).map(k=>`<i style="width:${bm[k[0]]/tot*100}%;background:var(${k[2]})"></i>`).join('')}</div><div class="leg">${MT.filter(k=>bm[k[0]]).map(k=>`<span><i class="dot" style="display:inline-block;background:var(${k[2]})"></i> ${k[1]} ${yen(bm[k[0]])}</span>`).join('')}</div></div>`;
+ h+=`<div class="box"><h2>支付方式</h2><div class="stack">${MT.filter(k=>bm[k[0]]).map(k=>`<i style="width:${bm[k[0]]/tot*100}%;background:var(${k[2]})"></i>`).join('')}</div><div class="leg">${MT.filter(k=>bm[k[0]]).map(k=>`<button class="lg" data-sm="${k[0]}"><i class="dot" style="display:inline-block;background:var(${k[2]})"></i> ${k[1]} ${yen(bm[k[0]])}</button>`).join('')}</div></div>`;
  const bd=Array(nd).fill(0);a.forEach(x=>bd[+x.date.slice(8)-1]+=x.amt);
  const dm=Math.max(...bd);
  h+=`<div class="box"><h2>每日支出</h2><div class="days">${bd.map((v,i)=>`<i class="${v?'':'z'}" style="height:${v?Math.max(4,v/dm*100):3}%" title="${i+1}日 ${yen(v)}"></i>`).join('')}</div><div class="leg" style="justify-content:space-between;margin-top:6px"><span>1日</span><span>${nd}日</span></div></div>`;
  return h+exb;
 }
+function bandHTML(view){
+ if(view==='add'){if(E||EI)return `<span class="band-t">${EI?'编辑收入':'编辑记录'}</span>`;return `<div class="seg"><button data-ty="out" aria-pressed="${F.type!=='in'}">支出</button><button data-ty="in" aria-pressed="${F.type==='in'}">收入</button></div>`}
+ if(view==='list'||view==='stats'){const[y,m]=ym.split('-');return `<div class="mon"><button class="ib" data-m="-1" aria-label="上个月">‹</button><b>${y}年${+m}月</b><button class="ib" data-m="1" aria-label="下个月">›</button></div>`}
+ return `<span class="band-t">${view==='assets'?'总资产':'更多'}</span>`;
+}
 function render(){
  const v=hv().slice(1);
  const view=['add','stats','assets','more'].includes(v)?v:'list';
+ $('band').innerHTML='<div class="bi">'+bandHTML(view)+'</div>';
  $('app').innerHTML=view==='add'?addView():view==='stats'?statsView():view==='assets'?assetsView():view==='more'?moreView():listView();
  ['list','add','stats','assets','more'].forEach(k=>$('n-'+k).classList.toggle('on',k===view));
  if(view==='add'&&!E&&!EI){F.manual=false}
@@ -213,6 +252,14 @@ function render(){
 document.addEventListener('click',async e=>{
  const t=e.target.closest('button');if(!t)return;
  if(t.dataset.m){pending=null;return shift(+t.dataset.m)}
+ if(t.dataset.sc!==undefined){Q={t:'',c:t.dataset.sc,m:'',k:'out'};location.hash='#list';return}
+ if(t.dataset.sm){Q={t:'',c:'',m:t.dataset.sm,k:'out'};location.hash='#list';return}
+ if(t.dataset.si!==undefined){Q={t:t.dataset.si==='收入'?'':t.dataset.si,c:'',m:'',k:'in'};location.hash='#list';return}
+ if(t.dataset.sn!==undefined){Q={t:t.dataset.sn,c:'',m:'',k:'out'};location.hash='#list';return}
+ if(t.dataset.t5){T5=t.dataset.t5;return render()}
+ if(t.dataset.gocat){OUI=true;location.hash='#more';return}
+ if(t.dataset.qk!==undefined){Q.k=t.dataset.qk;if(Q.k==='in'){Q.c='';Q.m=''}return render()}
+ if(t.dataset.qclear){Q={t:'',c:'',m:'',k:''};return render()}
  if(t.dataset.edit){const x=D.find(z=>z.id===+t.dataset.edit);if(x){E=x.id;EI=null;F={method:x.method,cat:x.cat,manual:true,type:'out'};location.hash='#add'}return}
  if(t.dataset.iedit){const x=A.inc.find(z=>z.id===+t.dataset.iedit);if(x){EI=x.id;E=null;F={...F,type:'in'};location.hash='#add'}return}
  if(t.dataset.ty){PF={amt:$('amt').value,note:$('note').value};F.type=t.dataset.ty;F.manual=false;return render()}
@@ -242,7 +289,7 @@ document.addEventListener('click',async e=>{
 document.addEventListener('input',e=>{
  if(e.target.id==='note'&&!F.manual){const c=guess(e.target.value);if(c){F.cat=c;document.querySelectorAll('[data-ct]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.ct===c))}}
 });
-window.addEventListener('hashchange',()=>{pending=null;clrc=false;SEL={on:false,ids:[],cf:false};if(hv()!=='#add'){E=null;EI=null;PF=null;DK=''}OPEN={};render()});
+window.addEventListener('hashchange',()=>{pending=null;clrc=false;SEL={on:false,ids:[],cf:false};if(hv()!=='#add'){E=null;EI=null;PF=null;DK=''}OPEN={};if(OUI){OPEN.ui=true;OUI=false}render()});
 
 const AK='kakeibo.assets.v1';
 let A={rate:150,cash:0,stock:0,cur:'JPY',inc:[],start:'',snaps:[],assets:[],disp:'JPY'};
@@ -268,7 +315,7 @@ function assetsView(){
  const fm=n=>dc==='JPY'?yen(n):(dc==='USD'?'US$':'CN¥')+Math.round(n/A.rates[dc]).toLocaleString('en-US');
  const sn=A.snaps.slice().sort((p,q)=>p.date.localeCompare(q.date));
  const td=today(),prev=sn.filter(s=>s.date<td).pop(),cur=sn.find(s=>s.date===td);
- let h=`<div class='top'><h1>总资产</h1></div><p class='big'>${dc==='JPY'?'<small>¥</small>'+Math.round(tot).toLocaleString('ja-JP'):fm(tot)}</p>`;
+ let h=`<p class='big'>${dc==='JPY'?'<small>¥</small>'+Math.round(tot).toLocaleString('ja-JP'):fm(tot)}</p>`;
  h+=`<p class='sub'>投资资产 ${fm(inv)} · 现金/存款 ${fm(oth)}${dc!=='JPY'?'<br>按 1 '+(dc==='USD'?'美元':'人民币')+' = ¥'+A.rates[dc]+' 换算':''}${prev?'<br>较 '+prev.date.slice(5)+' 确认的数值 '+(tot-prev.total<0?'−':'+')+fm(Math.abs(tot-prev.total)):''}</p>`;
  h+=`<div class='box'><h2>币种与汇率</h2><div class='chips'>${[['JPY','日元'],['CNY','人民币'],['USD','美元']].map(c=>`<button class='chip' data-disp='${c[0]}' aria-pressed='${dc===c[0]}'>${c[1]}</button>`).join('')}</div><div style='display:flex;gap:8px'><div style='flex:1;min-width:0'><label for='rt-USD'>1 美元 = ?日元</label><input id='rt-USD' class='f' data-rt='USD' inputmode='decimal' value='${A.rates.USD}'></div><div style='flex:1;min-width:0'><label for='rt-CNY'>1 人民币 = ?日元</label><input id='rt-CNY' class='f' data-rt='CNY' inputmode='decimal' value='${A.rates.CNY}'></div></div><p class='sub' style='margin:10px 0 0'>总资产按所选币种显示,汇率需要你自己更新。现金、消费、收入和投资资产都以日元记录,每天确认的数值也以日元保存。</p></div>`;
  h+=`<div class='box'><h2>确认今日总资产</h2><p class='sub' style='margin:0'>投资资产(日元计,按券商或交易所显示的日元市值填写)</p>`
@@ -300,9 +347,22 @@ document.addEventListener('change',e=>{
  if(t.id==='sd'){A.start=t.value||today();saveA();render()}
 });
 const CK='kakeibo.cfg.v1';
-let B={total:0,cats:{}},R=[],Q={t:'',c:'',m:''},uid=Date.now(),rp=null,bkc=false;
+let B={total:0,cats:{}},R=[],Q={t:'',c:'',m:'',k:''},uid=Date.now(),rp=null,bkc=false;
 try{const o=JSON.parse(localStorage.getItem(CK)||'{}');if(o.B)B=Object.assign({total:0,cats:{}},o.B);if(Array.isArray(o.R))R=o.R}catch(e){}
-const saveC=()=>{try{localStorage.setItem(CK,JSON.stringify({B,R}))}catch(e){toast('保存失败:浏览器禁止了本地存储')}};
+let UI={theme:'auto',accent:'orange',home:'add'},CC=[];
+const ACC={orange:['橙色',null,null],green:['青绿','#0e7a68','#3cc3a8'],blue:['蓝色','#2f6fed','#7aa2ff'],purple:['紫色','#7c4dff','#b39dff'],pink:['粉红','#d6336c','#ff7aa8']};
+const saveC=()=>{try{localStorage.setItem(CK,JSON.stringify({B,R,UI,CC}))}catch(e){toast('保存失败:浏览器禁止了本地存储')}};
+try{const o=JSON.parse(localStorage.getItem(CK)||'{}');if(o.UI)UI=Object.assign(UI,o.UI);if(Array.isArray(o.CC))CC=o.CC}catch(e){}
+if(!ACC[UI.accent])UI.accent='orange';
+function applyCats(){CATS.length=0;CATS.push(...BASE.slice(0,-1),...CC.filter(c=>!BASE.includes(c)),BASE[BASE.length-1])}
+function applyUI(){
+ const r=document.documentElement;
+ if(UI.theme!=='auto'){r.setAttribute('data-theme',UI.theme);r.dataset.kk='1'}else if(r.dataset.kk){r.removeAttribute('data-theme');delete r.dataset.kk}
+ let st=document.getElementById('ui-css');if(!st){st=document.createElement('style');st.id='ui-css';document.head.appendChild(st)}
+ const a=ACC[UI.accent];
+ st.textContent=a&&a[1]?`:root{--ac:${a[1]};--on:#fff}@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ac:${a[2]};--on:#10151a}}:root[data-theme="dark"]{--ac:${a[2]};--on:#10151a}:root[data-theme="light"]{--ac:${a[1]};--on:#fff}`:'';
+}
+applyCats();applyUI();
 const nid=()=>++uid;
 async function saveFile(name,data,mime){
  try{if(typeof claude!=='undefined'&&claude&&claude.use){const dl=await claude.use('downloads');if(dl){await dl.save({filename:name,data});return true}}}catch(err){if(err&&err.code==='declined')return false}
@@ -361,7 +421,10 @@ function rvPanel(){
 }
 function moreView(){
  const opt=(a,v)=>a.map(x=>`<option value='${x[0]}'${x[0]===v?' selected':''}>${x[1]}</option>`).join('');
- let h=`<div class='top'><h1>更多</h1></div>`;
+ let h='';
+ const TH={auto:'跟随系统',light:'浅色',dark:'深色'},HM={add:'记一笔',list:'明细',stats:'统计',assets:'资产'};
+ h+=`<div class='box'><h2>自定义界面</h2><p class='sub' style='margin:0'>主题 ${TH[UI.theme]} · 强调色 ${ACC[UI.accent][0]} · 打开时进入「${HM[UI.home]}」${CC.length?' · 自定义分类 '+CC.length+' 个':''}</p>`
+ +(OPEN.ui?`<label>主题</label><div class='chips'>${Object.entries(TH).map(([k,v])=>`<button class='chip' data-th='${k}' aria-pressed='${UI.theme===k}'>${v}</button>`).join('')}</div><label>强调色</label><div class='chips'>${Object.entries(ACC).map(([k,v])=>`<button class='chip' data-ac='${k}' aria-pressed='${UI.accent===k}' style='display:inline-flex;align-items:center;gap:6px'><i class='dot' style='background:${v[1]||"#0e7a68"}'></i>${v[0]}</button>`).join('')}</div><label>打开时进入的页面</label><div class='chips'>${Object.entries(HM).map(([k,v])=>`<button class='chip' data-hm='${k}' aria-pressed='${UI.home===k}'>${v}</button>`).join('')}</div><label for='ccn'>自定义分类</label>`+CC.map(c=>`<div class='row'><div class='rm'><div>${esc(c)}</div></div><button class='del' data-ccdel='${esc(c)}'>删除</button></div>`).join('')+`<div style='display:flex;gap:8px'><input id='ccn' class='f' style='flex:1;min-width:0' placeholder='新分类名称(最多 8 个字)' maxlength='8' autocomplete='off'><button class='go alt' id='ccadd' style='margin:0;flex:0 0 auto;padding:12px 16px'>添加</button></div><button class='go alt' data-open='ui' style='margin-top:12px'>收起</button>`:`<button class='go alt' data-open='ui'>自定义界面</button>`)+`</div>`;
  const bks=Object.keys(B.cats),bleft=CATS.filter(c=>!B.cats[c]);
  const bud=!!OPEN.bud,fix=!!OPEN.fix;
  h+=`<div class='box'><h2>预算</h2><p class='sub' style='margin:0'>${B.total>0?'每月总预算 '+yen(B.total):'未设置总预算'}${bks.length?' · 分类预算 '+bks.length+' 项':''}</p>`
@@ -390,11 +453,11 @@ document.addEventListener('click',async e=>{
   R.push({id:nid(),name,amt:Math.round(amt),day,cat:$('rc').value,method:$('rmt').value,last:prevM(today().slice(0,7))});saveC();applyRec();toast('已添加固定支出');OPEN.fix=false;render();return}
  if(t.dataset.rdel){const id=+t.dataset.rdel;if(rp===id){R=R.filter(x=>x.id!==id);rp=null;saveC();toast('已删除(已生成的记录会保留)')}else rp=id;render();return}
  if(t.id==='pp-imp'){const v=$('ppt').value.trim();if(!v){toast('请先选择文件或粘贴内容');return}importPay(v);return}
- if(t.id==='bk-exp'){await saveFile('kakeibo-backup.json',JSON.stringify({v:1,D,A,B,R}),'application/json');return}
- if(t.id==='bk-copy'){const txt=JSON.stringify({v:1,D,A,B,R});$('bkt').value=txt;try{await navigator.clipboard.writeText(txt);toast('已复制备份内容')}catch(e){$('bkt').focus();$('bkt').select();toast('已填入下方文本框,请长按全选后复制')}return}
+ if(t.id==='bk-exp'){await saveFile('kakeibo-backup.json',JSON.stringify({v:1,D,A,B,R,UI,CC}),'application/json');return}
+ if(t.id==='bk-copy'){const txt=JSON.stringify({v:1,D,A,B,R,UI,CC});$('bkt').value=txt;try{await navigator.clipboard.writeText(txt);toast('已复制备份内容')}catch(e){$('bkt').focus();$('bkt').select();toast('已填入下方文本框,请长按全选后复制')}return}
  if(t.id==='bk-imp'){const v=$('bkt').value.trim();if(!v){toast('请先选择文件或粘贴内容');return}
   if(!bkc){bkc=true;t.textContent='确认覆盖现有数据';return}
-  try{const o=JSON.parse(v);if(!Array.isArray(o.D))throw 0;D=o.D;A=Object.assign({rate:150,cash:0,stock:0,cur:'JPY',inc:[],start:today(),snaps:[],assets:[],disp:'JPY'},o.A||{});migA();B=Object.assign({total:0,cats:{}},o.B||{});R=Array.isArray(o.R)?o.R:[];save();saveA();saveC();bkc=false;toast('已恢复备份');render()}catch(err){bkc=false;t.textContent='导入备份';toast('备份内容无法识别')}}
+  try{const o=JSON.parse(v);if(!Array.isArray(o.D))throw 0;D=o.D;A=Object.assign({rate:150,cash:0,stock:0,cur:'JPY',inc:[],start:today(),snaps:[],assets:[],disp:'JPY'},o.A||{});migA();B=Object.assign({total:0,cats:{}},o.B||{});R=Array.isArray(o.R)?o.R:[];UI=Object.assign({theme:'auto',accent:'orange',home:'add'},o.UI||{});if(!ACC[UI.accent])UI.accent='orange';CC=Array.isArray(o.CC)?o.CC:[];applyCats();applyUI();save();saveA();saveC();bkc=false;toast('已恢复备份');render()}catch(err){bkc=false;t.textContent='导入备份';toast('备份内容无法识别')}}
 });
 document.addEventListener('click',e=>{
  const t=e.target.closest('button');if(!t)return;
@@ -406,6 +469,11 @@ document.addEventListener('click',e=>{
    if(!SEL.cf){SEL.cf=true}else{D=D.filter(x=>!ids.includes(x.id));A.inc=A.inc.filter(x=>!ids.includes('i'+x.id));RV.unc=RV.unc.filter(id=>!ids.includes(id));save();saveA();saveRV();SEL={on:false,ids:[],cf:false};toast('已删除 '+ids.length+' 笔')}}
   $('lst').innerHTML=listBody();return}
  if(t.dataset.open){const k=t.dataset.open;OPEN[k]=!OPEN[k];render();return}
+ if(t.dataset.th){UI.theme=t.dataset.th;saveC();applyUI();render();return}
+ if(t.dataset.ac){UI.accent=t.dataset.ac;saveC();applyUI();render();return}
+ if(t.dataset.hm){UI.home=t.dataset.hm;saveC();render();return}
+ if(t.id==='ccadd'){const n=$('ccn').value.trim();if(!n){toast('请输入分类名称');return}if(CATS.includes(n)){toast('已有同名分类');return}CC.push(n);applyCats();saveC();toast('已添加分类 '+n);render();return}
+ if(t.dataset.ccdel){const c=t.dataset.ccdel;if(D.some(x=>x.cat===c)){toast('还有记录在使用「'+c+'」,无法删除');return}CC=CC.filter(x=>x!==c);delete B.cats[c];applyCats();saveC();toast('已删除分类');render();return}
  if(t.id==='badd'){const c=$('bcs').value,n=num($('bca').value);if(!(n>0)){toast('请输入预算金额');$('bca').focus();return}B.cats[c]=Math.round(n);saveC();toast('已添加 '+c+' 预算');render();return}
  if(t.dataset.bdel){delete B.cats[t.dataset.bdel];saveC();toast('已删除预算');render();return}
  if(t.id==='clr'){if(!clrc){clrc=true}else{const n=D.length;D=[];RV.unc=[];save();saveRV();clrc=false;toast('已清空 '+n+' 笔消费')}render()}
@@ -415,7 +483,8 @@ document.addEventListener('change',e=>{
  const t=e.target;
  if(t.dataset&&t.dataset.uc){const x=D.find(z=>z.id===+t.dataset.uc);if(x){x.cat=t.value;save();if(t.value!=='其他'){RV.unc=RV.unc.filter(i=>i!==x.id);saveRV()}render()}return}
  if(t.dataset&&t.dataset.sel){const id=t.dataset.sel[0]==='i'?t.dataset.sel:+t.dataset.sel;SEL.ids=t.checked?[...SEL.ids,id]:SEL.ids.filter(z=>z!==id);SEL.cf=false;$('lst').innerHTML=listBody();return}
- if(t.id==='qc'||t.id==='qm'){Q[t.id==='qc'?'c':'m']=t.value;$('lst').innerHTML=listBody();return}
+ if(t.id==='qsrc'){Q.t=t.value;render();return}
+ if(t.id==='qc'||t.id==='qm'){Q[t.id==='qc'?'c':'m']=t.value;if(Q.k==='in')Q.k='';render();return}
  if(t.id==='bt'){const n=num(t.value);B.total=n>0?n:0;saveC();toast('已保存预算');return}
  if(t.dataset&&t.dataset.bc){const n=num(t.value);if(n>0)B.cats[t.dataset.bc]=n;else delete B.cats[t.dataset.bc];saveC();toast('已保存预算');if(!(n>0))render();return}
  if(t.id==='ppf'&&t.files[0])readF(t.files[0],'ppt');
@@ -425,6 +494,6 @@ document.addEventListener('change',e=>{
  if(p.get('a')||p.get('n')){PF={amt:(p.get('a')||'').replace(/[^0-9]/g,''),note:p.get('n')||''};const m=p.get('m');if(['paypay','card','cash'].includes(m))F.method=m;if(p.get('t')==='in')F.type='in';const c=guess(PF.note);if(c)F.cat=c}}catch(e){}})();
 render();
 </script>
-<script>if('serviceWorker' in navigator&&location.protocol==='https:'){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}</script>
+<script>if('serviceWorker' in navigator&&location.protocol==='https:'){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}</script>
 </body>
 </html>
