@@ -17,9 +17,9 @@
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--c5:#4cc9b8;--c6:#ff9478;--c7:#b8b0c4;--c8:#7fb5d6;--bg:#1c1814;--sf:#26211c;--tx:#f2ece3;--mu:#a39a8e;--ln:#3a332b;--ac:#f09a58;--on:#241508;--sel:#352d25;--in:#58c88a;--pp:#ff7a85;--cd:#7a9cff;--cs:#e3b04a;--cr:#b48cff;color-scheme:dark}}
 :root[data-theme="dark"]{--c5:#4cc9b8;--c6:#ff9478;--c7:#b8b0c4;--c8:#7fb5d6;--bg:#1c1814;--sf:#26211c;--tx:#f2ece3;--mu:#a39a8e;--ln:#3a332b;--ac:#f09a58;--on:#241508;--sel:#352d25;--in:#58c88a;--pp:#ff7a85;--cd:#7a9cff;--cs:#e3b04a;--cr:#b48cff;color-scheme:dark}
 *{box-sizing:border-box}
-html,body{margin:0;overscroll-behavior-y:none}
-body{background:var(--bg);color:var(--tx);font:16px/1.5 -apple-system,"Hiragino Sans","PingFang SC","Noto Sans JP",system-ui,sans-serif;padding-bottom:calc(104px + env(safe-area-inset-bottom,0px));font-variant-numeric:tabular-nums}
-main{max-width:520px;margin:0 auto;padding:12px 16px}
+html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none}
+body{background:var(--bg);color:var(--tx);font:16px/1.5 -apple-system,"Hiragino Sans","PingFang SC","Noto Sans JP",system-ui,sans-serif;display:flex;flex-direction:column;height:100vh;height:100dvh;font-variant-numeric:tabular-nums}
+main{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:12px max(16px,calc((100% - 488px)/2)) calc(96px + env(safe-area-inset-bottom,0px))}
 h1{font-size:15px;font-weight:600;margin:0;color:var(--mu)}
 .top{display:flex;align-items:center;justify-content:space-between;padding:8px 0 4px}
 .mon{display:flex;align-items:center;gap:4px}
@@ -78,7 +78,7 @@ button.bar,button.lg{background:none;border:0;padding:0;text-align:left;cursor:p
 button.bar{width:100%}
 button.lg{display:inline-flex;align-items:center;gap:4px;color:var(--mu);font-size:13px}
 button.bar:active,button.lg:active{opacity:.6}
-#band{background:var(--ac);color:#fff;padding:calc(env(safe-area-inset-top,0px) + 8px) 16px 8px;position:sticky;top:0;z-index:5;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+#band{background:var(--ac);color:#fff;padding:calc(env(safe-area-inset-top,0px) + 8px) 16px 8px;flex:none;z-index:5;box-shadow:0 2px 10px rgba(0,0,0,.08)}
 #band .bi{max-width:520px;margin:0 auto;display:flex;align-items:center;justify-content:center;min-height:40px}
 .band-t{font-size:19px;font-weight:700;color:#fff}
 #band .mon{gap:8px}#band .mon b{color:#fff;font-size:18px;min-width:128px}
@@ -97,7 +97,7 @@ button.bar:active,button.lg:active{opacity:.6}
 .lrow{display:flex;align-items:center;gap:12px;margin:0 -16px;padding:0 20px;background:var(--sf);border-bottom:1px solid var(--ln)}
 .lrow label{margin:0;font-size:17px;color:var(--tx);flex:none}
 .lrow input{flex:1;min-width:0;border:0;background:none;text-align:right;font-size:17px;padding:11px 0;outline:0}
-.go.save{display:block;position:sticky;bottom:calc(88px + env(safe-area-inset-bottom,0px));z-index:4;width:calc(100% - 48px);margin:14px auto 0;border-radius:999px;font-size:19px;padding:12px;box-shadow:0 8px 20px rgba(0,0,0,.18)}
+.go.save{display:block;width:calc(100% - 48px);margin:14px auto 0;border-radius:999px;font-size:19px;padding:12px;box-shadow:0 8px 20px rgba(0,0,0,.18)}
 .addrow{display:flex;align-items:center;gap:6px;margin-top:10px;background:var(--sf);border:1.5px solid var(--ln);border-radius:999px;padding:4px 4px 4px 16px}
 .addrow:focus-within{border-color:var(--ac)}
 .addrow input{flex:1;min-width:0;border:0;background:none;outline:0;font-size:16px;padding:8px 0}
@@ -105,7 +105,7 @@ button.bar:active,button.lg:active{opacity:.6}
 .days .dc{flex:1;height:100%;display:flex;align-items:flex-end;border:0;background:none;padding:0;cursor:pointer}.days .dc i{width:100%;flex:none}.days .dc:active i{opacity:.5}
 .dro{min-height:26px;margin-top:6px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px}.dro button{border:0;background:none;color:var(--ac);font-size:14px;cursor:pointer;padding:0}.days .dc.on i{opacity:1;outline:2px solid var(--tx);outline-offset:0}
 .addrow button.dl{background:none;color:var(--pp);padding:9px 14px;font-weight:600}
-.lhead{position:sticky;top:var(--bh,56px);z-index:3;background:var(--bg);margin:0 -16px;padding:4px 16px 0;border-bottom:1px solid var(--ln)}.lhead .srch{margin:2px 0}.lhead .srch .f{padding:7px 10px}.lhead .srch select.f{padding:7px 2px;font-size:14px}.lhead>.chips{margin:6px 0 2px!important}.lsum{padding:0 0 6px}.lsum .big{font-size:28px;margin:0}.lsum .big small{font-size:14px}.lsum .sub{margin:0 0 2px;font-size:13px}.lsum .pg{margin:4px 0 2px}
+.lhead{position:sticky;top:-12px;z-index:3;background:var(--bg);margin:0 -16px;padding:4px 16px 0;border-bottom:1px solid var(--ln)}.lhead .srch{margin:2px 0}.lhead .srch .f{padding:7px 10px}.lhead .srch select.f{padding:7px 2px;font-size:14px}.lhead>.chips{margin:6px 0 2px!important}.lsum{padding:0 0 6px}.lsum .big{font-size:28px;margin:0}.lsum .big small{font-size:14px}.lsum .sub{margin:0 0 2px;font-size:13px}.lsum .pg{margin:4px 0 2px}
 </style>
 </head>
 <body>
@@ -396,7 +396,7 @@ function bandHTML(view){
 function render(){
  const v=hv().slice(1);
  const view=['add','stats','assets','more'].includes(v)?v:'list';
- $('band').innerHTML='<div class="bi">'+bandHTML(view)+'</div>';document.documentElement.style.setProperty('--bh',$('band').offsetHeight+'px');document.body.style.paddingBottom=view==='add'?'0':'';
+ $('band').innerHTML='<div class="bi">'+bandHTML(view)+'</div>';document.documentElement.style.setProperty('--bh',$('band').offsetHeight+'px');if(window.__lv!==view){window.__lv=view;$('app').scrollTop=0}
  $('app').innerHTML=view==='add'?addView():view==='stats'?statsView():view==='assets'?assetsView():view==='more'?moreView():listView();
  ['list','add','stats','assets','more'].forEach(k=>$('n-'+k).classList.toggle('on',k===view));
  if(view==='add'&&!E&&!EI){F.manual=false}
