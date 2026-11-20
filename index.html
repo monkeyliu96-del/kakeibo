@@ -124,12 +124,12 @@ const save=()=>{try{localStorage.setItem(K,JSON.stringify(D))}catch(e){toast('�
 const CATS=['餐饮','日用品','交通','购物','娱乐','居住','医疗','其他'];
 const BASE=CATS.slice();
 const KW={
- '餐饮':/コープ|ソムオー|レストラン|キッチン|[ヘへ]ジャンク|五右衛門|セブン|ローソン|ファミリーマート|ファミマ|マクド|マック|吉野家|すき家|松屋|サイゼリヤ|ガスト|コメダ|ドトール|スタバ|スターバックス|カフェ|ラーメン|食堂|居酒屋|弁当|パン/,
+ '餐饮':/コープ|ソムオー|レストラン|キッチン|[ヘへ]ジャンク|五右衛門|セブン|ローソン|ファミリーマート|ファミマ|マクド|マック|吉野家|すき家|スキヤ|松屋|サイゼリヤ|ガスト|コメダ|ドトール|スタバ|スターバックス|カフェ|ラーメン|食堂|居酒屋|弁当|パン/,
  '日用品':/ドン・キホーテ|ドンキ|ダイソー|ドラッグ|マツモトキヨシ|マツキヨ|ウエルシア|ニトリ|セリア|スーパー/,
- '交通':/JR|Suica|スイカ|PASMO|ICOCA|メトロ|電車|駅|新幹線|バス|タクシー|ガソリン/,
- '购物':/Yahoo|Amazon|アマゾン|楽天|ユニクロ|ZOZO|ヨドバシ|ビックカメラ/,
- '娱乐':/歌広場|映画|ゲーム|Netflix|Spotify|カラオケ/,
- '居住':/家賃|電気|ガス|水道|NTT|ドコモ|ソフトバンク/,
+ '交通':/JR|Suica|京成|スカイライナ|スイカ|PASMO|ICOCA|メトロ|電車|駅|新幹線|バス|タクシー|ガソリン/,
+ '购物':/Yahoo|Amazon|アマゾン|楽天(?!モバイル)|ユニクロ|ZOZO|ヨドバシ|ビックカメラ|OLIVE ?YOUNG/i,
+ '娱乐':/歌広場|映画|ゲーム|Netflix|Spotify|カラオケ|APPLE COM BILL|ICLOUD/i,
+ '居住':/家賃|電気|ガス|水道|NTT|ドコモ|ソフトバンク|楽天モバイル/,
  '医疗':/病院|クリニック|薬局|歯科/};
 const guess=s=>{s=(s||'').normalize('NFKC').trim();if(!s)return null;const h=D.slice().sort((p,q)=>q.id-p.id).find(x=>x.note&&(x.note===s||(s.length>=2&&(x.note.includes(s)||s.includes(x.note)))));if(h)return h.cat;for(const c in KW)if(KW[c].test(s)&&CATS.includes(c))return c;return null};
 const DEF_PM=[['paypay','PayPay','--pp'],['card','PayPay卡','--cd'],['rakuten','乐天卡','--cr'],['cash','现金','--cs']];
@@ -172,7 +172,7 @@ const ZH2EN={
 "收入请在「记一笔」里添加。":"Add income from the \"Add\" tab.","请填写名称和市值":"Enter a name and value","已添加固定支出":"Recurring expense added","已添加分类":"Category added","已添加":"Added","请先输入收入金额":"Enter an income amount first",
 "橙色":"Orange","青绿":"Green","蓝色":"Blue","紫色":"Purple","粉红":"Pink",
 "导出失败,请改用「复制备份内容」":"Export failed. Use \"Copy backup\" instead.","没有找到「取引日」列,请确认是 PayPay 导出的 CSV":"Column 取引日 not found. Make sure this is a PayPay CSV export.","没有找到「出金金額」列":"Column 出金金額 not found.",
-"疑似重复":"Possible duplicate","导入后需要确认":"Needs review after import","导入 PayPay 记录":"Import PayPay records","导入备份":"Import backup","导入":"Import","已导入":"Imported",
+"疑似重复":"Possible duplicate","导入后需要确认":"Needs review after import","导入 PayPay 记录":"Import PayPay records","导入乐天卡明细":"Import Rakuten Card statement","选择 PDF 文件":"Choose PDF files","正在读取 PDF…":"Reading PDF…","PDF 解析组件加载失败,请联网后再试":"Could not load the PDF reader. Connect to the internet and try again.","没有识别到明细,请确认是乐天卡 e-NAVI 的请款明细 PDF":"No entries found. Make sure this is a Rakuten e-NAVI statement PDF.","在乐天 e-NAVI 下载「ご利用代金請求明細書」PDF,可以一次选多张卡的文件。按利用日记账,支付方式记为乐天卡;退款需要你确认,PayPay 充值会跳过,重复导入同一份明细会自动忽略。首次使用需要联网加载 PDF 解析组件。":"Download the statement PDF (ご利用代金請求明細書) from Rakuten e-NAVI. You can pick several cards at once. Entries use the purchase date and the Rakuten Card payment method; refunds need your review, PayPay top-ups are skipped, and re-importing the same statement is ignored. The first import needs internet to load the PDF reader.","退款":"Refund","导入备份":"Import backup","导入":"Import","已导入":"Imported",
 "已自动忽略(不算消费):":"Ignored automatically (not spending): ","以下记录没有导入,请逐条决定。转到自己的账户或投资的,选「忽略」即可。":"These were not imported. Decide one by one. For transfers to your own account or investments, choose \"Ignore\".",
 "无备注":"no note","收到":"Received","送出":"Sent","是同一笔":"Same entry","不是,导入":"No, import it","记为收入":"Record as income","记为支出":"Record as spending","忽略":"Ignore",
 "以下支出分类不确定,请选择(之后同名商户会自动沿用):":"Category unsure for these. Pick one (the same merchant will reuse it):",
@@ -202,7 +202,7 @@ const RX=[
  [/^(\d+)日$/,'$1'],
  [/^(\d+)日 (¥.*)$/,'Day $1 $2'],
  [/(\d{4}-\d\d) 收入 (¥[\d,]+) 支出 (¥[\d,]+)/,'$1 income $2, spending $3'],
- [/导入 (\d+) 笔,重复 (\d+) 笔/,'Imported $1, duplicates $2'],[/,疑似重复 (\d+) 笔待确认/,', $1 possible duplicates to review'],
+ [/导入 (\d+) 笔,重复 (\d+) 笔/,'Imported $1, duplicates $2'],[/,疑似重复 (\d+) 笔待确认/,', $1 possible duplicates to review'],[/,(\d+) 个文件无法识别/,', $1 file(s) not recognized'],
  [/,?共 (\d+) 笔/g,(m,n)=>', '+n+(n==1?' item':' items')],
  [/(\d+) 笔/g,(m,n)=>n+(n==1?' item':' items')],
  [/共 (\d+) 项,每月自动记账/,(m,n)=>n+' recurring '+(n==1?'item':'items')+', logged automatically each month'],
@@ -603,6 +603,54 @@ function importPay(t){
  saveRV();save();
  toast(`导入 ${add} 笔,重复 ${dup} 笔${sus?',疑似重复 '+sus+' 笔待确认':''}。需确认的项目见下方`);render();
 }
+/* ===== 乐天卡 PDF 明细导入 ===== */
+const PDFJS='https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/';
+let pdfjsP=null;
+const loadPdfjs=()=>pdfjsP||(pdfjsP=import(PDFJS+'legacy/build/pdf.min.mjs').then(m=>{m.GlobalWorkerOptions.workerSrc=PDFJS+'legacy/build/pdf.worker.min.mjs';return m}).catch(e=>{pdfjsP=null;throw e}));
+function rkParse(pages){
+ let card='',rows=[];
+ pages.forEach(items=>{
+  const L=[];
+  items.forEach(it=>{const s=(it.s||'').trim();if(!s)return;let l=L.find(l=>Math.abs(l.y-it.y)<2.5);if(!l){l={y:it.y,a:[]};L.push(l)}l.a.push({s,x:it.x})});
+  L.forEach(l=>{l.a.sort((p,q)=>p.x-q.x);const a=l.a;
+   const cm=a.map(x=>x.s).join(' ').match(/(\S*カード\S*)\s*[\*\-]+(\d{4})/);if(cm&&!card)card=cm[2];
+   const dm=a[0].s.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);if(!dm)return;
+   const nums=a.filter(x=>/^[-−△▲]?[\d,]+$/.test(x.s));if(nums.length<3)return;
+   const shop=a.filter(x=>x.x>a[0].x+20&&x.x<nums[0].x&&!/^(本人|家族)|払い$|^リボ|^分割/.test(x.s)).map(x=>x.s).join(' ');
+   const v=nums[0].s,amt=parseInt(v.replace(/[^\d]/g,''),10);if(!(amt>0))return;
+   rows.push({date:dm[1]+'-'+pad(+dm[2])+'-'+pad(+dm[3]),note:shop.normalize('NFKC').replace(/利用国[A-Z]{2}$/,'').replace(/\s+/g,' ').trim(),amt,neg:/^[-−△▲]/.test(v)});
+  });
+ });
+ return {card,rows};
+}
+async function importRakuten(files){
+ toast('正在读取 PDF…');
+ let m;try{m=await loadPdfjs()}catch(e){toast('PDF 解析组件加载失败,请联网后再试');return}
+ let add=0,dup=0,sus=0,nf=0;const claimed=new Set(),items=[],ign={},unc=[];
+ for(const f of files){
+  let r;
+  try{const doc=await m.getDocument({data:new Uint8Array(await f.arrayBuffer()),cMapUrl:PDFJS+'cmaps/',cMapPacked:true}).promise;const pages=[];
+   for(let p=1;p<=doc.numPages;p++){const tc=await (await doc.getPage(p)).getTextContent();pages.push(tc.items.map(i=>({s:i.str,x:i.transform[4],y:i.transform[5]})))}
+   r=rkParse(pages)}catch(e){r={rows:[]}}
+  if(!r.rows.length){nf++;continue}
+  const seen={};
+  r.rows.forEach(x=>{
+   const k=x.date+':'+x.amt+':'+x.note;seen[k]=(seen[k]||0)+1;const ref='rk:'+(r.card||'')+':'+k+':'+seen[k];
+   if(/PAYPAY|ペイペイ/i.test(x.note)){ign['PayPay 充值']=(ign['PayPay 充值']||0)+1;return}
+   if(D.some(z=>z.ref===ref)){dup++;return}
+   if(x.neg){if(!A.inc.some(z=>z.ref===ref)&&!RV.dis.includes(ref))items.push({ref,date:x.date,amt:x.amt,dir:'in',kind:'退款',note:x.note,method:vm('rakuten')});return}
+   const cat=guess(x.note)||'其他',method=vm('rakuten');
+   const cand=D.find(z=>!z.ref&&z.date===x.date&&z.amt===x.amt&&!claimed.has(z.id));
+   if(cand){if(!RV.dis.includes(ref)){claimed.add(cand.id);items.push({ref,date:x.date,amt:x.amt,dir:'out',kind:'疑似重复',note:x.note,dupOf:cand.id,method,cat});sus++}return}
+   const id=nid();D.push({id,amt:x.amt,method,cat,note:x.note,date:x.date,ref});add++;if(cat==='其他')unc.push(id)});
+ }
+ if(nf===files.length){toast('没有识别到明细,请确认是乐天卡 e-NAVI 的请款明细 PDF');return}
+ RV.items=[...RV.items.filter(x=>!items.some(y=>y.ref===x.ref)),...items];
+ if(Object.keys(ign).length)RV.ign=ign;
+ RV.unc=[...RV.unc.filter(id=>D.some(x=>x.id===id&&x.cat==='其他')),...unc];
+ saveRV();save();
+ toast(`导入 ${add} 笔,重复 ${dup} 笔${sus?',疑似重复 '+sus+' 笔待确认':''}${nf?','+nf+' 个文件无法识别':''}${items.length||unc.length?'。需确认的项目见下方':''}`);render();
+}
 function rvPanel(){
  const un=RV.unc.map(id=>D.find(x=>x.id===id)).filter(x=>x&&x.cat==='其他'),ig=Object.entries(RV.ign);
  if(!RV.items.length&&!un.length&&!ig.length)return '';
@@ -629,6 +677,7 @@ function moreRaw(){
  +((fix||re)?`<label for='rn'>名称</label><input id='rn' class='f' placeholder='例如 家賃' autocomplete='off' value='${esc(re?re.name:'')}'><div style='display:flex;gap:8px'><div style='flex:1;min-width:0'><label for='ra'>金额</label><input id='ra' class='f' inputmode='numeric' value='${re?re.amt:''}'></div><div style='flex:1;min-width:0'><label for='rd'>每月几号</label><input id='rd' class='f' inputmode='numeric' value='${re?re.day:1}'></div></div><div style='display:flex;gap:8px'><div style='flex:1;min-width:0'><label for='rc'>分类</label><select id='rc' class='f'>${opt(CATS.map(c=>[c,c]),re?re.cat:'居住')}</select></div><div style='flex:1;min-width:0'><label for='rmt'>支付方式</label><select id='rmt' class='f'>${opt(MT.map(m=>[m[0],m[1]]),re?re.method:vm('card'))}</select></div></div>${re?`<p class='sub' style='margin:10px 0 0'>修改只影响之后自动记的账,已生成的记录不变。</p>`:''}<button class='go alt' id='radd'>${re?'保存修改':'添加固定支出'}</button><button class='go alt' ${re?`data-rcancel='1'`:`data-open='fix'`} style='margin-top:8px'>${re?'取消':'收起'}</button>`
  :`<button class='go alt' data-open='fix'>＋ 添加固定支出</button>`)+`</div>`;
  h+=`<div class='box' data-g='i'><h2>导入 PayPay 记录</h2><p class='sub' style='margin:0'>在 PayPay 的交易履历里导出 CSV,选择文件或粘贴内容。只导入支出,充值会跳过,重复的会自动忽略。请避免同一笔既手动记过又导入。</p><label for='ppf'>选择 CSV 文件</label><input id='ppf' type='file' accept='.csv,.txt,text/csv' class='f'><label for='ppt'>或粘贴内容</label><textarea id='ppt' class='f'></textarea><button class='go alt' id='pp-imp'>导入</button></div>`;
+ h+=`<div class='box' data-g='i'><h2>导入乐天卡明细</h2><p class='sub' style='margin:0'>在乐天 e-NAVI 下载「ご利用代金請求明細書」PDF,可以一次选多张卡的文件。按利用日记账,支付方式记为乐天卡;退款需要你确认,PayPay 充值会跳过,重复导入同一份明细会自动忽略。首次使用需要联网加载 PDF 解析组件。</p><label for='rkf'>选择 PDF 文件</label><input id='rkf' type='file' accept='.pdf,application/pdf' multiple class='f'></div>`;
  h+=`<div class='box' data-g='d'><h2>清空消费记录</h2><p class='sub' style='margin:0'>删除全部消费记录(所有月份)。收入、资产、预算和固定支出不受影响。建议先导出备份。</p><button class='go alt' id='clr' style='color:var(--pp)'>${clrc?'确认清空 '+D.length+' 笔消费':'清空所有消费记录'}</button></div>`;
  h+=`<div class='box' data-g='d'><h2>清空全部数据</h2><p class='sub' style='margin:0'>删除所有消费、收入、资产、预算和固定支出,不能撤销。主题、语言、自定义分类和支付方式会保留。请先导出备份。</p><button class='go alt' id='wipe-bk'>导出备份文件</button><input id='wipein' class='f' style='margin-top:10px' placeholder='输入「${LG()==='en'?'DELETE':'清空'}」确认' autocomplete='off' autocapitalize='off'><button class='go alt' id='wipe' style='color:var(--pp)'>清空全部数据</button></div>`;
  h+='<div data-g="i">'+rvPanel()+'</div>';
@@ -642,7 +691,7 @@ document.addEventListener('click',async e=>{
  const t=e.target.closest('button');if(!t)return;
  if(t.dataset.rv!==undefined){const i=+t.dataset.rv,x=RV.items[i];if(x){const act=t.dataset.act;
   if(act==='in'){A.inc.push({id:nid(),amt:x.amt,note:x.note||x.kind,date:x.date,ref:x.ref});saveA();toast('已记为收入')}
-  else if(act==='out'){D.push({id:nid(),amt:x.amt,method:vm('paypay'),cat:guess(x.note)||'其他',note:x.note,date:x.date,ref:x.ref});save();toast('已记为支出')}
+  else if(act==='out'){D.push({id:nid(),amt:x.amt,method:x.method||vm('paypay'),cat:guess(x.note)||'其他',note:x.note,date:x.date,ref:x.ref});save();toast('已记为支出')}
   if(act==='same'){const m=D.find(z=>z.id===x.dupOf);if(m){m.ref=x.ref;m.method=x.method;save()}toast('已关联为同一笔,不会重复记账')}
   else if(act==='new'){D.push({id:nid(),amt:x.amt,method:x.method,cat:x.cat,note:x.note,date:x.date,ref:x.ref});save();toast('已导入')}
   RV.dis.push(x.ref);RV.items.splice(i,1);saveRV();render()}return}
@@ -695,6 +744,7 @@ document.addEventListener('change',e=>{
  if(t.id==='bt'){const n=num(t.value);B.total=n>0?n:0;saveC();toast('已保存预算');return}
  if(t.dataset&&t.dataset.bc){const n=num(t.value);if(n>0)B.cats[t.dataset.bc]=n;else delete B.cats[t.dataset.bc];saveC();toast('已保存预算');if(!(n>0))render();return}
  if(t.id==='ppf'&&t.files[0])readF(t.files[0],'ppt');
+ if(t.id==='rkf'&&t.files.length){const fs=[...t.files];t.value='';importRakuten(fs)}
  if(t.id==='bkf'&&t.files[0])readF(t.files[0],'bkt');
 });
 (function(){try{const q=location.hash.split('?')[1]||location.search.slice(1),p=new URLSearchParams(q);
