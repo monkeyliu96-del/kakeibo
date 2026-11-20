@@ -163,6 +163,7 @@ select.f,.fr select{-webkit-appearance:none;appearance:none;background-image:url
 .icp{margin-top:10px;padding:10px;border:1px solid var(--ln);border-radius:16px;background:var(--bg)}.icg{display:grid;grid-template-columns:repeat(auto-fill,minmax(42px,1fr));gap:6px}
 .icb{height:42px;border:0;border-radius:12px;background:var(--sf);box-shadow:inset 0 0 0 1px var(--ln);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--tx)}.icb svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .icb[aria-pressed="true"]{background:var(--ac);color:#fff;box-shadow:none}
+.crow{width:100%;background:none;border:0;border-top:1px solid var(--ln);font:inherit;color:inherit;text-align:left;cursor:pointer;padding:11px 0}.crow:first-of-type{border-top:0}.crow .chev{color:var(--mu);font-size:18px;margin-left:-4px}.crow:active{opacity:.6}
 .tg{display:inline-block;margin-left:6px;padding:0 6px;border-radius:6px;font-size:11px;line-height:17px;background:var(--sel);color:var(--mu);vertical-align:1px}.tg.bad{background:color-mix(in srgb,var(--pp) 14%,transparent);color:var(--pp)}.tbud{font-size:13px;color:var(--mu);margin:-2px 0 6px}.tbud b{color:var(--in);font-weight:700}.tbud b.over{color:var(--pp)}.pdots{display:flex;justify-content:center;gap:6px;margin-top:8px}.pdots i{width:6px;height:6px;border-radius:50%;background:var(--ln)}.pdots i.on{background:var(--ac)}
 .lrow input.sw{padding:0;appearance:none;-webkit-appearance:none;flex:0 0 46px;width:46px;height:28px;border-radius:14px;background:rgba(120,120,128,.28);position:relative;margin:8px 0;cursor:pointer;transition:background .2s}.lrow input.sw:before{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}.lrow input.sw:checked{background:var(--ac)}.lrow input.sw:checked:before{transform:translateX(18px)}.cord{margin:8px 0 0;padding:0;list-style:none}.cord li{display:flex;align-items:center;gap:10px;background:var(--sf);border:1px solid var(--ln);border-radius:12px;padding:0 6px 0 0;margin-bottom:6px;position:relative}.cord li.drg{z-index:5;box-shadow:0 8px 20px rgba(0,0,0,.18);border-color:var(--ac)}.cord .hd{touch-action:none;cursor:grab;padding:10px 12px;color:var(--mu);font-size:18px;line-height:1;user-select:none;-webkit-user-select:none}.cord .nm{flex:1;font-size:15px}.cord .dl2{background:none;border:0;color:var(--mu);font-size:14px;padding:8px 10px;cursor:pointer}
 .addrow button.dl{background:none;color:var(--pp);padding:9px 14px;font-weight:600}
@@ -345,11 +346,12 @@ function toast(t,undo){const e=$('toast');clearTimeout(TMR);e.textContent=t;UNDO
 function shift(n){Q.d='';const[y,m]=ym.split('-').map(Number);const d=new Date(y,m-1+n,1);ym=d.getFullYear()+'-'+pad(d.getMonth()+1);render()}
 const monthData=()=>D.filter(x=>x.date.startsWith(ym));
 function head(){return ''}
-function filt(){const q=Q.t.trim().toLowerCase();return monthData().filter(x=>(!Q.d||x.date===Q.d)&&(!Q.f||(Q.f==='fix')===isFix(x))&&(!Q.c||x.cat===Q.c)&&(!Q.m||x.method===Q.m)&&(!q||(x.note||'').toLowerCase().includes(q)||x.cat.includes(q)))}
+const inR=x=>x.date>Q.r[0]&&x.date<=Q.r[1];
+function filt(){const q=Q.t.trim().toLowerCase();return (Q.r?D.filter(inR):monthData()).filter(x=>(!Q.d||x.date===Q.d)&&(!Q.f||(Q.f==='fix')===isFix(x))&&(!Q.c||x.cat===Q.c)&&(!Q.m||x.method===Q.m)&&(!q||(x.note||'').toLowerCase().includes(q)||x.cat.includes(q)))}
 function listItems(){
  const q=Q.t.trim().toLowerCase();
  const ex=Q.k==='in'?[]:filt().map(x=>({...x,key:x.id}));
- const inc=(Q.c||Q.m||Q.f||Q.k==='out')?[]:A.inc.filter(x=>x.date.startsWith(ym)&&(!Q.d||x.date===Q.d)&&(!q||(x.note||'').toLowerCase().includes(q)||'收入'.includes(q))).map(x=>({...x,inc:true,key:'i'+x.id}));
+ const inc=(Q.c||Q.m||Q.f||Q.k==='out')?[]:A.inc.filter(x=>(Q.r?inR(x):x.date.startsWith(ym))&&(!Q.d||x.date===Q.d)&&(!q||(x.note||'').toLowerCase().includes(q)||'收入'.includes(q))).map(x=>({...x,inc:true,key:'i'+x.id}));
  return [...ex,...inc].sort((p,q)=>q.date.localeCompare(p.date)||q.id-p.id);
 }
 let SEL={on:false,ids:[],cf:false},clrc=false;
@@ -362,7 +364,7 @@ function listSplit(){const h=listBody(),i=h.indexOf('<!--S-->');return [h.slice(
 function updList(){const r=listSplit();$('lsum').innerHTML=r[0];$('lst').innerHTML=r[1]}
 function listBody(){
  const L=listItems(),a=L.filter(x=>!x.inc);
- const ia=L.filter(x=>x.inc),fl=Q.t||Q.c||Q.m||Q.k||Q.d||Q.f,all=sum(monthData()),tot=sum(a);
+ const ia=L.filter(x=>x.inc),fl=Q.t||Q.c||Q.m||Q.k||Q.d||Q.f||Q.r,all=sum(monthData()),tot=sum(a);
  SEL.ids=SEL.ids.filter(k=>L.some(x=>x.key===k));
  let h='<div class="lsum">'+(Q.k==='in'?`<p class="big" style="color:var(--in)"><small>+¥</small>${Math.round(sum(ia)).toLocaleString('ja-JP')}</p><p class="sub">${Q.t?'筛选结果':'本月收入'},共 ${ia.length} 笔</p>`:`<p class="big"><small>¥</small>${Math.round(tot).toLocaleString('ja-JP')}</p><p class="sub">${fl?'筛选结果':'本月支出'},共 ${a.length} 笔${!fl&&inM(ym)?' · 收入 '+yen(inM(ym))+' · 结余 '+sgn(inM(ym)-all):''}</p>`);
  if(!fl&&B.total>0)h+=`<div class="pg"><i style="width:${Math.min(100,all/B.total*100)}%;background:var(${all>B.total?'--pp':'--ac'})"></i></div><p class="sub">预算 ${yen(B.total)} · ${all>B.total?'已超出 '+yen(all-B.total):'剩余 '+yen(B.total-all)}</p>`;
@@ -397,7 +399,7 @@ function calHtml(){
 function listView(){
  const o=(a,v)=>a.map(x=>`<option value="${x[0]}"${x[0]===v?' selected':''}>${x[1]}</option>`).join('');
  const LB=listSplit();const srcs=[...new Set(A.inc.map(x=>(x.note||'').trim()).filter(Boolean))];
- return head()+`<div class="lhead">${Q.k==='in'?`<div class="srch"><label class="sq"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="qs" type="search" enterkeyhint="search" placeholder="搜索来源或备注" value="${esc(Q.t)}" autocomplete="off"></label><span class="ss${srcs.includes(Q.t)?' on':''}"><select id="qsrc" aria-label="收入来源"><option value="">全部来源</option>${srcs.map(n=>`<option value="${esc(n)}"${Q.t===n?' selected':''}>${esc(n)}</option>`).join('')}</select></span></div>`:`<div class="srch"><label class="sq"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="qs" type="search" enterkeyhint="search" placeholder="搜索商户或备注" value="${esc(Q.t)}" autocomplete="off"></label><span class="ss${Q.c?' on':''}"><select id="qc" aria-label="分类"><option value="">分类</option>${o(CATS.map(c=>[c,c]),Q.c)}</select></span><span class="ss${Q.m?' on':''}"><select id="qm" aria-label="支付方式"><option value="">支付</option>${o(MT.map(m=>[m[0],m[1]]),Q.m)}</select></span></div>`}<div class="chips" style="margin:8px 0 4px">${[['','全部'],['out','支出'],['in','收入']].map(c=>`<button class="chip" data-qk="${c[0]}" aria-pressed="${(Q.k||'')===c[0]}" style="padding:6px 14px;font-size:14px">${c[1]}</button>`).join('')}<button class="chip" data-lv="${LV==='cal'?'list':'cal'}" aria-pressed="${LV==='cal'}" style="padding:6px 14px;font-size:14px;margin-left:auto">日历</button>${Q.f?`<button class="chip" data-qf="1" aria-pressed="true" style="padding:6px 14px;font-size:14px">${Q.f==='fix'?'固定':'变动'} ×</button>`:''}${Q.d&&LV!=='cal'?`<button class="chip" data-qd="1" aria-pressed="true" style="padding:6px 14px;font-size:14px">${+Q.d.slice(5,7)}月${+Q.d.slice(8)}日 ×</button>`:''}${(Q.t||Q.c||Q.m||Q.k)?`<button class="chip" data-qclear="1" style="padding:6px 14px;font-size:14px">清除筛选</button>`:''}</div><div id="lsum">${LB[0]}</div></div><!--H-->${LV==='cal'?calHtml():''}<div id="lst">${LB[1]}</div>`;
+ return head()+`<div class="lhead">${Q.k==='in'?`<div class="srch"><label class="sq"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="qs" type="search" enterkeyhint="search" placeholder="搜索" value="${esc(Q.t)}" autocomplete="off"></label><span class="ss${srcs.includes(Q.t)?' on':''}"><select id="qsrc" aria-label="收入来源"><option value="">全部来源</option>${srcs.map(n=>`<option value="${esc(n)}"${Q.t===n?' selected':''}>${esc(n)}</option>`).join('')}</select></span></div>`:`<div class="srch"><label class="sq"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="qs" type="search" enterkeyhint="search" placeholder="搜索" value="${esc(Q.t)}" autocomplete="off"></label><span class="ss${Q.c?' on':''}"><select id="qc" aria-label="分类"><option value="">分类</option>${o(CATS.map(c=>[c,c]),Q.c)}</select></span><span class="ss${Q.m?' on':''}"><select id="qm" aria-label="支付方式"><option value="">支付</option>${o(MT.map(m=>[m[0],m[1]]),Q.m)}</select></span></div>`}<div class="chips" style="margin:8px 0 4px">${[['','全部'],['out','支出'],['in','收入']].map(c=>`<button class="chip" data-qk="${c[0]}" aria-pressed="${(Q.k||'')===c[0]}" style="padding:6px 14px;font-size:14px">${c[1]}</button>`).join('')}<button class="chip" data-lv="${LV==='cal'?'list':'cal'}" aria-pressed="${LV==='cal'}" style="padding:6px 14px;font-size:14px;margin-left:auto">日历</button>${Q.f?`<button class="chip" data-qf="1" aria-pressed="true" style="padding:6px 14px;font-size:14px">${Q.f==='fix'?'固定':'变动'} ×</button>`:''}${Q.d&&LV!=='cal'?`<button class="chip" data-qd="1" aria-pressed="true" style="padding:6px 14px;font-size:14px">${+Q.d.slice(5,7)}月${+Q.d.slice(8)}日 ×</button>`:''}${Q.r?`<button class="chip" data-qr="1" aria-pressed="true" style="padding:6px 14px;font-size:14px">${+Q.r[0].slice(5,7)}/${+Q.r[0].slice(8)} 之后 ×</button>`:''}${(Q.t||Q.c||Q.m||Q.k)?`<button class="chip" data-qclear="1" style="padding:6px 14px;font-size:14px">清除筛选</button>`:''}</div><div id="lsum">${LB[0]}</div></div><!--H-->${LV==='cal'?calHtml():''}<div id="lst">${LB[1]}</div>`;
 }
 function recentNotes(inn){
  const src=(inn?A.inc:D).slice().sort((p,q)=>q.date.localeCompare(p.date)||q.id-p.id),seen=new Set(),out=[];
@@ -515,6 +517,7 @@ document.addEventListener('click',async e=>{
  if(t.dataset.t5){T5=t.dataset.t5;return render()}
  if(t.dataset.ecat){if($('amt'))PF={amt:$('amt').value,note:$('note').value};ECAT=!ECAT;CDP='';return render()}
  if(t.dataset.qk!==undefined){Q.k=t.dataset.qk;if(Q.k==='in'){Q.c='';Q.m=''}return render()}
+ if(t.dataset.qr){delete Q.r;return render()}
  if(t.dataset.qclear){Q={t:'',c:'',m:'',k:''};return render()}
  if(t.dataset.edit){const x=D.find(z=>z.id===+t.dataset.edit);if(x){E=x.id;EI=null;F={method:x.method,cat:x.cat,manual:true,type:'out'};location.hash='#add'}return}
  if(t.dataset.iedit){const x=A.inc.find(z=>z.id===+t.dataset.iedit);if(x){EI=x.id;E=null;F={...F,type:'in'};location.hash='#add'}return}
@@ -578,14 +581,19 @@ async function fetchRates(force){if(RFX||(!force&&A.rateAt===today()))return;RFX
 function chgBox(p,fm,tot){if(!p)return '';
  const td=today(),inP=x=>x.date>p.date&&x.date<=td&&x.date>=A.start,inc=sum(A.inc.filter(inP)),out=sum(D.filter(inP)),rows=[],sg=v=>(v<0?'−':'+')+fm(Math.abs(v));
  if(p.items){const pm=new Map(p.items),cm=new Map(A.assets.map(x=>[x.name,x.val]));
-  new Set([...pm.keys(),...cm.keys()]).forEach(n=>{const d=(cm.get(n)||0)-(pm.get(n)||0);if(Math.round(d))rows.push([n,d,!cm.has(n)?'已删除':!pm.has(n)?'新增':''])});
+  new Set([...pm.keys(),...cm.keys()]).forEach(n=>{const d=(cm.get(n)||0)-(pm.get(n)||0);if(Math.round(d))rows.push([n,d,!cm.has(n)?'已删除':!pm.has(n)?'新增':'','a:'+n])});
   const f=flow(),adj=(A.cash+f.i-f.o)-p.cash-(inc-out);
-  if(inc)rows.push(['收入',inc,'']);if(out)rows.push(['支出',-out,'']);if(Math.round(adj))rows.push(['现金余额调整',adj,'修改了起算余额或起算日'])}
- else{if(inc)rows.push(['收入',inc,'']);if(out)rows.push(['支出',-out,'']);const o=tot-p.total-(inc-out);if(Math.round(o))rows.push(['投资等其他变化',o,''])}
+  if(inc)rows.push(['收入',inc,'','in']);if(out)rows.push(['支出',-out,'','out']);if(Math.round(adj))rows.push(['现金余额调整',adj,'修改了起算余额或起算日','cash'])}
+ else{if(inc)rows.push(['收入',inc,'','in']);if(out)rows.push(['支出',-out,'','out']);const o=tot-p.total-(inc-out);if(Math.round(o))rows.push(['投资等其他变化',o,'看投资','inv'])}
  const d=tot-p.total;
  return `<div class='box' data-g='o'><h2 style='display:flex;justify-content:space-between'><span>变化明细</span><span style='color:var(${d<0?'--pp':'--in'})'>${sg(d)}</span></h2><p class='sub' style='margin:0 0 4px'>现在 vs ${p.date.slice(5)} 确认的 ${fm(p.total)}</p>`
-  +(rows.length?rows.map(([n,v,t])=>`<div class='row'><div class='rm'><div>${esc(n)}</div>${t?`<span>${t}</span>`:''}</div><div class='amt' style='color:var(${v<0?'--pp':'--in'})'>${sg(v)}</div></div>`).join(''):`<p class='sub' style='margin:6px 0 0'>没有变化。</p>`)
+  +(rows.length?rows.map(([n,v,t,k])=>`<button class='row crow' data-chg='${esc(k)}' data-from='${p.date}'><div class='rm'><div>${esc(n)}</div>${t?`<span>${t}</span>`:''}</div><div class='amt' style='color:var(${v<0?'--pp':'--in'})'>${sg(v)}</div><span class='chev'>›</span></button>`).join(''):`<p class='sub' style='margin:6px 0 0'>没有变化。</p>`)
   +(p.items?'':`<p class='sub' style='margin:8px 0 0'>从下一次确认开始,会显示每项投资各自的涨跌。</p>`)+`</div>`}
+document.addEventListener('click',e=>{const t=e.target.closest('button[data-chg]');if(!t)return;const k=t.dataset.chg,from=t.dataset.from;
+ if(k==='in'||k==='out'){Q={t:'',c:'',m:'',k,r:[from,today()]};LV='list';ym=today().slice(0,7);location.hash='#list';return}
+ if(k==='cash'){AT='k';render();return}
+ if(k==='inv'){AT='i';render();return}
+ if(k.startsWith('a:')){const x=A.assets.find(z=>z.name===k.slice(2));AT='i';AE=x?x.id:null;render();const f=$('av');if(f)f.scrollIntoView({block:'center'});return}});
 function assetsView(){setTimeout(()=>fetchRates(false),0);return tabBar('at',AT,[['o','总览'],['i','投资'],['k','现金存款'],['s','币种汇率']])+assetsRaw()}
 function assetsRaw(){
  const f=flow(),oth=A.cash+f.i-f.o,inv=stockJ(),tot=inv+oth,dc=A.disp||'JPY';
