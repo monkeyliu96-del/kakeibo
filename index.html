@@ -128,6 +128,9 @@ button.bar:active,button.lg:active{opacity:.6}
 .addv .pdots{margin-top:6px}
 .addv .grp .lrow input{padding:12px 0}.addv .grp .sec{padding:0 16px 10px}
 .addv .dfx input[type=date]{flex:0 1 auto;text-align:left}
+.calc{position:fixed;left:0;right:0;top:0;z-index:50;display:none;align-items:center;gap:6px;padding:6px 8px;background:var(--sf);border-top:1px solid var(--ln);box-shadow:0 -2px 10px rgba(0,0,0,.06)}
+.calc.on{display:flex}.calc button{flex:1;min-width:0;height:38px;border:0;border-radius:10px;background:var(--bg);color:var(--tx);font:inherit;font-size:20px;font-weight:600;cursor:pointer;-webkit-user-select:none;user-select:none}
+.calc button:active{background:var(--sel)}.calc button.eq{background:var(--ac);color:var(--on)}.calc .cr{flex:2.2;min-width:0;text-align:right;font-size:14px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dwrap{position:relative;display:flex;align-items:center;justify-content:space-between}.dwrap .chev{color:var(--mu)}.dwrap input{position:absolute;inset:0;width:100%;height:100%;opacity:0;-webkit-appearance:none;appearance:none;border:0;margin:0;padding:0;cursor:pointer}.addv .vsep{width:1px;align-self:stretch;margin:10px 4px;background:var(--ln);margin-left:auto}.addv .dfx .fxl{font-size:15px;color:var(--tx);margin:0}
 .addv .dfx .sw{margin:8px 0}
 .addv{padding-top:0}.addv .strip,.addv .sec,.addv .grp{margin-bottom:8px}
@@ -340,8 +343,8 @@ const isF=a=>a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&!['button','checkbo
 const kbAdj=()=>{const sc=$('sc'),vv=window.visualViewport,a=document.activeElement;if(!sc)return;
  const kb=vv?Math.max(0,window.innerHeight-vv.height):0;
  if(!(isF(a)&&sc.contains(a)&&kb>80)){sc.style.paddingBottom='';return}
- sc.style.paddingBottom=(kb+24)+'px';fix();
- const r=a.getBoundingClientRect(),vis=vv.height;if(r.top<70||r.bottom>vis-16)sc.scrollTop+=r.top+r.height/2-vis*0.42};
+ const cb=/^(numeric|decimal)$/.test(a.getAttribute('inputmode')||'')&&a.id!=='rd'?52:0;sc.style.paddingBottom=(kb+cb+24)+'px';fix();
+ const r=a.getBoundingClientRect(),vis=vv.height-cb;if(r.top<70||r.bottom>vis-16)sc.scrollTop+=r.top+r.height/2-vis*0.42};
 document.addEventListener('focusin',e=>{if(isF(e.target)){setTimeout(kbAdj,350);setTimeout(kbAdj,700)}});
 document.addEventListener('focusout',()=>{setTimeout(fix,120);setTimeout(fix,500);setTimeout(kbAdj,150)});
 window.addEventListener('pageshow',fix);window.addEventListener('orientationchange',()=>setTimeout(fix,300));
@@ -586,6 +589,37 @@ document.addEventListener('input',e=>{
  if(e.target.id==='note'&&!F.manual){const c=guess(e.target.value);if(c){F.cat=c;document.querySelectorAll('[data-ct]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.ct===c))}}
 });
 window.addEventListener('hashchange',()=>{pending=null;BE=null;BCS=null;CIP=null;if(/^#(me|more)/.test(hv()))sbBoot().catch(()=>{});AE=null;CE=false;clrc=false;SEL={on:false,ids:[],cf:false};if(hv()!=='#add'){E=null;EI=null;PF=null;DK='';ECAT=false;EPM=false}OPEN={};if(OUI){OPEN.ui=true;OUI=false}render()});
+
+/* calculator bar for amount fields */
+const CALC=(()=>{
+ const isC=el=>el&&el.tagName==='INPUT'&&/^(numeric|decimal)$/.test(el.getAttribute('inputmode')||'')&&el.id!=='rd';
+ const norm=v=>String(v).replace(/[,，\s]/g,'').replace(/[×xX]/g,'*').replace(/[÷]/g,'/').replace(/[−–—]/g,'-');
+ const hasOp=v=>/[+\-*/()]/.test(norm(v).replace(/^-/,''));
+ const ev=v=>{const e=norm(v);if(!e||!/^[0-9.+\-*/()]+$/.test(e))return NaN;try{const r=Function('"use strict";return ('+e+')')();return typeof r==='number'&&isFinite(r)?r:NaN}catch(_){return NaN}};
+ const fmt=(el,r)=>el.getAttribute('inputmode')==='decimal'?String(Math.round(r*10000)/10000):String(Math.round(r));
+ const commit=el=>{if(!isC(el)||!hasOp(el.value))return;const r=ev(el.value);if(isFinite(r)){el.value=fmt(el,r);el.dispatchEvent(new Event('input',{bubbles:true}))}};
+ const bar=document.createElement('div');bar.className='calc';bar.setAttribute('role','toolbar');bar.setAttribute('aria-label','计算器');
+ bar.innerHTML=['+','−','×','÷'].map(k=>`<button type="button" data-ck="${k}" aria-label="${k}">${k}</button>`).join('')+'<span class="cr"></span><button type="button" class="eq" data-ck="=" aria-label="计算">=</button>';
+ document.body.appendChild(bar);
+ let cur=null;
+ const pos=()=>{const vv=window.visualViewport;if(!cur||!vv){bar.classList.remove('on');return}
+  const kb=window.innerHeight-vv.height;if(kb<80){bar.classList.remove('on');return}
+  bar.classList.add('on');bar.style.top=(vv.offsetTop+vv.height-bar.offsetHeight)+'px'};
+ const prev=()=>{const c=bar.querySelector('.cr');if(!cur||!hasOp(cur.value)){c.textContent='';return}const r=ev(cur.value);c.textContent=isFinite(r)?'= '+Number(fmt(cur,r)).toLocaleString('ja-JP'):''};
+ const ins=t=>{if(!cur)return;const v=cur.value,a=cur.selectionStart??v.length,b=cur.selectionEnd??v.length;cur.value=v.slice(0,a)+t+v.slice(b);try{cur.setSelectionRange(a+t.length,a+t.length)}catch(_){}cur.dispatchEvent(new Event('input',{bubbles:true}))};
+ const keep=e=>{if(e.target.closest('.calc'))e.preventDefault()};
+ bar.addEventListener('pointerdown',keep);bar.addEventListener('mousedown',keep);bar.addEventListener('touchstart',keep,{passive:false});
+ bar.addEventListener('click',e=>{const b=e.target.closest('[data-ck]');if(!b||!cur)return;e.stopPropagation();const k=b.dataset.ck;
+  if(k==='='){commit(cur);prev();return}ins({'−':'-','×':'×','÷':'÷'}[k]||k);cur.focus()});
+ document.addEventListener('focusin',e=>{if(isC(e.target)){cur=e.target;prev();setTimeout(pos,300);setTimeout(pos,650)}},true);
+ document.addEventListener('focusout',e=>{if(isC(e.target)){commit(e.target);setTimeout(()=>{if(!isC(document.activeElement)){cur=null;pos()}},120)}},true);
+ document.addEventListener('change',e=>commit(e.target),true);
+ document.addEventListener('click',e=>{if(!e.target.closest('.calc')){document.querySelectorAll('input[inputmode]').forEach(commit)}},true);
+ document.addEventListener('keydown',e=>{if(e.key==='Enter')commit(e.target)},true);
+ document.addEventListener('input',e=>{if(e.target===cur)prev()},true);
+ if(window.visualViewport){visualViewport.addEventListener('resize',pos);visualViewport.addEventListener('scroll',pos)}
+ return {on:()=>bar.classList.contains('on')?bar.offsetHeight:0,commit};
+})();
 
 const AK='kakeibo.assets.v1';
 let A={rate:150,cash:0,stock:0,cur:'JPY',inc:[],start:'',snaps:[],assets:[],disp:'JPY'};
