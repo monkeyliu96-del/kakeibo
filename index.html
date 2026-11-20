@@ -31,7 +31,7 @@ button,input,select{font:inherit;color:inherit}
 .rm span{font-size:13px;color:var(--mu)}
 .amt{font-weight:600}
 .del{border:0;background:none;color:var(--mu);font-size:13px;padding:6px 4px;cursor:pointer}
-.del.on{color:var(--pp);font-weight:600}
+.del.on{color:var(--pp);font-weight:600} .arow{width:100%;background:none;border:0;border-top:1px solid var(--ln);font:inherit;color:inherit;text-align:left;cursor:pointer}.arow:first-child{border-top:0}.arow .chev{color:var(--mu);font-size:18px;margin-left:-4px}.aform{border-top:1px solid var(--ln);padding:10px 0 4px}.aform:first-child{border-top:0}.lk{background:none;border:0;color:var(--ac);font:inherit;padding:0;cursor:pointer}
 label{display:block;font-size:13px;color:var(--mu);margin:14px 0 6px}
 .f{width:100%;border:1px solid var(--ln);background:var(--bg);border-radius:12px;padding:12px;font-size:16px}
 .amtin{font-size:32px;font-weight:700;padding:10px 12px}
@@ -175,7 +175,7 @@ const ZH2EN={
 "收入请在「记一笔」里添加。":"Add income from the \"Add\" tab.","请填写名称和市值":"Enter a name and value","已添加固定支出":"Recurring expense added","已添加分类":"Category added","已添加":"Added","请先输入收入金额":"Enter an income amount first",
 "橙色":"Orange","青绿":"Green","蓝色":"Blue","紫色":"Purple","粉红":"Pink",
 "导出失败,请改用「复制备份内容」":"Export failed. Use \"Copy backup\" instead.","没有找到「取引日」列,请确认是 PayPay 导出的 CSV":"Column 取引日 not found. Make sure this is a PayPay CSV export.","没有找到「出金金額」列":"Column 出金金額 not found.",
-"疑似重复":"Possible duplicate","导入后需要确认":"Needs review after import","导入 PayPay 记录":"Import PayPay records","导入乐天卡明细":"Import Rakuten Card statement","固定支出":"Fixed expense","房租、话费、订阅等":"Rent, phone, subscriptions","由「固定支出」自动生成":"Created from a recurring expense","已取消固定支出标签":"Fixed tag removed","按住左边的 ≡ 上下拖动调整顺序;点「删除」删掉分类(「其他」固定在最后,不能删除)":"Drag ≡ to reorder. Tap Delete to remove a category (Other always stays last and can't be deleted).","选择 PDF 文件":"Choose PDF files","正在读取 PDF…":"Reading PDF…","PDF 解析组件加载失败,请联网后再试":"Could not load the PDF reader. Connect to the internet and try again.","没有识别到明细,请确认是乐天卡 e-NAVI 的请款明细 PDF":"No entries found. Make sure this is a Rakuten e-NAVI statement PDF.","在乐天 e-NAVI 下载「ご利用代金請求明細書」PDF,可以一次选多张卡的文件。按利用日记账,支付方式记为乐天卡;退款需要你确认,PayPay 充值会跳过,重复导入同一份明细会自动忽略。首次使用需要联网加载 PDF 解析组件。":"Download the statement PDF (ご利用代金請求明細書) from Rakuten e-NAVI. You can pick several cards at once. Entries use the purchase date and the Rakuten Card payment method; refunds need your review, PayPay top-ups are skipped, and re-importing the same statement is ignored. The first import needs internet to load the PDF reader.","退款":"Refund","导入备份":"Import backup","导入":"Import","已导入":"Imported",
+"疑似重复":"Possible duplicate","导入后需要确认":"Needs review after import","导入 PayPay 记录":"Import PayPay records","导入乐天卡明细":"Import Rakuten Card statement","+ 添加投资资产":"+ Add investment","按券商或交易所显示的日元市值填写,点一项可修改。":"Enter the yen market value shown by your broker. Tap an item to edit.","还没有投资资产。":"No investments yet.","起算余额":"Starting balance","起算日以来收入":"Income since start date","起算日以来支出":"Spending since start date","修改起算余额 / 起算日":"Edit starting balance / start date","当前余额 = 起算余额 + 收入 − 支出。收入请在「记一笔」里添加。":"Current balance = starting balance + income − spending. Add income on the Add page.","立即更新":"Update now","汇率已更新":"Rates updated","获取汇率失败,请检查网络后再试":"Couldn't fetch rates. Check your connection and try again.","打开资产页时会自动从网上获取汇率。":"Rates are fetched online when you open Assets. ","也可以手动修改,当天不会被覆盖。总资产按所选币种显示,所有金额都以日元记录。":"You can also edit them; manual values are kept for the day. Totals show in the selected currency; all amounts are stored in yen.","固定支出":"Fixed expense","房租、话费、订阅等":"Rent, phone, subscriptions","由「固定支出」自动生成":"Created from a recurring expense","已取消固定支出标签":"Fixed tag removed","按住左边的 ≡ 上下拖动调整顺序;点「删除」删掉分类(「其他」固定在最后,不能删除)":"Drag ≡ to reorder. Tap Delete to remove a category (Other always stays last and can't be deleted).","选择 PDF 文件":"Choose PDF files","正在读取 PDF…":"Reading PDF…","PDF 解析组件加载失败,请联网后再试":"Could not load the PDF reader. Connect to the internet and try again.","没有识别到明细,请确认是乐天卡 e-NAVI 的请款明细 PDF":"No entries found. Make sure this is a Rakuten e-NAVI statement PDF.","在乐天 e-NAVI 下载「ご利用代金請求明細書」PDF,可以一次选多张卡的文件。按利用日记账,支付方式记为乐天卡;退款需要你确认,PayPay 充值会跳过,重复导入同一份明细会自动忽略。首次使用需要联网加载 PDF 解析组件。":"Download the statement PDF (ご利用代金請求明細書) from Rakuten e-NAVI. You can pick several cards at once. Entries use the purchase date and the Rakuten Card payment method; refunds need your review, PayPay top-ups are skipped, and re-importing the same statement is ignored. The first import needs internet to load the PDF reader.","退款":"Refund","导入备份":"Import backup","导入":"Import","已导入":"Imported",
 "已自动忽略(不算消费):":"Ignored automatically (not spending): ","以下记录没有导入,请逐条决定。转到自己的账户或投资的,选「忽略」即可。":"These were not imported. Decide one by one. For transfers to your own account or investments, choose \"Ignore\".",
 "无备注":"no note","收到":"Received","送出":"Sent","是同一笔":"Same entry","不是,导入":"No, import it","记为收入":"Record as income","记为支出":"Record as spending","忽略":"Ignore",
 "以下支出分类不确定,请选择(之后同名商户会自动沿用):":"Category unsure for these. Pick one (the same merchant will reuse it):",
@@ -205,7 +205,7 @@ const RX=[
  [/^(\d+)日$/,'$1'],
  [/^(\d+)日 (¥.*)$/,'Day $1 $2'],
  [/(\d{4}-\d\d) 收入 (¥[\d,]+) 支出 (¥[\d,]+)/,'$1 income $2, spending $3'],
- [/导入 (\d+) 笔,重复 (\d+) 笔/,'Imported $1, duplicates $2'],[/,疑似重复 (\d+) 笔待确认/,', $1 possible duplicates to review'],[/,(\d+) 个文件无法识别/,', $1 file(s) not recognized'],[/^已标为固定支出 (\d+) 笔$/,'Marked $1 as fixed'],[/^标为固定支出\((\d+) 笔\)$/,'Mark as fixed ($1)'],[/^取消固定支出标签\((\d+) 笔\)$/,'Remove fixed tag ($1)'],
+ [/导入 (\d+) 笔,重复 (\d+) 笔/,'Imported $1, duplicates $2'],[/,疑似重复 (\d+) 笔待确认/,', $1 possible duplicates to review'],[/,(\d+) 个文件无法识别/,', $1 file(s) not recognized'],[/^汇率日期 (\S+)\(欧洲央行参考汇率\),每天自动更新。$/,'Rates as of $1 (ECB reference), updated daily. '],[/^(\S+) 起算$/,'From $1'],[/^已标为固定支出 (\d+) 笔$/,'Marked $1 as fixed'],[/^标为固定支出\((\d+) 笔\)$/,'Mark as fixed ($1)'],[/^取消固定支出标签\((\d+) 笔\)$/,'Remove fixed tag ($1)'],
  [/,?共 (\d+) 笔/g,(m,n)=>', '+n+(n==1?' item':' items')],
  [/(\d+) 笔/g,(m,n)=>n+(n==1?' item':' items')],
  [/共 (\d+) 项,每月自动记账/,(m,n)=>n+' recurring '+(n==1?'item':'items')+', logged automatically each month'],
@@ -408,7 +408,7 @@ function render(){
  ['list','add','stats','assets','more'].forEach(k=>$('n-'+k).classList.toggle('on',k===view));
  if(view==='add'&&!E&&!EI){F.manual=false}
 }
-let ST='o',AT='o',MP='s',RE=null,RSO=false;
+let ST='o',AT='o',MP='s',RE=null,RSO=false,AE=null,CE=false;
 function tabBar(k,cur,items){return `<style>#app [data-g]:not([data-g="${cur}"]){display:none}</style><div class="chips" style="margin:0;padding:10px max(16px,calc((100% - 488px)/2)) 8px;flex-wrap:nowrap;background:var(--bg)">${items.map(([v,l])=>`<button class="chip" data-${k}="${v}" aria-pressed="${cur===v}" style="flex:1;text-align:center;padding:8px 2px">${l}</button>`).join('')}</div><!--H-->`}
 let LPT='mouse';
 document.addEventListener('scroll',e=>{const s=e.target;if(!s||(s.id!=='cs'&&s.id!=='ms'))return;const p=Math.round(s.scrollLeft/s.clientWidth);document.querySelectorAll('#'+s.id+'d i').forEach((d,i)=>d.classList.toggle('on',i===p))},true);
@@ -475,7 +475,7 @@ document.addEventListener('click',async e=>{
 document.addEventListener('input',e=>{
  if(e.target.id==='note'&&!F.manual){const c=guess(e.target.value);if(c){F.cat=c;document.querySelectorAll('[data-ct]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.ct===c))}}
 });
-window.addEventListener('hashchange',()=>{pending=null;clrc=false;SEL={on:false,ids:[],cf:false};if(hv()!=='#add'){E=null;EI=null;PF=null;DK='';ECAT=false;EPM=false}OPEN={};if(OUI){OPEN.ui=true;OUI=false}render()});
+window.addEventListener('hashchange',()=>{pending=null;AE=null;CE=false;clrc=false;SEL={on:false,ids:[],cf:false};if(hv()!=='#add'){E=null;EI=null;PF=null;DK='';ECAT=false;EPM=false}OPEN={};if(OUI){OPEN.ui=true;OUI=false}render()});
 
 const AK='kakeibo.assets.v1';
 let A={rate:150,cash:0,stock:0,cur:'JPY',inc:[],start:'',snaps:[],assets:[],disp:'JPY'};
@@ -496,7 +496,15 @@ const totalA=()=>{const f=flow();return stockJ()+A.cash+f.i-f.o};
 const sgn=n=>(n<0?'−':'+')+yen(Math.abs(n));
 const num=s=>{const n=parseFloat(String(s).replace(/,/g,''));return isFinite(n)?n:NaN};
 let ip=null,ap=null;
-function assetsView(){return tabBar('at',AT,[['o','总览'],['i','投资'],['k','现金存款'],['s','币种汇率']])+assetsRaw()}
+let RFX=false;
+async function fetchRates(force){if(RFX||(!force&&A.rateAt===today()))return;RFX=true;let r=null;
+ try{const j=await (await fetch('https://api.frankfurter.app/latest?from=JPY&to=USD,CNY',{cache:'no-store'})).json();if(j&&j.rates&&j.rates.USD>0&&j.rates.CNY>0)r={USD:1/j.rates.USD,CNY:1/j.rates.CNY,d:j.date}}catch(e){}
+ if(!r)try{const j=await (await fetch('https://open.er-api.com/v6/latest/JPY',{cache:'no-store'})).json();if(j&&j.rates&&j.rates.USD>0&&j.rates.CNY>0)r={USD:1/j.rates.USD,CNY:1/j.rates.CNY,d:today()}}catch(e){}
+ RFX=false;
+ if(!r){if(force)toast('获取汇率失败,请检查网络后再试');return}
+ A.rates.USD=+r.USD.toFixed(2);A.rates.CNY=+r.CNY.toFixed(2);A.rateAt=today();A.rateD=r.d;saveA();if(force)toast('汇率已更新');
+ if(hv()==='#assets'&&AE===null&&!CE&&!(document.activeElement&&document.activeElement.matches('input,textarea')))render()}
+function assetsView(){setTimeout(()=>fetchRates(false),0);return tabBar('at',AT,[['o','总览'],['i','投资'],['k','现金存款'],['s','币种汇率']])+assetsRaw()}
 function assetsRaw(){
  const f=flow(),oth=A.cash+f.i-f.o,inv=stockJ(),tot=inv+oth,dc=A.disp||'JPY';
  const fm=n=>dc==='JPY'?yen(n):(dc==='USD'?'US$':'CN¥')+Math.round(n/A.rates[dc]).toLocaleString('en-US');
@@ -504,12 +512,15 @@ function assetsRaw(){
  const td=today(),prev=sn.filter(s=>s.date<td).pop(),cur=sn.find(s=>s.date===td);
  let h=`<p class='big'>${dc==='JPY'?'<small>¥</small>'+Math.round(tot).toLocaleString('ja-JP'):fm(tot)}</p>`;
  h+=`<p class='sub'>投资资产 ${fm(inv)} · 现金/存款 ${fm(oth)}${dc!=='JPY'?'<br>按 1 '+(dc==='USD'?'美元':'人民币')+' = ¥'+A.rates[dc]+' 换算':''}${prev?'<br>较 '+prev.date.slice(5)+' 确认的数值 '+(tot-prev.total<0?'−':'+')+fm(Math.abs(tot-prev.total)):''}</p>`;
- h+=`<div class='box' data-g='s'><h2>币种与汇率</h2><div class='chips'>${[['JPY','日元'],['CNY','人民币'],['USD','美元']].map(c=>`<button class='chip' data-disp='${c[0]}' aria-pressed='${dc===c[0]}'>${c[1]}</button>`).join('')}</div><div style='display:flex;gap:8px'><div style='flex:1;min-width:0'><label for='rt-USD'>1 美元 = ?日元</label><input id='rt-USD' class='f' data-rt='USD' inputmode='decimal' value='${A.rates.USD}'></div><div style='flex:1;min-width:0'><label for='rt-CNY'>1 人民币 = ?日元</label><input id='rt-CNY' class='f' data-rt='CNY' inputmode='decimal' value='${A.rates.CNY}'></div></div><p class='sub' style='margin:10px 0 0'>总资产按所选币种显示,汇率需要你自己更新。现金、消费、收入和投资资产都以日元记录,每天确认的数值也以日元保存。</p></div>`;
- h+=`<div class='box' data-g='i'><h2>投资资产</h2><p class='sub' style='margin:0'>投资资产(日元计,按券商或交易所显示的日元市值填写)</p>`
- +(A.assets.length?"<div style='max-height:calc(100dvh - 660px);min-height:100px;overflow-y:auto'>"+A.assets.map(x=>`<div class='row'><div class='rm'><div>${esc(x.name)}</div></div><input class='f hin' style='width:130px;flex:none' data-av='${x.id}' inputmode='decimal' value='${x.val}' aria-label='${esc(x.name)}市值'><button class='del${ap===x.id?' on':''}' data-adel='${x.id}'>${ap===x.id?'确认删除':'删除'}</button></div>`).join('')+"</div>":`<p class='sub' style='margin:8px 0 0'>还没有投资资产,在下面添加。</p>`)
- +`<label for='an'>添加投资资产</label><div class='chips' style='margin-bottom:8px'>${['美股','日股','比特币','基金'].map(n=>`<button class='chip' data-qn='${n}' style='padding:6px 12px;font-size:14px'>${n}</button>`).join('')}</div><div style='display:flex;gap:6px'><input id='an' class='f' style='flex:1;min-width:0;padding:10px' placeholder='名称' autocomplete='off'><input id='av' class='f' style='flex:1;min-width:0;padding:10px' inputmode='decimal' placeholder='市值(日元)'><button class='go alt' id='aadd' style='flex:none;width:auto;margin:0;padding:8px 14px'>添加</button></div>`+`</div>`;
- h+=`<div class='box' data-g='o'><h2>确认今日总资产</h2>`+`<p class='sub' style='margin:0'>投资资产 ${fm(inv)} + 现金/存款 ${fm(oth)}<br>合计 <b style='color:var(--tx)'>${fm(tot)}</b></p><button class='go' id='snap'>${cur?'重新确认今日总资产':'确认今日总资产'}</button>${cur?`<p class='sub' style='text-align:center;margin:8px 0 0'>今天已确认:${fm(cur.total)}</p>`:''}</div>`;
- h+=`<div class='box' data-g='k'><h2>现金 / 存款</h2><label for='cash'>起算时的余额(日元)</label><input id='cash' class='f' inputmode='numeric' value='${A.cash||''}' placeholder='0'><label for='sd'>起算日</label><input id='sd' type='date' class='f' value='${A.start}'><p class='sub' style='margin:12px 0 0'>起算日以来:收入 ${sgn(f.i)},支出 ${sgn(-f.o)}<br>当前余额 ${yen(oth)}(起算余额 + 收入 − 支出)<br>收入请在「记一笔」里添加。</p></div>`;
+ h+=`<div class='box' data-g='s'><h2>币种与汇率</h2><div class='chips'>${[['JPY','日元'],['CNY','人民币'],['USD','美元']].map(c=>`<button class='chip' data-disp='${c[0]}' aria-pressed='${dc===c[0]}'>${c[1]}</button>`).join('')}</div><div style='display:flex;gap:8px'><div style='flex:1;min-width:0'><label for='rt-USD'>1 美元 = ?日元</label><input id='rt-USD' class='f' data-rt='USD' inputmode='decimal' value='${A.rates.USD}'></div><div style='flex:1;min-width:0'><label for='rt-CNY'>1 人民币 = ?日元</label><input id='rt-CNY' class='f' data-rt='CNY' inputmode='decimal' value='${A.rates.CNY}'></div></div><p class='sub' style='margin:10px 0 0'>${A.rateD?'汇率日期 '+A.rateD+'(欧洲央行参考汇率),每天自动更新。':'打开资产页时会自动从网上获取汇率。'}<button class='lk' data-rfetch='1'>立即更新</button><br>也可以手动修改,当天不会被覆盖。总资产按所选币种显示,所有金额都以日元记录。</p></div>`;
+ const aform=x=>`<div class='aform'>${x?'':`<div class='chips' style='margin-bottom:8px'>${['美股','日股','比特币','基金'].map(n=>`<button class='chip' data-qn='${n}' style='padding:6px 12px;font-size:14px'>${n}</button>`).join('')}</div>`}<div style='display:flex;gap:6px'><input id='an' class='f' style='flex:1;min-width:0;padding:10px' placeholder='名称' autocomplete='off' value='${x?esc(x.name):''}'><input id='av' class='f' style='flex:1;min-width:0;padding:10px' inputmode='decimal' placeholder='市值(日元)' value='${x?x.val:''}'></div><div style='display:flex;gap:6px;margin-top:8px;align-items:center'><button class='go' id='asave' style='margin:0;flex:1;padding:9px'>${x?'保存':'添加'}</button><button class='go alt' id='acancel' style='margin:0;flex:1;padding:9px'>取消</button>${x?`<button class='del${ap===x.id?' on':''}' data-adel='${x.id}' style='flex:none'>${ap===x.id?'确认删除':'删除'}</button>`:''}</div></div>`;
+ h+=`<div class='box' data-g='i'><h2 style='display:flex;justify-content:space-between'><span>投资资产</span><span>${fm(inv)}</span></h2><p class='sub' style='margin:0 0 4px'>按券商或交易所显示的日元市值填写,点一项可修改。</p><div>`
+ +A.assets.map(x=>AE===x.id?aform(x):`<button class='row arow' data-aed='${x.id}'><div class='rm'><div>${esc(x.name)}</div></div><div class='amt'>${yen(x.val)}</div><span class='chev'>›</span></button>`).join('')
+ +(A.assets.length?'':`<p class='sub' style='margin:8px 0 0'>还没有投资资产。</p>`)+`</div>`
+ +(AE==='new'?aform(null):`<button class='go alt' data-anew='1' style='margin:10px 0 0;padding:9px'>+ 添加投资资产</button>`)+`</div>`;
+ h+=`<div class='box' data-g='o'><button class='go' id='snap' style='margin:0'>${cur?'重新确认今日总资产':'确认今日总资产'}</button>${cur?`<p class='sub' style='text-align:center;margin:8px 0 0'>今天已确认:${fm(cur.total)}</p>`:''}</div>`;
+ h+=`<div class='box' data-g='k'><h2 style='display:flex;justify-content:space-between'><span>现金 / 存款</span><span>${yen(oth)}</span></h2>`+(CE?`<label for='ce-cash'>起算时的余额(日元)</label><input id='ce-cash' class='f' inputmode='numeric' value='${A.cash||''}' placeholder='0'><label for='ce-sd'>起算日</label><input id='ce-sd' type='date' class='f' value='${A.start}'><div style='display:flex;gap:6px;margin-top:12px'><button class='go' id='csave' style='margin:0;flex:1;padding:9px'>保存</button><button class='go alt' id='ccancel' style='margin:0;flex:1;padding:9px'>取消</button></div>`
+  :`<div><div class='row'><div class='rm'><div>起算余额</div><span>${A.start} 起算</span></div><div class='amt'>${yen(A.cash||0)}</div></div><div class='row'><div class='rm'><div>起算日以来收入</div></div><div class='amt' style='color:var(--in)'>${sgn(f.i)}</div></div><div class='row'><div class='rm'><div>起算日以来支出</div></div><div class='amt'>${f.o?'−'+yen(f.o):yen(0)}</div></div></div><button class='go alt' id='cedit' style='margin:10px 0 0;padding:9px'>修改起算余额 / 起算日</button><p class='sub' style='margin:10px 0 0'>当前余额 = 起算余额 + 收入 − 支出。收入请在「记一笔」里添加。</p>`)+`</div>`;
  if(sn.length){const pts=sn.slice(-30),n=pts.length,mn=Math.min(...pts.map(s=>s.total)),mx=Math.max(...pts.map(s=>s.total)),r=mx-mn||1;
   const xy=pts.map((s,i)=>[n>1?10+i/(n-1)*280:150,n>1?90-(s.total-mn)/r*80:50]),md=d=>d.slice(5),lastP=pts[n-1],d0=lastP.total-pts[0].total;
   const chg=n>1?` · 较 ${md(pts[0].date)} ${d0>=0?'+':'−'}${fm(Math.abs(d0))}${pts[0].total?' ('+(d0>=0?'+':'−')+Math.abs(d0/pts[0].total*100).toFixed(1)+'%)':''}`:'';
@@ -522,8 +533,15 @@ document.addEventListener('click',e=>{
  if(t.id==='snap'){const td=today();A.snaps=A.snaps.filter(s=>s.date!==td);A.snaps.push({date:td,total:Math.round(totalA())});saveA();toast('已确认今日总资产');render();return}
  if(t.dataset.disp){A.disp=t.dataset.disp;saveA();render();return}
  if(t.dataset.qn){$('an').value=t.dataset.qn;$('av').focus();return}
- if(t.id==='aadd'){const name=$('an').value.trim(),v=num($('av').value);if(!name||!(v>=0)){toast('请填写名称和市值');return}A.assets.push({id:Date.now(),name,val:Math.round(v)});saveA();toast('已添加 '+name);render();return}
- if(t.dataset.adel){const id=+t.dataset.adel;if(ap===id){A.assets=A.assets.filter(x=>x.id!==id);ap=null;saveA();toast('已删除')}else ap=id;render();return}
+ if(t.dataset.aed){AE=+t.dataset.aed;ap=null;render();const e=$('av');if(e)e.focus();return}
+ if(t.dataset.anew){AE='new';ap=null;render();return}
+ if(t.id==='acancel'){AE=null;ap=null;render();return}
+ if(t.id==='asave'){const name=$('an').value.trim(),v=num($('av').value);if(!name||!(v>=0)){toast('请填写名称和市值');return}if(AE==='new'){A.assets.push({id:Date.now(),name,val:Math.round(v)});toast('已添加 '+name)}else{const x=A.assets.find(z=>z.id===AE);if(x){x.name=name;x.val=Math.round(v);toast('已保存')}}AE=null;saveA();render();return}
+ if(t.id==='cedit'){CE=true;render();return}
+ if(t.id==='ccancel'){CE=false;render();return}
+ if(t.id==='csave'){const n=num($('ce-cash').value);A.cash=isFinite(n)?n:0;A.start=$('ce-sd').value||today();CE=false;saveA();toast('已保存');render();return}
+ if(t.dataset.rfetch){fetchRates(true);return}
+ if(t.dataset.adel){const id=+t.dataset.adel;if(ap===id){A.assets=A.assets.filter(x=>x.id!==id);ap=null;AE=null;saveA();toast('已删除')}else ap=id;render();return}
  if(t.id==='iadd'){const amt=num($('ia').value);if(!(amt>0)){toast('请先输入收入金额');$('ia').focus();return}
   const date=$('idt').value||today();A.inc.push({id:Date.now(),amt:Math.round(amt),note:$('inn').value.trim(),date});saveA();toast('已记录收入 '+yen(amt));render();return}
  if(t.dataset.idel){const id=+t.dataset.idel,it=A.inc.find(x=>x.id===id);if(it){A.inc=A.inc.filter(x=>x.id!==id);ip=null;saveA();toast('已删除',()=>{A.inc.push(it);saveA();render()})}render()}
