@@ -68,7 +68,7 @@ nav a.on{background:var(--sel);color:var(--ac);font-weight:700}
 textarea.f{min-height:34px;font-size:13px}
 .srch{display:flex;gap:8px;margin:6px 0 2px;align-items:center}.srch .sq{margin:0;font-size:15px;flex:1;min-width:0;display:flex;align-items:center;gap:6px;height:38px;padding:0 12px;background:var(--sf);border:1px solid var(--ln);border-radius:19px;transition:border-color .15s,box-shadow .15s;cursor:text}.srch .sq:focus-within{border-color:var(--ac);box-shadow:0 0 0 3px color-mix(in srgb,var(--ac) 18%,transparent)}.srch .sq svg{flex:none;width:17px;height:17px;stroke:var(--mu);fill:none;stroke-width:2.2;stroke-linecap:round}.srch .sq input{flex:1;min-width:0;border:0;background:none;outline:0;font:inherit;font-size:15px;color:var(--tx);padding:0;height:100%;-webkit-appearance:none}.srch .sq input::placeholder{color:var(--mu)}.srch .sq input::-webkit-search-decoration{-webkit-appearance:none}.srch .ss{flex:none;position:relative;display:flex}.srch .ss:after{content:'';position:absolute;right:12px;top:50%;width:6px;height:6px;margin-top:-5px;border:solid var(--mu);border-width:0 1.8px 1.8px 0;transform:rotate(45deg);pointer-events:none}.srch .ss select{-webkit-appearance:none;appearance:none;height:38px;max-width:112px;padding:0 28px 0 14px;border:1px solid var(--ln);border-radius:19px;background:var(--sf);color:var(--tx);font:inherit;font-size:14px;outline:0;text-overflow:ellipsis}.srch .ss.on select{background:color-mix(in srgb,var(--ac) 12%,var(--sf));border-color:color-mix(in srgb,var(--ac) 45%,transparent);color:var(--ac);font-weight:600}.srch .ss.on:after{border-color:var(--ac)}.srch .ss select:focus{border-color:var(--ac)}.srch .f{padding:9px 10px;font-size:15px;min-width:0}
 button.bar,button.lg{background:none;border:0;padding:0;text-align:left;cursor:pointer;font:inherit;color:inherit}
-button.bar{width:100%}
+button.bar{width:100%}.bar .bch{color:var(--mu);font-size:18px;margin:0 -4px 0 -2px}
 button.lg{display:inline-flex;align-items:center;gap:4px;color:var(--mu);font-size:13px}
 button.bar:active,button.lg:active{opacity:.6}
 #band{background:var(--ac);color:#fff;padding:calc(env(safe-area-inset-top,0px) + 8px) 16px 8px;flex:none;z-index:5;box-shadow:0 2px 10px rgba(0,0,0,.08)}
@@ -443,7 +443,7 @@ function statsRaw(){
  const bc={};a.forEach(x=>bc[x.cat]=(bc[x.cat]||0)+x.amt);
  const mxio=Math.max(it,tot,1),pi=sum(A.inc.filter(x=>x.date.startsWith(prevM(ym))));
  const src={};inc.forEach(x=>{const k=x.note||'收入';src[k]=(src[k]||0)+x.amt});
- h+=`<div class="box" data-g="o"><h2>收支</h2><div class="bar"><span class="n">收入</span><span class="t"><i style="width:${it/mxio*100}%"></i></span><span class="v">+${yen(it)}</span></div><div class="bar"><span class="n">支出</span><span class="t"><i style="width:${tot/mxio*100}%;background:var(--pp)"></i></span><span class="v">${yen(tot)}</span></div><p class="sub" style="margin:8px 0 0">结余 <b style="color:var(${it>=tot?'--in':'--pp'})">${sgn(it-tot)}</b>${pi?'<br>上月收入 '+yen(pi)+',本月'+(it>=pi?'多':'少')+' '+yen(Math.abs(it-pi)):''}${a.length?'<br>日均 '+yen(tot/elapsed)+' · 单笔最高 '+yen(Math.max(...a.map(x=>x.amt))):''}</p>`+`</div>`;
+ h+=`<div class="box" data-g="o"><h2>收支</h2><button class="bar" data-si="收入"><span class="n">收入</span><span class="t"><i style="width:${it/mxio*100}%"></i></span><span class="v">+${yen(it)}</span><span class="bch">›</span></button><button class="bar" data-sc=""><span class="n">支出</span><span class="t"><i style="width:${tot/mxio*100}%;background:var(--pp)"></i></span><span class="v">${yen(tot)}</span><span class="bch">›</span></button><p class="sub" style="margin:8px 0 0">结余 <b style="color:var(${it>=tot?'--in':'--pp'})">${sgn(it-tot)}</b>${pi?'<br>上月收入 '+yen(pi)+',本月'+(it>=pi?'多':'少')+' '+yen(Math.abs(it-pi)):''}${a.length?'<br>日均 '+yen(tot/elapsed)+' · 单笔最高 '+yen(Math.max(...a.map(x=>x.amt))):''}</p>`+`</div>`;
  const bk=Object.keys(B.cats);
  if(B.total>0||bk.length){
   const row=(nm,u,l)=>`<div style="margin:10px 0 0"><div style="display:flex;justify-content:space-between;font-size:14px"><span>${esc(nm)}</span><span style="color:var(${u>l?'--pp':'--mu'})">${yen(u)} / ${yen(l)}${u>l?' · 超出 '+yen(u-l):''}</span></div><div class="pg"><i style="width:${Math.min(100,u/l*100)}%;background:var(${u>l?'--pp':'--ac'})"></i></div></div>`;
@@ -749,7 +749,7 @@ function rkParse(pages){
 async function importRakuten(files){
  toast('正在读取 PDF…');
  let m;try{m=await loadPdfjs()}catch(e){toast('PDF 解析组件加载失败,请联网后再试');return}
- let add=0,dup=0,sus=0,nf=0,rec=0;const claimed=new Set(),items=[],ign={},unc=[];
+ let add=0,dup=0,sus=0,nf=0,rec=0;const claimed=new Set(),items=[],ign={},unc=[],ums=new Set();
  for(const f of files){
   let r;
   try{const doc=await m.getDocument({data:new Uint8Array(await f.arrayBuffer()),cMapUrl:PDFJS+'cmaps/',cMapPacked:true}).promise;const pages=[];
@@ -757,7 +757,7 @@ async function importRakuten(files){
    r=rkParse(pages)}catch(e){r={rows:[]}}
   if(!r.rows.length){nf++;continue}
   const seen={};
-  r.rows.forEach(x=>{
+  r.rows.forEach(x=>{ums.add(x.date.slice(0,7));
    const k=x.date+':'+x.amt+':'+x.note;seen[k]=(seen[k]||0)+1;const ref='rk:'+(r.card||'')+':'+k+':'+seen[k];
    if(/PAYPAY|ペイペイ/i.test(x.note)){ign['PayPay 充值']=(ign['PayPay 充值']||0)+1;return}
    if(D.some(z=>z.ref===ref)){dup++;return}
@@ -774,7 +774,7 @@ async function importRakuten(files){
  if(Object.keys(ign).length)RV.ign=ign;
  RV.unc=[...RV.unc.filter(id=>D.some(x=>x.id===id&&x.cat==='其他')),...unc];
  saveRV();save();
- toast(`导入 ${add} 笔,重复 ${dup} 笔${rec?',自动对账 '+rec+' 笔':''}${sus?',疑似重复 '+sus+' 笔待确认':''}${nf?','+nf+' 个文件无法识别':''}${items.length||unc.length?'。需确认的项目见下方':''}`);render();
+ toast(`${[...ums].sort().map(m=>+m.slice(5)+'月').join('、')}消费(按刷卡日期记账):导入 ${add} 笔,重复 ${dup} 笔${rec?',自动对账 '+rec+' 笔':''}${sus?',疑似重复 '+sus+' 笔待确认':''}${nf?','+nf+' 个文件无法识别':''}${items.length||unc.length?'。需确认的项目见下方':''}`);render();
 }
 function rvPanel(){
  const un=RV.unc.map(id=>D.find(x=>x.id===id)).filter(x=>x&&x.cat==='其他'),ig=Object.entries(RV.ign);
