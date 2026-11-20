@@ -636,7 +636,7 @@ function assetsRaw(){
  +A.assets.map(x=>AE===x.id?aform(x):`<button class='row arow' data-aed='${x.id}'><div class='rm'><div>${esc(x.name)}</div></div><div class='amt'>${yen(x.val)}</div><span class='chev'>›</span></button>`).join('')
  +(A.assets.length?'':`<p class='sub' style='margin:8px 0 0'>还没有投资资产。</p>`)+`</div>`
  +(AE==='new'?aform(null):`<button class='go alt' data-anew='1' style='margin:10px 0 0;padding:9px'>+ 添加投资资产</button>`)+`</div>`;
- h+=`<div class='box' data-g='o'><button class='go' id='snap' style='margin:0'>${cur?'重新确认今日总资产':'确认今日总资产'}</button>${cur?`<p class='sub' style='text-align:center;margin:8px 0 0'>今天已确认:${fm(cur.total)}</p>`:''}</div>`+chgBox(prev,fm,tot);
+ h+=`<div class='box' data-g='o'><button class='go' id='snap' style='margin:0'>${cur?'重新确认今日总资产':'确认今日总资产'}</button>${cur?`<p class='sub' style='text-align:center;margin:8px 0 0'>今天已确认:${fm(cur.total)}</p>`:''}<button class='row crow' data-sdset='1' style='margin-top:10px;border-top:1px solid var(--ln)'><div class='rm'><div>起算日</div><span>现金 = 起算余额 ${yen(A.cash)} + 之后的收入 − 支出</span></div><div class='amt'>${A.start?+A.start.slice(5,7)+'/'+ +A.start.slice(8):'未设'}</div><span class='chev'>›</span></button></div>`+chgBox(prev,fm,tot);
  h+=`<div class='box' data-g='k'><h2 style='display:flex;justify-content:space-between'><span>现金 / 存款</span><span>${yen(oth)}</span></h2>`+(CE?`<label for='ce-cash'>起算时的余额(日元)</label><input id='ce-cash' class='f' inputmode='numeric' value='${A.cash||''}' placeholder='0'><label for='ce-sd'>起算日</label><input id='ce-sd' type='date' class='f' value='${A.start}'><div style='display:flex;gap:6px;margin-top:12px'><button class='go' id='csave' style='margin:0;flex:1;padding:9px'>保存</button><button class='go alt' id='ccancel' style='margin:0;flex:1;padding:9px'>取消</button></div>`
   :`<div><div class='row'><div class='rm'><div>起算余额</div><span>${A.start} 起算</span></div><div class='amt'>${yen(A.cash||0)}</div></div><div class='row'><div class='rm'><div>起算日以来收入</div></div><div class='amt' style='color:var(--in)'>${sgn(f.i)}</div></div><div class='row'><div class='rm'><div>起算日以来支出</div></div><div class='amt'>${f.o?'−'+yen(f.o):yen(0)}</div></div></div><button class='go alt' id='cedit' style='margin:10px 0 0;padding:9px'>修改起算余额 / 起算日</button><p class='sub' style='margin:10px 0 0'>当前余额 = 起算余额 + 收入 − 支出。收入请在「记一笔」里添加。</p>`)+`</div>`;
  if(sn.length){const pts=sn.slice(-30),n=pts.length,mn=Math.min(...pts.map(s=>s.total)),mx=Math.max(...pts.map(s=>s.total)),r=mx-mn||1;
@@ -656,6 +656,7 @@ document.addEventListener('click',e=>{
  if(t.id==='acancel'){AE=null;ap=null;render();return}
  if(t.id==='asave'){const name=$('an').value.trim(),v=num($('av').value);if(!name||!(v>=0)){toast('请填写名称和市值');return}if(AE==='new'){A.assets.push({id:Date.now(),name,val:Math.round(v)});toast('已添加 '+name)}else{const x=A.assets.find(z=>z.id===AE);if(x){x.name=name;x.val=Math.round(v);toast('已保存')}}AE=null;saveA();render();return}
  if(t.id==='cedit'){CE=true;render();return}
+ if(t.dataset.sdset){AT='k';CE=true;render();const f=$('ce-sd');if(f)f.scrollIntoView({block:'center'});return}
  if(t.id==='ccancel'){CE=false;render();return}
  if(t.id==='csave'){const n=num($('ce-cash').value);A.cash=isFinite(n)?n:0;A.start=$('ce-sd').value||today();CE=false;saveA();toast('已保存');render();return}
  if(t.dataset.rfetch){fetchRates(true);return}
