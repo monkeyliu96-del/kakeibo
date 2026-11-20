@@ -171,6 +171,13 @@ select.f,.fr select{-webkit-appearance:none;appearance:none;background-image:url
 .icb{height:42px;border:0;border-radius:12px;background:var(--sf);box-shadow:inset 0 0 0 1px var(--ln);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--tx)}.icb svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .icb[aria-pressed="true"]{background:var(--ac);color:#fff;box-shadow:none}
 .crow{width:100%;background:none;border:0;border-top:1px solid var(--ln);font:inherit;color:inherit;text-align:left;cursor:pointer;padding:11px 0}.crow:first-of-type{border-top:0}.crow .chev{color:var(--mu);font-size:18px;margin-left:-4px}.crow:active{opacity:.6}
+#sheet{position:fixed;inset:0;z-index:55;pointer-events:none}#sheet[hidden]{display:none}
+#sheet .shbg{position:absolute;inset:0;background:rgba(20,16,10,.38);opacity:0;transition:opacity .25s;pointer-events:auto}
+#sheet .shp{position:absolute;left:0;right:0;bottom:0;max-width:560px;margin:0 auto;max-height:calc(100% - env(safe-area-inset-top,0px) - 24px);display:flex;flex-direction:column;background:var(--bg);border-radius:22px 22px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,.18);transform:translateY(100%);transition:transform .28s cubic-bezier(.2,.8,.2,1);pointer-events:auto}
+#sheet.on .shbg{opacity:1}#sheet.on .shp{transform:none}
+#sheet .shh{flex:none;display:flex;align-items:center;justify-content:space-between;padding:14px 18px 8px;font-size:16px}#sheet .shh:before{content:'';position:absolute;top:6px;left:50%;width:36px;height:5px;margin-left:-18px;border-radius:3px;background:var(--ln)}
+#sheet .shb{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:4px 16px calc(14px + env(safe-area-inset-bottom,0px));-webkit-overflow-scrolling:touch}
+#sheet #cancel{display:none!important}
 .tg{display:inline-block;margin-left:6px;padding:0 6px;border-radius:6px;font-size:11px;line-height:17px;background:var(--sel);color:var(--mu);vertical-align:1px}.tg.bad{background:color-mix(in srgb,var(--pp) 14%,transparent);color:var(--pp)}.tbud{font-size:13px;color:var(--mu);margin:-2px 0 6px}.tbud b{color:var(--in);font-weight:700}.tbud b.over{color:var(--pp)}.pdots{display:flex;justify-content:center;gap:6px;margin-top:8px}.pdots i{width:6px;height:6px;border-radius:50%;background:var(--ln)}.pdots i.on{background:var(--ac)}
 .lrow input.sw{padding:0;appearance:none;-webkit-appearance:none;flex:0 0 46px;width:46px;height:28px;border-radius:14px;background:rgba(120,120,128,.28);position:relative;margin:8px 0;cursor:pointer;transition:background .2s}.lrow input.sw:before{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}.lrow input.sw:checked{background:var(--ac)}.lrow input.sw:checked:before{transform:translateX(18px)}.cord{margin:8px 0 0;padding:0;list-style:none}.cord li{display:flex;align-items:center;gap:10px;background:var(--sf);border:1px solid var(--ln);border-radius:12px;padding:0 6px 0 0;margin-bottom:6px;position:relative}.cord li.drg{z-index:5;box-shadow:0 8px 20px rgba(0,0,0,.18);border-color:var(--ac)}.cord .hd{touch-action:none;cursor:grab;padding:10px 12px;color:var(--mu);font-size:18px;line-height:1;user-select:none;-webkit-user-select:none}.cord .nm{flex:1;font-size:15px}.cord .dl2{background:none;border:0;color:var(--mu);font-size:14px;padding:8px 10px;cursor:pointer}
 .addrow button.dl{background:none;color:var(--pp);padding:9px 14px;font-weight:600}
@@ -186,7 +193,7 @@ select.f,.fr select{-webkit-appearance:none;appearance:none;background-image:url
 <a href="#stats" id="n-stats"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.2 15.9A10 10 0 118 2.8"/><path d="M22 12A10 10 0 0012 2v10z"/></svg>统计</a>
 <a href="#assets" id="n-assets"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 8l3 4 3-4M12 12v5M9.5 13h5M9.5 15h5"/></svg>资产</a>
 </nav>
-<div class="toast" id="toast" role="status"></div>
+<div id="sheet" hidden></div><div class="toast" id="toast" role="status"></div>
 <script>
 const FRESH=(()=>{try{return !localStorage.getItem('kakeibo.v1')&&!localStorage.getItem('kakeibo.cfg.v1')}catch(e){return true}})();
 const HK='kakeibo.hint.v1';
@@ -320,7 +327,7 @@ function i18nRun(){
  if(i18nBusy)return;i18nBusy=true;if(i18nObs)i18nObs.disconnect();
  try{
   const en=typeof UI!=='undefined'&&LG()==='en';
-  ['band','app','toast'].forEach(id=>{const r=document.getElementById(id);if(!r)return;
+  ['band','app','toast','sheet'].forEach(id=>{const r=document.getElementById(id);if(!r)return;
    const tw=document.createTreeWalker(r,4);let n;const L=[];while(n=tw.nextNode())L.push(n);
    L.forEach(n=>{const v=n.nodeValue;if(/[　-〿一-鿿＀-￯]/.test(v)){const o=trs(v);if(o!==v)n.nodeValue=o}});
    r.querySelectorAll('*').forEach(el=>{for(const a of Array.from(el.attributes)){const v=a.value;if(v.indexOf('')>=0||(en&&(a.name==='placeholder'||a.name==='aria-label'||a.name==='title')&&/[　-〿一-鿿＀-￯]/.test(v))){const o=trs(v);if(o!==v)el.setAttribute(a.name,o)}}})});
@@ -330,7 +337,7 @@ function i18nRun(){
  i18nBusy=false;if(i18nObs)i18nStart();
 }
 let i18nObs=null;
-function i18nStart(){if(!i18nObs)return;['band','app','toast'].forEach(id=>{const r=document.getElementById(id);if(r)i18nObs.observe(r,{childList:true,subtree:true,characterData:true})})}
+function i18nStart(){if(!i18nObs)return;['band','app','toast','sheet'].forEach(id=>{const r=document.getElementById(id);if(r)i18nObs.observe(r,{childList:true,subtree:true,characterData:true})})}
 if(typeof MutationObserver!=='undefined'){i18nObs=new MutationObserver(()=>i18nRun());}
 
 const pad=n=>String(n).padStart(2,'0');
@@ -434,8 +441,8 @@ function addView(){
  const e=E?D.find(x=>x.id===E):null,ei=EI?A.inc.find(x=>x.id===EI):null,cur=e||ei,inn=F.type==='in',pf=cur?null:PF;
  const av=cur?cur.amt:(pf&&pf.amt)||'',nv=cur?(cur.note||''):(pf&&pf.note)||'',dv=cur?cur.date:today(),rc=recentNotes(inn);
 if(!MT.some(m=>m[0]===F.method))F.method=MT[0][0];
- const hint=(!cur&&hintOn()&&!D.length&&!A.inc.length)?`<div class="box" style="margin:12px 0 24px"><h2>欢迎使用记账本</h2><p class="sub" style="margin:6px 0">记录只保存在这台手机上,不会上传,也不会同步到其他设备。</p><p class="sub" style="margin:6px 0">换手机、删除 App 或清除网站数据前,请先在「更多 → 导出」里备份。</p><p class="sub" style="margin:6px 0 10px">用 Safari 打开后,点「分享 → 添加到主屏幕」,就能像 App 一样使用。</p><button class="go" data-hint="1" style="margin:0;padding:11px">知道了</button></div>`:'';
- const bg=bkGet(),bkb=(!cur&&!hint&&bkDue())?`<div class="box" style="margin:12px 0 24px"><h2>该备份了</h2><p class="sub" style="margin:6px 0 10px">${bg.last?'上次备份是 '+bg.last+'(已过 '+dayDiff(bg.last,today())+' 天)。':'你还没有备份过数据。'}数据只保存在这台手机上,建议现在备份一份。选「存储到“文件”」→ iCloud Drive 即可同步到云端。</p><div style="display:flex;gap:8px"><button class="go" data-bkn="1" style="margin:0;padding:10px;flex:1">立即备份</button><button class="go alt" data-bkl="1" style="margin:0;padding:10px;flex:1">稍后提醒</button></div></div>`:'';
+ const hint=(!cur&&hintOn()&&!D.length&&!A.inc.length)?`<div class="box" style="margin:12px 0 24px"><h2>欢迎使用记账本</h2><p class="sub" style="margin:6px 0">点右上角头像登录账号后,记录会自动同步到云端,换手机也能找回。不登录的话,记录只保存在这台手机上。</p><p class="sub" style="margin:6px 0 10px">用 Safari 打开后,点「分享 → 添加到主屏幕」,就能像 App 一样使用。</p><button class="go" data-hint="1" style="margin:0;padding:11px">知道了</button></div>`:'';
+ const bg=bkGet(),bkb=(!cur&&!hint&&bkDue()&&!(typeof SESS!=='undefined'&&SESS))?`<div class="box" style="margin:12px 0 24px"><h2>该备份了</h2><p class="sub" style="margin:6px 0 10px">${bg.last?'上次备份是 '+bg.last+'(已过 '+dayDiff(bg.last,today())+' 天)。':'你还没有备份过数据。'}没登录账号时,数据只保存在这台手机上,建议备份一份,或者点右上角头像登录,自动同步到云端。</p><div style="display:flex;gap:8px"><button class="go" data-bkn="1" style="margin:0;padding:10px;flex:1">立即备份</button><button class="go alt" data-bkl="1" style="margin:0;padding:10px;flex:1">稍后提醒</button></div></div>`:'';
  return hint+bkb+`<div class="addv"><div class="strip"><span class="yen">¥</span><input id="amt" class="amtin" inputmode="numeric" pattern="[0-9]*" placeholder="0" autocomplete="off" aria-label="金额" value="${esc(av)}">${inn||cur?'':todayBud()}</div>
  ${inn?'':`<div class="sec"><div class="sech"><span>支付方式</span><button data-epm="1">${EPM?'完成':'添加/编辑'}</button></div><div class="cpg" id="ms">${Array.from({length:Math.ceil(MT.length/8)},(_,p)=>`<div class="grid4">${MT.slice(p*8,p*8+8).map(m=>`<button class="chip" data-mt="${m[0]}" aria-pressed="${F.method===m[0]}"><i class="md" style="background:var(${m[2]})"></i>${m[1]}</button>`).join('')}</div>`).join('')}</div>${MT.length>8?`<div class="pdots" id="msd">${Array.from({length:Math.ceil(MT.length/8)},(_,p)=>`<i${p?'':' class="on"'}></i>`).join('')}</div>`:''}${EPM?`<p class="sub" style="margin:12px 0 0">改完名称后点别处即可保存。有记录在使用的支付方式不能删除。</p>${pmSrc().map(m=>`<div class="addrow" style="margin-top:8px"><input data-pmn="${esc(m[0])}" value="${esc(LG()==='en'&&ZH2EN[m[1]]?ZH2EN[m[1]]:m[1])}" maxlength="12" aria-label="支付方式"><button class="dl" data-pmdel="${esc(m[0])}">删除</button></div>`).join('')}<div class="addrow" style="margin-top:8px"><input id="pmnew" placeholder="新支付方式名称(最多 12 个字)" maxlength="12" autocomplete="off"><button id="pmadd">添加</button></div>`:''}</div>
  <div class="sec"><div class="sech"><span>分类</span><button data-ecat="1">${ECAT?'完成':'添加/编辑'}</button></div><div class="cpg" id="cs">${Array.from({length:Math.ceil(CATS.length/8)},(_,p)=>`<div class="grid4">${CATS.slice(p*8,p*8+8).map(c=>`<button class="chip" data-ct="${c}" aria-pressed="${F.cat===c}">${catIcon(c)}<span>${c}</span></button>`).join('')}</div>`).join('')}</div>${CATS.length>8?`<div class="pdots" id="csd">${Array.from({length:Math.ceil(CATS.length/8)},(_,p)=>`<i${p?'':' class="on"'}></i>`).join('')}</div>`:''}${ECAT?`<div class="addrow"><input id="ccn" placeholder="新分类名称(最多 8 个字)" maxlength="8" autocomplete="off"><button id="ccadd">添加</button></div><p class="sub" style="margin:12px 0 0">按住 ≡ 拖动调整顺序,点图标可以更换图标(「其他」固定在最后,不能删除)</p><ul class="cord" id="cord">${CATS.filter(c=>c!=='其他').map(c=>`<li data-c="${esc(c)}"><span class="hd" aria-hidden="true">≡</span><button class="cib" data-cico="${esc(c)}" aria-label="更换图标">${catIcon(c)}</button><span class="nm">${esc(c)}</span><button class="dl2" data-ccdel="${esc(c)}"${CDP===c?' style="color:var(--pp);font-weight:600"':''}>${CDP===c?'确认删除':'删除'}</button></li>`).join('')}</ul>${CIP&&CATS.includes(CIP)?iconPicker(CIP):''}`:''}</div>`}
@@ -520,7 +527,16 @@ function render(){
  $('app').innerHTML=(hi>=0?'<div class="fhead">'+html.slice(0,hi)+'</div>':'')+'<div id="sc">'+(hi>=0?html.slice(hi+8):html)+'</div>';if(st)$('sc').scrollTop=st;['cs','ms'].forEach(id=>{const cs=$(id),b=cs&&cs.querySelector('[aria-pressed="true"]');if(b&&b.parentElement.offsetLeft)cs.scrollLeft=b.parentElement.offsetLeft});
  ['list','add','stats','assets'].forEach(k=>$('n-'+k).classList.toggle('on',k===view));
  if(view==='add'&&!E&&!EI){F.manual=false}
+ const sh=$('sheet'),shOn=view!=='add'&&(E||EI);
+ if(shOn){const isNew=sh.hidden;sh.hidden=false;
+  const bs=$('shb'),bst=(!isNew&&bs)?bs.scrollTop:0;
+  sh.innerHTML=`<div class="shbg" data-shx="1"></div><div class="shp" role="dialog" aria-modal="true" aria-label="编辑记录"><div class="shh"><button class="lk" data-shx="1">取消</button><b>${EI?'编辑收入':'编辑支出'}</b><span style="width:36px"></span></div><div class="shb" id="shb">${addView()}</div></div>`;
+  if(bst)$('shb').scrollTop=bst;
+  ['cs','ms'].forEach(id=>{const cs=$(id),b=cs&&cs.querySelector('[aria-pressed="true"]');if(b&&b.parentElement.offsetLeft)cs.scrollLeft=b.parentElement.offsetLeft});
+  if(isNew||SHN){SHN=false;requestAnimationFrame(()=>requestAnimationFrame(()=>sh.classList.add('on')))}else sh.classList.add('on')}
+ else if(!sh.hidden){sh.hidden=true;sh.classList.remove('on');sh.innerHTML=''}
 }
+var SHN=false;
 let SY=false;
 let ST='o',AT='o',MP='i',RE=null,RSO=false,AE=null,CE=false;
 function tabBar(k,cur,items){return `<style>#app [data-g]:not([data-g="${cur}"]){display:none}</style><div class="chips" style="margin:0;padding:10px max(16px,calc((100% - 488px)/2)) 8px;flex-wrap:nowrap;background:var(--bg)">${items.map(([v,l])=>`<button class="chip" data-${k}="${v}" aria-pressed="${cur===v}" style="flex:1;text-align:center;padding:8px 2px">${l}</button>`).join('')}</div><!--H-->`}
@@ -564,11 +580,11 @@ document.addEventListener('click',async e=>{
  if(t.dataset.qk!==undefined){Q.k=t.dataset.qk;if(Q.k==='in'){Q.c='';Q.m=''}return render()}
  if(t.dataset.qr){delete Q.r;return render()}
  if(t.dataset.qclear){Q={t:'',c:'',m:'',k:''};return render()}
- if(t.dataset.edit){const x=D.find(z=>z.id===+t.dataset.edit);if(x){E=x.id;EI=null;F={method:x.method,cat:x.cat,manual:true,type:'out'};location.hash='#add'}return}
- if(t.dataset.iedit){const x=A.inc.find(z=>z.id===+t.dataset.iedit);if(x){EI=x.id;E=null;F={...F,type:'in'};location.hash='#add'}return}
+ if(t.dataset.edit){const x=D.find(z=>z.id===+t.dataset.edit);if(x){E=x.id;EI=null;PF=null;F={method:x.method,cat:x.cat,manual:true,type:'out'};if(hv()==='#add')render();else{SHN=true;render()}}return}
+ if(t.dataset.iedit){const x=A.inc.find(z=>z.id===+t.dataset.iedit);if(x){EI=x.id;E=null;PF=null;F={...F,type:'in'};if(hv()==='#add')render();else{SHN=true;render()}}return}
  if(t.dataset.ty){PF={amt:$('amt').value,note:$('note').value};F.type=t.dataset.ty;F.manual=false;return render()}
  if(t.dataset.rc!==undefined){const r=RC[+t.dataset.rc];if(r){$('note').value=r.note;if(F.type==='in'){if(!$('amt').value&&r.amt)$('amt').value=r.amt}else{F.cat=r.cat;F.method=r.method;F.manual=true;document.querySelectorAll('[data-ct]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.ct===r.cat));document.querySelectorAll('[data-mt]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.mt===r.method))}}return}
- if(t.id==='cancel'){E=null;EI=null;PF=null;location.hash='#list';return}
+ if(t.id==='cancel'||t.dataset.shx){E=null;EI=null;PF=null;F.type='out';if(hv()==='#add')location.hash='#list';else render();return}
  if(t.dataset.del){const id=+t.dataset.del,it=D.find(x=>x.id===id);if(it){D=D.filter(x=>x.id!==id);pending=null;save();toast('已删除',()=>{D.push(it);save();render()})}return render()}
  if(t.id==='undo'){const f=UNDO;UNDO=null;$('toast').classList.remove('on','act');if(f)f();return}
  if(t.dataset.mt){F.method=t.dataset.mt;document.querySelectorAll('[data-mt]').forEach(b=>b.setAttribute('aria-pressed',b===t))}
