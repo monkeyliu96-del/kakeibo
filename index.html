@@ -178,6 +178,7 @@ select.f,.fr select{-webkit-appearance:none;appearance:none;background-image:url
 #sheet .shh{flex:none;display:flex;align-items:center;justify-content:space-between;padding:14px 18px 8px;font-size:16px}#sheet .shh:before{content:'';position:absolute;top:6px;left:50%;width:36px;height:5px;margin-left:-18px;border-radius:3px;background:var(--ln)}
 #sheet .shb{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:4px 16px calc(14px + env(safe-area-inset-bottom,0px));-webkit-overflow-scrolling:touch}
 #sheet #cancel{display:none!important}
+.dupc{border-color:color-mix(in srgb,var(--pp) 40%,var(--ln));background:color-mix(in srgb,var(--pp) 5%,var(--sf))}.dupc h2{display:flex;align-items:center;gap:6px;color:var(--pp)}.dupc h2 svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}.dupg{border-top:1px solid var(--ln);padding:10px 0 2px}.dupt{display:flex;justify-content:space-between;gap:8px}.dupt b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dupt span{font-weight:700;color:var(--pp);flex:none}.dupg .btns .go{padding:9px;font-size:14px}
 .tg{display:inline-block;margin-left:6px;padding:0 6px;border-radius:6px;font-size:11px;line-height:17px;background:var(--sel);color:var(--mu);vertical-align:1px}.tg.bad{background:color-mix(in srgb,var(--pp) 14%,transparent);color:var(--pp)}.tbud{font-size:13px;color:var(--mu);margin:-2px 0 6px}.tbud b{color:var(--in);font-weight:700}.tbud b.over{color:var(--pp)}.pdots{display:flex;justify-content:center;gap:6px;margin-top:8px}.pdots i{width:6px;height:6px;border-radius:50%;background:var(--ln)}.pdots i.on{background:var(--ac)}
 .lrow input.sw{padding:0;appearance:none;-webkit-appearance:none;flex:0 0 46px;width:46px;height:28px;border-radius:14px;background:rgba(120,120,128,.28);position:relative;margin:8px 0;cursor:pointer;transition:background .2s}.lrow input.sw:before{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}.lrow input.sw:checked{background:var(--ac)}.lrow input.sw:checked:before{transform:translateX(18px)}.cord{margin:8px 0 0;padding:0;list-style:none}.cord li{display:flex;align-items:center;gap:10px;background:var(--sf);border:1px solid var(--ln);border-radius:12px;padding:0 6px 0 0;margin-bottom:6px;position:relative}.cord li.drg{z-index:5;box-shadow:0 8px 20px rgba(0,0,0,.18);border-color:var(--ac)}.cord .hd{touch-action:none;cursor:grab;padding:10px 12px;color:var(--mu);font-size:18px;line-height:1;user-select:none;-webkit-user-select:none}.cord .nm{flex:1;font-size:15px}.cord .dl2{background:none;border:0;color:var(--mu);font-size:14px;padding:8px 10px;cursor:pointer}
 .addrow button.dl{background:none;color:var(--pp);padding:9px 14px;font-weight:600}
@@ -404,7 +405,7 @@ function listBody(){
    const inf=x.inc?`<i class="dot" style="background:var(--in)"></i><div class="rm"><div>${esc(x.note||'收入')}</div><span>收入</span></div><div class="amt" style="color:var(--in)">+${yen(x.amt)}</div>`:`<i class="dot" style="background:var(${mcol(x.method)})"></i><div class="rm"><div>${esc(x.note||x.cat)}</div><span>${esc(x.cat)} · ${mname(x.method)}${isFix(x)?' · 固定':''}${reconTag(x)}</span></div><div class="amt">${yen(x.amt)}</div>`;
    const btn=x.inc?`<button class="del" data-iedit="${x.id}">编辑</button><button class="del${ip===x.id?' on':''}" data-idel="${x.id}">${ip===x.id?'确认删除':'删除'}</button>`:`<button class="del" data-edit="${x.id}">编辑</button><button class="del${pending===x.id?' on':''}" data-del="${x.id}">${pending===x.id?'确认删除':'删除'}</button>`;
    h+=SEL.on?`<label class="row" style="cursor:pointer"><input type="checkbox" data-sel="${x.key}"${SEL.ids.includes(x.key)?' checked':''} style="width:22px;height:22px;flex:none;accent-color:var(--ac)" aria-label="选择">${inf}</label>`:`<div class="row">${inf}${btn}</div>`});
-  h+='</div>';
+  h+='</div>';if(!fl&&!SEL.on&&LV!=='cal')h+=dupCard(dupCharges(ym));
  }
  return h;
 }
@@ -811,6 +812,21 @@ const IMPM=['paypay','card','rakuten'];
 function reconTag(x){if(x.ref||x.rid||!IMPM.includes(x.method))return '';
  const last=D.reduce((m,z)=>z.ref&&z.method===x.method&&z.date>m?z.date:m,'');
  return last&&x.date<=last?'<span class="tg bad">未对上</span>':'<span class="tg">待对账</span>'}
+/* ===== 疑似重复扣款:导入的账单里同一商户、同一金额在同一个月出现多次 ===== */
+const SUBRE=/APPLE|ICLOUD|ITUNES|NETFLIX|SPOTIFY|AMAZON|PRIME|GOOGLE|YOUTUBE|DISNEY|HULU|U-NEXT|ADOBE|MICROSOFT|OPENAI|CHATGPT|ANTHROPIC|CLAUDE|DAZN|ABEMA|NINTENDO|PLAYSTATION|DROPBOX|楽天モバイル|DOCOMO|SOFTBANK|AHAMO|POVO/i;
+const mkey=n=>String(n||'').normalize('NFKC').toUpperCase().replace(/\s+/g,' ').trim();
+function dupCharges(m){
+ const ok=new Set(UI.dupok||[]),g={},seen={};
+ D.forEach(x=>{if(!x.ref||!x.note)return;const b=mkey(x.note)+'|'+x.amt;(seen[b]=seen[b]||new Set()).add(x.date.slice(0,7));
+  if(m&&!x.date.startsWith(m))return;const k=b+'|'+x.date.slice(0,7);(g[k]=g[k]||{k,b,n:x.note,amt:x.amt,mo:x.date.slice(0,7),xs:[]}).xs.push(x)});
+ return Object.values(g).filter(o=>{if(o.xs.length<2||ok.has(o.k))return false;const ds=o.xs.map(x=>x.date).sort();
+  return SUBRE.test(mkey(o.n))||ds.some((d,i)=>i&&dd(ds[i-1],d)<=3)||seen[o.b].size>=2}).sort((p,q)=>q.mo.localeCompare(p.mo)||q.amt-p.amt)}
+function dupCard(gs){if(!gs.length)return '';
+ return `<div class="box dupc"><h2><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>疑似重复扣款 · ${gs.length} 组</h2><p class="sub" style="margin:0 0 4px">同一商户、同一金额,同一个月被扣了不止一次。如果确实是重复扣款,可以联系商户(Apple 可在「设置 → Apple 账户 → 订阅 / 购买记录」里查看)或卡公司申请退款。</p>`
+ +gs.map(o=>`<div class="dupg"><div class="dupt"><b>${esc(o.n)}</b><span>${yen(o.amt)} × ${o.xs.length}</span></div><p class="sub" style="margin:2px 0 8px">${+o.mo.slice(5)} 月 · ${o.xs.map(x=>+x.date.slice(5,7)+'/'+(+x.date.slice(8))).sort().join('、')} · ${mname(o.xs[0].method)} · 多扣了 ${yen(o.amt*(o.xs.length-1))}</p><div class="btns"><button class="go alt" data-dupv="${esc(o.n)}" data-dupm="${o.mo}">查看这几笔</button><button class="go alt" data-dupok="${esc(o.k)}">不是重复</button></div></div>`).join('')+`</div>`}
+document.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)return;
+ if(t.dataset.dupv!==undefined){Q={t:t.dataset.dupv,c:'',m:'',k:'out'};ym=t.dataset.dupm;LV='list';if(hv()==='#list')render();else location.hash='#list';return}
+ if(t.dataset.dupok!==undefined){UI.dupok=[...(UI.dupok||[]),t.dataset.dupok];saveC();toast('已标记为正常扣款,不再提醒');render();return}});
 function importPay(t){
  const rows=parseCSV(t.replace(/^﻿/,'')),hi=rows.findIndex(r=>r.some(x=>x.includes('取引日')));
  if(hi<0){toast('没有找到「取引日」列,请确认是 PayPay 导出的 CSV');return}
@@ -836,7 +852,7 @@ function importPay(t){
  RV.ign=ign;
  RV.unc=[...RV.unc.filter(id=>D.some(x=>x.id===id&&x.cat==='其他')),...unc];
  saveRV();save();
- toast(`导入 ${add} 笔,重复 ${dup} 笔${rec?',自动对账 '+rec+' 笔':''}${sus?',疑似重复 '+sus+' 笔待确认':''}。需确认的项目见下方`);render();
+ const dg=dupCharges().length;toast(`导入 ${add} 笔,重复 ${dup} 笔${rec?',自动对账 '+rec+' 笔':''}${sus?',疑似重复 '+sus+' 笔待确认':''}${dg?',发现 '+dg+' 组疑似重复扣款':''}。需确认的项目见下方`);render();
 }
 /* ===== 乐天卡 PDF 明细导入 ===== */
 const PDFJS='https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/';
@@ -886,7 +902,7 @@ async function importRakuten(files){
  if(Object.keys(ign).length)RV.ign=ign;
  RV.unc=[...RV.unc.filter(id=>D.some(x=>x.id===id&&x.cat==='其他')),...unc];
  saveRV();save();
- toast(`${[...ums].sort().map(m=>+m.slice(5)+'月').join('、')}消费(按刷卡日期记账):导入 ${add} 笔,重复 ${dup} 笔${rec?',自动对账 '+rec+' 笔':''}${sus?',疑似重复 '+sus+' 笔待确认':''}${nf?','+nf+' 个文件无法识别':''}${items.length||unc.length?'。需确认的项目见下方':''}`);render();
+ toast(`${[...ums].sort().map(m=>+m.slice(5)+'月').join('、')}消费(按刷卡日期记账):导入 ${add} 笔,重复 ${dup} 笔${rec?',自动对账 '+rec+' 笔':''}${sus?',疑似重复 '+sus+' 笔待确认':''}${nf?','+nf+' 个文件无法识别':''}${(n=>n?',发现 '+n+' 组疑似重复扣款':'')(dupCharges().length)}${items.length||unc.length||dupCharges().length?'。需确认的项目见下方':''}`);render();
 }
 function rvPanel(){
  const un=RV.unc.map(id=>D.find(x=>x.id===id)).filter(x=>x&&x.cat==='其他'),ig=Object.entries(RV.ign);
@@ -917,7 +933,7 @@ function moreRaw(){
  h+=`<div class='box' data-k='rk' data-g='i'><h2 class='sh'>导入乐天卡明细</h2><p class='sub' style='margin:0'>在乐天 e-NAVI 下载「ご利用代金請求明細書」PDF,可以一次选多张卡的文件。按利用日记账,支付方式记为乐天卡;退款需要你确认,PayPay 充值会跳过,重复导入同一份明细会自动忽略。首次使用需要联网加载 PDF 解析组件。</p><label for='rkf'>选择 PDF 文件</label><input id='rkf' type='file' accept='.pdf,application/pdf' multiple class='f'></div>`;
  h+=`<div class='box' data-k='clr' data-g='d'><h2 class='sh'>清空消费记录</h2><p class='sub' style='margin:0'>删除全部消费记录(所有月份)。收入、资产、预算和固定支出不受影响。建议先导出备份。</p><button class='go alt' id='clr' style='color:var(--pp)'>${clrc?'确认清空 '+D.length+' 笔消费':'清空所有消费记录'}</button></div>`;
  h+=`<div class='box' data-k='wipe' data-g='d'><h2 class='sh'>清空全部数据</h2><p class='sub' style='margin:0'>删除所有消费、收入、资产、预算和固定支出,不能撤销。主题、语言、自定义分类和支付方式会保留。请先导出备份。</p><button class='go alt' id='wipe-bk'>导出备份文件</button><input id='wipein' class='f' style='margin-top:10px' placeholder='输入「${LG()==='en'?'DELETE':'清空'}」确认' autocomplete='off' autocapitalize='off'><button class='go alt' id='wipe' style='color:var(--pp)'>清空全部数据</button></div>`;
- h+='<div data-k="rv" data-g="i">'+rvPanel()+'</div>';
+ h+='<div data-k="rv" data-g="i">'+dupCard(dupCharges())+rvPanel()+'</div>';
  h+=`<div class='box' data-k='bk' data-g='x'><h2 class='sh'>备份</h2><p class='sub' style='margin:0 0 6px'>${bkGet().last?'上次备份:'+bkGet().last:'还没有备份过'}</p><p class='sub' style='margin:0'>导出时选「存储到“文件”」→ iCloud Drive,即可同步到云端。</p><button class='go alt' id='bk-exp'>导出备份文件</button><button class='go alt' id='bk-copy'>复制备份内容(换设备用)</button></div>`;
  h+=`<details class='box' data-k='rs' data-g='x' id='rsd'${RSO?' open':''}><summary style='font-weight:700;cursor:pointer'>恢复备份</summary><p class='sub' style='margin:6px 0 0'>恢复会覆盖现有数据。</p><label for='bkf'>选择备份文件</label><input id='bkf' type='file' accept='.json,.txt,application/json' class='f'><label for='bkt'>或粘贴备份内容</label><textarea id='bkt' class='f'></textarea><button class='go alt' id='bk-imp'>导入备份</button></details>`;
  h+=`<div class='box' data-k='csv' data-g='x'><h2 class='sh'>导出表格(CSV)</h2><p class='sub' style='margin:4px 0 0'>把消费记录导出成 CSV 表格,可以用 Excel 或 Numbers 打开。</p><div style='display:flex;gap:8px;margin-top:10px'><button class='go alt' id='expm' style='flex:1;padding:10px 4px;font-size:14px;margin:0'>导出本月(CSV)</button><button class='go alt' id='exp' style='flex:1;padding:10px 4px;font-size:14px;margin:0'>导出全部(CSV)</button></div></div>`;
