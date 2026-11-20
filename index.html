@@ -72,7 +72,7 @@ button.bar{width:100%}
 button.lg{display:inline-flex;align-items:center;gap:4px;color:var(--mu);font-size:13px}
 button.bar:active,button.lg:active{opacity:.6}
 #band{background:var(--ac);color:#fff;padding:calc(env(safe-area-inset-top,0px) + 8px) 16px 8px;flex:none;z-index:5;box-shadow:0 2px 10px rgba(0,0,0,.08)}
-#band .bi{max-width:520px;margin:0 auto;display:flex;align-items:center;justify-content:center;min-height:40px}
+#band{position:relative}#band .bi{max-width:520px;margin:0 auto;display:flex;align-items:center;justify-content:center;min-height:40px;padding:0 44px;position:relative}.avb{position:absolute;right:max(14px,calc((100% - 520px)/2));bottom:12px;width:36px;height:36px;border-radius:50%;border:2px solid rgba(255,255,255,.75);background:rgba(255,255,255,.22);padding:0;cursor:pointer;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#fff}.av{display:flex;align-items:center;justify-content:center;width:100%;height:100%;border-radius:50%;background:center/cover no-repeat;font-weight:700;color:inherit}.av svg{width:60%;height:60%;stroke:currentColor;fill:none;stroke-width:2}.bkb{position:absolute;left:0;top:50%;transform:translateY(-50%)}.avl{flex:none;width:64px;height:64px;border-radius:50%;background:var(--sel);color:var(--ac);cursor:pointer;display:flex;position:relative;font-size:24px}.avl:after{content:'✎';position:absolute;right:-2px;bottom:-2px;width:22px;height:22px;border-radius:50%;background:var(--ac);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center}.syn{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle;background:var(--mu)}.syn.ok{background:var(--in)}.syn.err{background:var(--pp)}.syn.ing{background:var(--ac)}
 .band-t{font-size:19px;font-weight:700;color:#fff}
 #band .mon{gap:8px}#band .mon b{color:#fff;font-size:18px;min-width:128px}
 #band .ib{background:rgba(255,255,255,.25);color:#fff}
@@ -121,7 +121,7 @@ const hintOn=()=>{try{return !localStorage.getItem(HK)}catch(e){return false}};
 const K='kakeibo.v1';
 let D=[];
 try{D=JSON.parse(localStorage.getItem(K)||'[]')}catch(e){D=[]}
-const save=()=>{try{localStorage.setItem(K,JSON.stringify(D))}catch(e){toast('保存失败:浏览器禁止了本地存储')}};
+const save=()=>{try{localStorage.setItem(K,JSON.stringify(D))}catch(e){toast('保存失败:浏览器禁止了本地存储')}dirty()};
 const CATS=['餐饮','日用品','交通','购物','娱乐','居住','医疗','其他'];
 const BASE=CATS.slice();
 const KW={
@@ -397,18 +397,19 @@ function statsRaw(){
 function bandHTML(view){
  if(view==='add'){if(E||EI)return `<span class="band-t">${EI?'编辑收入':'编辑记录'}</span>`;return `<div class="seg"><button data-ty="out" aria-pressed="${F.type!=='in'}">支出</button><button data-ty="in" aria-pressed="${F.type==='in'}">收入</button></div>`}
  if(view==='list'||view==='stats'){const[y,m]=ym.split('-');return `<div class="mon"><button class="ib" data-m="-1" aria-label="上个月">‹</button><b>${y}年${+m}月</b><button class="ib" data-m="1" aria-label="下个月">›</button></div>`}
+ if(view==='me')return `<button class="ib bkb" data-back="1" aria-label="返回">‹</button><span class="band-t">账号与设置</span>`;
  return `<span class="band-t">${view==='assets'?'总资产':'更多'}</span>`;
 }
 function render(){
  const v=hv().slice(1);
- const view=['add','stats','assets','more'].includes(v)?v:'list';
- $('band').innerHTML='<div class="bi">'+bandHTML(view)+'</div>';document.documentElement.style.setProperty('--bh',$('band').offsetHeight+'px');const os=$('sc'),st=(os&&window.__lv===view)?os.scrollTop:0;window.__lv=view;
- const html=view==='add'?addView():view==='stats'?statsView():view==='assets'?assetsView():view==='more'?moreView():listView(),hi=html.indexOf('<!--H-->');
+ const view=['add','stats','assets','more','me'].includes(v)?v:'list';if(view!=='me')window.__back=view;
+ $('band').innerHTML='<div class="bi">'+bandHTML(view)+'</div>'+(view==='me'?'':`<button class="avb" data-me="1" aria-label="账号">${avHTML()}</button>`);document.documentElement.style.setProperty('--bh',$('band').offsetHeight+'px');const os=$('sc'),st=(os&&window.__lv===view)?os.scrollTop:0;window.__lv=view;
+ const html=view==='me'?meView():view==='add'?addView():view==='stats'?statsView():view==='assets'?assetsView():view==='more'?moreView():listView(),hi=html.indexOf('<!--H-->');
  $('app').innerHTML=(hi>=0?'<div class="fhead">'+html.slice(0,hi)+'</div>':'')+'<div id="sc">'+(hi>=0?html.slice(hi+8):html)+'</div>';if(st)$('sc').scrollTop=st;['cs','ms'].forEach(id=>{const cs=$(id),b=cs&&cs.querySelector('[aria-pressed="true"]');if(b&&b.parentElement.offsetLeft)cs.scrollLeft=b.parentElement.offsetLeft});
  ['list','add','stats','assets','more'].forEach(k=>$('n-'+k).classList.toggle('on',k===view));
  if(view==='add'&&!E&&!EI){F.manual=false}
 }
-let ST='o',AT='o',MP='s',RE=null,RSO=false,AE=null,CE=false;
+let ST='o',AT='o',MP='i',RE=null,RSO=false,AE=null,CE=false;
 function tabBar(k,cur,items){return `<style>#app [data-g]:not([data-g="${cur}"]){display:none}</style><div class="chips" style="margin:0;padding:10px max(16px,calc((100% - 488px)/2)) 8px;flex-wrap:nowrap;background:var(--bg)">${items.map(([v,l])=>`<button class="chip" data-${k}="${v}" aria-pressed="${cur===v}" style="flex:1;text-align:center;padding:8px 2px">${l}</button>`).join('')}</div><!--H-->`}
 let LPT='mouse';
 document.addEventListener('scroll',e=>{const s=e.target;if(!s||(s.id!=='cs'&&s.id!=='ms'))return;const p=Math.round(s.scrollLeft/s.clientWidth);document.querySelectorAll('#'+s.id+'d i').forEach((d,i)=>d.classList.toggle('on',i===p))},true);
@@ -475,11 +476,11 @@ document.addEventListener('click',async e=>{
 document.addEventListener('input',e=>{
  if(e.target.id==='note'&&!F.manual){const c=guess(e.target.value);if(c){F.cat=c;document.querySelectorAll('[data-ct]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.ct===c))}}
 });
-window.addEventListener('hashchange',()=>{pending=null;AE=null;CE=false;clrc=false;SEL={on:false,ids:[],cf:false};if(hv()!=='#add'){E=null;EI=null;PF=null;DK='';ECAT=false;EPM=false}OPEN={};if(OUI){OPEN.ui=true;OUI=false}render()});
+window.addEventListener('hashchange',()=>{pending=null;if(hv()==='#me')sbBoot().catch(()=>{});AE=null;CE=false;clrc=false;SEL={on:false,ids:[],cf:false};if(hv()!=='#add'){E=null;EI=null;PF=null;DK='';ECAT=false;EPM=false}OPEN={};if(OUI){OPEN.ui=true;OUI=false}render()});
 
 const AK='kakeibo.assets.v1';
 let A={rate:150,cash:0,stock:0,cur:'JPY',inc:[],start:'',snaps:[],assets:[],disp:'JPY'};
-const saveA=()=>{try{localStorage.setItem(AK,JSON.stringify(A))}catch(e){toast('保存失败:浏览器禁止了本地存储')}};
+const saveA=()=>{try{localStorage.setItem(AK,JSON.stringify(A))}catch(e){toast('保存失败:浏览器禁止了本地存储')}dirty()};
 try{const o=JSON.parse(localStorage.getItem(AK)||'{}');A=Object.assign(A,o);
  if(o.stock===undefined&&Array.isArray(o.hold)&&o.hold.length){A.stock=Math.round(o.hold.reduce((s,h)=>s+h.sh*h.px*(h.cur==='USD'?(o.rate||150):1),0));A.cur='JPY'}}catch(e){}
 function migA(){A.rates=Object.assign({USD:A.rate||150,CNY:21},A.rates||{});if(!Array.isArray(A.assets))A.assets=[];if(!Array.isArray(A.inc))A.inc=[];
@@ -558,7 +559,7 @@ let B={total:0,cats:{}},R=[],Q={t:'',c:'',m:'',k:''},uid=Date.now(),rp=null,bkc=
 try{const o=JSON.parse(localStorage.getItem(CK)||'{}');if(o.B)B=Object.assign({total:0,cats:{}},o.B);if(Array.isArray(o.R))R=o.R}catch(e){}
 let UI={theme:'auto',accent:'orange',home:'add'},CC=[],CDP='';
 const ACC={orange:['橙色',null,null],green:['青绿','#0e7a68','#3cc3a8'],blue:['蓝色','#2f6fed','#7aa2ff'],purple:['紫色','#7c4dff','#b39dff'],pink:['粉红','#d6336c','#ff7aa8']};
-const saveC=()=>{try{localStorage.setItem(CK,JSON.stringify({B,R,UI,CC,PM}))}catch(e){toast('保存失败:浏览器禁止了本地存储')}};
+const saveC=()=>{try{localStorage.setItem(CK,JSON.stringify({B,R,UI,CC,PM}))}catch(e){toast('保存失败:浏览器禁止了本地存储')}dirty()};
 try{const o=JSON.parse(localStorage.getItem(CK)||'{}');if(o.UI)UI=Object.assign(UI,o.UI);if(Array.isArray(o.CC))CC=o.CC;if(Array.isArray(o.PM)&&o.PM.length&&o.PM.every(m=>Array.isArray(m)&&m[0]&&m[1]))PM=o.PM}catch(e){}
 applyPM();
 if(!ACC[UI.accent])UI.accent='orange';
@@ -682,7 +683,7 @@ function rvPanel(){
  if(un.length)h+=`<p class='sub' style='margin:12px 0 0'>以下支出分类不确定,请选择(之后同名商户会自动沿用):</p>`+un.map(x=>`<div class='row'><div class='rm'><div>${esc(x.note)}</div><span>${x.date.slice(5)} · ${yen(x.amt)}</span></div><select class='f' style='width:96px;padding:8px' data-uc='${x.id}' aria-label='分类'>${CATS.map(c=>`<option${c==='其他'?' selected':''}>${c}</option>`).join('')}</select></div>`).join('');
  return h+`</div>`;
 }
-function moreView(){return tabBar('mp',MP,[['s','设置'],['i','导入'],['x','导出'],['d','清空']])+moreRaw()}
+function moreView(){if(MP==='s')MP='i';return tabBar('mp',MP,[['i','导入'],['x','导出'],['d','清空']])+moreRaw()}
 function moreRaw(){
  const opt=(a,v)=>a.map(x=>`<option value='${x[0]}'${x[0]===v?' selected':''}>${x[1]}</option>`).join('');
  let h='';
@@ -771,6 +772,110 @@ document.addEventListener('change',e=>{
  if(t.id==='bkf'&&t.files[0])readF(t.files[0],'bkt');
 });
 
+
+/* ===== 账号与云同步(Supabase) ===== */
+var SUPA_URL='https://vnaedljaafxqakrzxarn.supabase.co',SUPA_KEY='sb_publishable_6tSRBZ_fuchtB4LHFZYSyw_uJzaGQdD',SUPA_JS='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2/+esm';
+var SB=null,SESS=null,SBP=null,MUTE=false,SYT=null,SYNCING=false,SYAGAIN=false,SYNC={st:'off',at:0,err:''},RECOV=false,AUTHM='in';
+var SYK='kakeibo.sync.v1',AUK='kakeibo.auth';
+function dirty(){if(MUTE||!SB||!SESS)return;clearTimeout(SYT);SYT=setTimeout(syncNow,1200)}
+const syGet=()=>{try{return JSON.parse(localStorage.getItem(SYK)||'{}')}catch(e){return {}}};
+const sySet=o=>{try{localStorage.setItem(SYK,JSON.stringify(o))}catch(e){}};
+function sbBoot(){if(SBP)return SBP;SBP=import(SUPA_JS).then(m=>{
+  SB=m.createClient(SUPA_URL,SUPA_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storageKey:AUK}});
+  SB.auth.onAuthStateChange((ev,s)=>{const was=SESS&&SESS.user.id;SESS=s||null;
+   if(ev==='PASSWORD_RECOVERY'){RECOV=true;location.hash='#me'}
+   if(SESS&&SESS.user.id!==was)setTimeout(syncNow,0);
+   if(!SESS)SYNC={st:'off',at:0,err:''};
+   setTimeout(paintMe,0)});
+  return SB}).catch(e=>{SBP=null;throw e});return SBP}
+function paintMe(){const a=document.querySelector('#band .avb');if(a)a.innerHTML=avHTML();if(hv()==='#me'&&!(document.activeElement&&document.activeElement.matches('#app input,#app textarea')))render()}
+function avHTML(){if(UI.avatar)return `<span class="av" style="background-image:url('${UI.avatar}')"></span>`;
+ const n=(UI.nick||(SESS&&SESS.user.email)||'').trim();
+ return n?`<span class="av">${esc(n[0].toUpperCase())}</span>`:`<span class="av"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></span>`}
+/* --- 合并:以上次同步的内容为基准做三方合并,两台设备离线各记的账都不会丢 --- */
+const J=JSON.stringify;
+const keyD=x=>x.ref?'f:'+x.ref:x.rid?'r:'+x.rid+'@'+x.date:'i:'+x.id;
+function mergeArr(l,r,b,kf){
+ const M=a=>new Map((a||[]).filter(Boolean).map(x=>[kf(x),x])),L=M(l),R=M(r),B=b?M(b):null,out=[];
+ for(const k of new Set([...L.keys(),...R.keys()])){const lx=L.get(k),rx=R.get(k),bx=B&&B.get(k);
+  if(lx&&rx){out.push(bx&&J(lx)===J(bx)?rx:lx);continue}
+  const x=lx||rx;if(bx){if(J(x)!==J(bx))out.push(x);continue}
+  out.push(x)}
+ return out}
+const mergeVal=(l,r,b,hasB)=>hasB?(J(l)!==J(b)?l:r):(r!==undefined?r:l);
+function mergeDoc(l,r,b){if(!r)return l;const hb=!!b;b=b||{};const o=JSON.parse(J(r));
+ o.D=mergeArr(l.D,r.D,hb?b.D:null,keyD);o.R=mergeArr(l.R,r.R,hb?b.R:null,x=>'i:'+x.id);
+ ['B','UI','CC','PM'].forEach(k=>o[k]=mergeVal(l[k],r[k],b[k],hb));
+ const la=l.A||{},ra=r.A||{},ba=b.A||{};o.A={};
+ new Set([...Object.keys(la),...Object.keys(ra)]).forEach(k=>{
+  if(k==='inc'||k==='assets')o.A[k]=mergeArr(la[k],ra[k],hb?ba[k]:null,x=>x.ref?'f:'+x.ref:'i:'+x.id);
+  else if(k==='snaps')o.A[k]=mergeArr(la[k],ra[k],hb?ba[k]:null,x=>'d:'+x.date);
+  else o.A[k]=mergeVal(la[k],ra[k],ba[k],hb)});
+ return o}
+const localDoc=()=>JSON.parse(J({v:1,D,A,B,R,UI,CC,PM}));
+function applyDoc(o){
+ D=Array.isArray(o.D)?o.D:[];A=Object.assign({rate:150,cash:0,stock:0,cur:'JPY',inc:[],start:today(),snaps:[],assets:[],disp:'JPY'},o.A||{});migA();
+ B=Object.assign({total:0,cats:{}},o.B||{});R=Array.isArray(o.R)?o.R:[];UI=Object.assign({theme:'auto',accent:'orange',home:'add'},o.UI||{});if(!ACC[UI.accent])UI.accent='orange';
+ CC=Array.isArray(o.CC)?o.CC:[];PM=(Array.isArray(o.PM)&&o.PM.length&&o.PM.every(m=>Array.isArray(m)&&m[0]&&m[1]))?o.PM:null;
+ applyPM();applyCats();applyUI();MUTE=true;save();saveA();saveC();MUTE=false;
+ if(!(document.activeElement&&document.activeElement.matches('#app input,#app textarea')))render()}
+async function syncNow(){
+ if(!SB||!SESS)return;if(SYNCING){SYAGAIN=true;return}
+ SYNCING=true;SYNC.st='ing';paintSync();const uid=SESS.user.id;
+ try{
+  for(let t=0;t<4;t++){
+   const sv=syGet(),base=sv.uid===uid?sv.base:null;
+   const {data:row,error}=await SB.from('kakeibo_state').select('data,updated_at').eq('user_id',uid).maybeSingle();if(error)throw error;
+   const loc=localDoc(),m=row?mergeDoc(loc,row.data,base):loc;
+   if(J(m)!==J(loc))applyDoc(m);
+   if(row&&J(m)===J(row.data)){sySet({uid,base:m});break}
+   const now=new Date().toISOString();
+   const res=row?await SB.from('kakeibo_state').update({data:m,updated_at:now}).eq('user_id',uid).eq('updated_at',row.updated_at).select('updated_at')
+                :await SB.from('kakeibo_state').insert({user_id:uid,data:m,updated_at:now}).select('updated_at');
+   if(res.error){if(!row&&res.error.code==='23505')continue;throw res.error}
+   if(!res.data||!res.data.length)continue;
+   sySet({uid,base:m});break}
+  SYNC={st:'ok',at:Date.now(),err:''}
+ }catch(e){SYNC={st:'err',at:SYNC.at,err:(e&&e.message)||String(e)}}
+ SYNCING=false;paintSync();if(SYAGAIN){SYAGAIN=false;syncNow()}}
+function syncLabel(){const t=SYNC.at?new Date(SYNC.at).toTimeString().slice(0,5):'';
+ return SYNC.st==='ing'?'<i class="syn ing"></i>同步中…':SYNC.st==='ok'?`<i class="syn ok"></i>已同步 · ${t}`:SYNC.st==='err'?`<i class="syn err"></i>同步失败,联网后会自动重试`:'<i class="syn"></i>尚未同步'}
+function paintSync(){const e=$('synst');if(e)e.innerHTML=syncLabel()}
+const authErr=m=>/Invalid login/i.test(m)?'邮箱或密码不正确':/not confirmed/i.test(m)?'邮箱还没有确认,请先点邮件里的确认链接':/already registered|already exists/i.test(m)?'这个邮箱已经注册过,请直接登录':/at least|Password should/i.test(m)?'密码至少 6 位':/valid email|invalid format/i.test(m)?'邮箱格式不正确':/rate limit|too many/i.test(m)?'操作太频繁,请稍后再试':/fetch|network/i.test(m)?'网络连接失败,请检查网络':m;
+function meView(){
+ const em=SESS?SESS.user.email:'';
+ let h=`<div class='box' style='display:flex;align-items:center;gap:14px'><label class='avl' for='avf' aria-label='更换头像'>${avHTML()}</label><input id='avf' type='file' accept='image/*' style='display:none'><div style='flex:1;min-width:0'><input id='nick' class='f' style='padding:8px 10px;font-size:17px;font-weight:600' maxlength='16' placeholder='昵称' value='${esc(UI.nick||'')}' autocomplete='off'><p class='sub' style='margin:6px 0 0'>${em?esc(em):'点头像可更换照片'}</p></div></div>`;
+ if(!SB){h+=`<div class='box'><h2>云同步账号</h2><p class='sub' style='margin:0'>正在连接…如果一直停在这里,请检查网络。</p></div>`;sbBoot().then(paintMe,()=>{})}
+ else if(RECOV)h+=`<div class='box'><h2>设置新密码</h2><label for='npw'>新密码(至少 6 位)</label><input id='npw' class='f' type='password' autocomplete='new-password'><button class='go' id='setpw'>保存新密码</button></div>`;
+ else if(!SESS)h+=`<div class='box'><h2>${AUTHM==='up'?'注册账号':'登录'}</h2><p class='sub' style='margin:0'>登录后记账数据会自动同步到云端,换手机或在其他设备上登录都能找回。首次登录时,这台手机上的记录会和云端合并。</p><label for='lem'>邮箱</label><input id='lem' class='f' type='email' autocomplete='email' inputmode='email' autocapitalize='off'><label for='lpw'>密码${AUTHM==='up'?'(至少 6 位)':''}</label><input id='lpw' class='f' type='password' autocomplete='${AUTHM==='up'?'new-password':'current-password'}'><button class='go' id='${AUTHM==='up'?'signup':'login'}'>${AUTHM==='up'?'注册并登录':'登录'}</button><div style='display:flex;justify-content:space-between;margin-top:12px;font-size:14px'><button class='lk' data-authm='${AUTHM==='up'?'in':'up'}'>${AUTHM==='up'?'已有账号?去登录':'没有账号?注册一个'}</button>${AUTHM==='up'?'':`<button class='lk' id='forgot'>忘记密码</button>`}</div></div>`;
+ else h+=`<div class='box'><h2>云同步</h2><p class='sub' id='synst' style='margin:0'>${syncLabel()}</p><p class='sub' style='margin:6px 0 0'>记账、资产、预算和设置都会自动同步。没有网络时照常记账,联网后自动补传。</p><div style='display:flex;gap:6px;margin-top:12px'><button class='go alt' id='syncnow' style='margin:0;flex:1;padding:9px'>立即同步</button><button class='go alt' id='logout' style='margin:0;flex:1;padding:9px;color:var(--pp)'>退出登录</button></div></div>`;
+ h+=`<div id='meset'><style>#meset [data-g]:not([data-g="s"]){display:none}</style>${moreRaw()}</div>`;
+ return h}
+function shrinkImg(f){return new Promise((ok,no)=>{const u=URL.createObjectURL(f),im=new Image();im.onload=()=>{const S=160,c=document.createElement('canvas');c.width=c.height=S;const k=Math.min(im.width,im.height),g=c.getContext('2d');
+ g.drawImage(im,(im.width-k)/2,(im.height-k)/2,k,k,0,0,S,S);URL.revokeObjectURL(u);ok(c.toDataURL('image/jpeg',.82))};im.onerror=no;im.src=u})}
+document.addEventListener('click',async e=>{const t=e.target.closest('button');if(!t)return;
+ if(t.dataset.me){location.hash='#me';return}
+ if(t.dataset.back){location.hash='#'+(window.__back||'add');return}
+ if(t.dataset.authm){AUTHM=t.dataset.authm;render();return}
+ if(t.id==='login'||t.id==='signup'){const em=$('lem').value.trim(),pw=$('lpw').value,lb=t.textContent;if(!em||!pw){toast('请输入邮箱和密码');return}
+  t.disabled=true;t.textContent='请稍候…';
+  try{const r=t.id==='login'?await SB.auth.signInWithPassword({email:em,password:pw}):await SB.auth.signUp({email:em,password:pw,options:{emailRedirectTo:location.origin+location.pathname}});
+   if(r.error)throw r.error;
+   if(t.id==='signup'&&!r.data.session){toast('已发送确认邮件,点邮件里的链接后回来登录');AUTHM='in';render();return}
+   toast('已登录,正在同步…')}catch(err){toast(authErr(err.message||String(err)));t.disabled=false;t.textContent=lb}return}
+ if(t.id==='forgot'){const em=$('lem').value.trim();if(!em){toast('请先填写邮箱');$('lem').focus();return}
+  const r=await SB.auth.resetPasswordForEmail(em,{redirectTo:location.origin+location.pathname});toast(r.error?authErr(r.error.message):'重设密码的邮件已发送');return}
+ if(t.id==='setpw'){const pw=$('npw').value;const r=await SB.auth.updateUser({password:pw});if(r.error){toast(authErr(r.error.message));return}RECOV=false;toast('密码已更新');render();return}
+ if(t.id==='syncnow'){syncNow();return}
+ if(t.id==='logout'){if(t.dataset.cf!=='1'){t.dataset.cf='1';t.textContent='确认退出';return}
+  clearTimeout(SYT);await syncNow();await SB.auth.signOut();sySet({});toast('已退出登录,这台手机上的记录会保留');render();return}
+});
+document.addEventListener('change',async e=>{const t=e.target;
+ if(t.id==='nick'){UI.nick=t.value.trim();saveC();paintMe();return}
+ if(t.id==='avf'&&t.files[0]){try{UI.avatar=await shrinkImg(t.files[0]);saveC();t.value='';render()}catch(err){toast('这张图片无法读取')}return}
+});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')syncNow()});
+window.addEventListener('online',()=>syncNow());
 /* ===== 分类拖拽排序 ===== */
 (()=>{let d=null;
  document.addEventListener('pointerdown',e=>{const h=e.target.closest&&e.target.closest('#cord .hd');if(!h)return;e.preventDefault();const li=h.parentElement,ul=li.parentElement;
@@ -822,6 +927,7 @@ document.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault
  if(p.get('a')||p.get('n')){PF={amt:(p.get('a')||'').replace(/[^0-9]/g,''),note:p.get('n')||''};const m=p.get('m');if(MT.some(x=>x[0]===m))F.method=m;if(p.get('t')==='in')F.type='in';const c=guess(PF.note);if(c)F.cat=c}}catch(e){}})();
 render();
 i18nStart();i18nRun();
+try{if(localStorage.getItem(AUK)||/access_token=|type=recovery/.test(location.hash))sbBoot().catch(()=>{})}catch(e){}
 </script>
 </body>
 </html>
