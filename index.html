@@ -58,7 +58,7 @@ h2{font-size:15px;margin:0 0 4px}
 .empty a{color:var(--ac);font-weight:600}
 @media (display-mode:standalone){body{height:100vh}}
 nav{touch-action:none;position:relative;flex:none;align-self:center;width:calc(100% - 24px);max-width:496px;margin:6px auto calc(10px + env(safe-area-inset-bottom,0px));display:flex;background:var(--sf);border:1px solid var(--ln);border-radius:30px;padding:6px;box-shadow:0 8px 28px rgba(0,0,0,.14);z-index:6}
-nav a{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;text-decoration:none;color:var(--mu);padding:8px 0 6px;font-size:12px;border-radius:24px}
+nav,nav a,#band,.avb{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}nav a{-webkit-tap-highlight-color:transparent;flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;text-decoration:none;color:var(--mu);padding:8px 0 6px;font-size:12px;border-radius:24px}
 nav a svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 nav a.on{background:var(--sel);color:var(--ac);font-weight:700}
 .toast{position:absolute;left:50%;bottom:112px;z-index:7;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s}
@@ -206,8 +206,8 @@ const save=()=>{try{localStorage.setItem(K,JSON.stringify(D))}catch(e){toast('�
 const CATS=['餐饮','日用品','交通','购物','娱乐','居住','医疗','其他'];
 const BASE=CATS.slice();
 const KW={
- '餐饮':/コープ|ソムオー|レストラン|キッチン|[ヘへ]ジャンク|五右衛門|セブン|ローソン|ファミリーマート|ファミマ|マクド|マック|吉野家|すき家|スキヤ|松屋|サイゼリヤ|ガスト|コメダ|ドトール|スタバ|スターバックス|カフェ|ラーメン|食堂|居酒屋|弁当|パン/,
- '日用品':/ドン・キホーテ|ドンキ|ダイソー|ドラッグ|マツモトキヨシ|マツキヨ|ウエルシア|ニトリ|セリア|スーパー/,
+ '餐饮':/餐|饭|飯|厨|食|料理|焼肉|寿司|すし|うどん|そば|カレー|バーガー|ピザ|中華|定食|デリ|コープ|ソムオー|レストラン|キッチン|[ヘへ]ジャンク|五右衛門|セブン|ローソン|ファミリーマート|ファミマ|マクド|マック|吉野家|すき家|スキヤ|松屋|サイゼリヤ|ガスト|コメダ|ドトール|スタバ|スターバックス|カフェ|ラーメン|食堂|居酒屋|弁当|パン/,
+ '日用品':/ドン・?キ|MEGAドン|ダイソー|ドラッグ|マツモトキヨシ|マツキヨ|ウエルシア|ニトリ|セリア|スーパー/,
  '交通':/JR|Suica|京成|スカイライナ|スイカ|PASMO|ICOCA|メトロ|電車|駅|新幹線|バス|タクシー|ガソリン/,
  '购物':/Yahoo|Amazon|アマゾン|楽天(?!モバイル)|ユニクロ|ZOZO|ヨドバシ|ビックカメラ|OLIVE ?YOUNG/i,
  '娱乐':/歌広場|映画|ゲーム|Netflix|Spotify|カラオケ|APPLE COM BILL|ICLOUD/i,
@@ -215,7 +215,7 @@ const KW={
  '医疗':/病院|クリニック|薬局|歯科/};
 const isFix=x=>!!(x&&(x.rid||x.fix));
 const fixOf=s=>{s=(s||'').normalize('NFKC').trim();if(!s)return false;const h=D.slice().sort((p,q)=>q.id-p.id).find(x=>x.note===s);return !!(h&&h.fix)};
-const guess=s=>{s=(s||'').normalize('NFKC').trim();if(!s)return null;const h=D.slice().sort((p,q)=>q.id-p.id).find(x=>x.note&&(x.note===s||(s.length>=2&&(x.note.includes(s)||s.includes(x.note)))));if(h)return h.cat;for(const c in KW)if(KW[c].test(s)&&CATS.includes(c))return c;return null};
+const guess=s=>{s=(s||'').normalize('NFKC').trim();if(!s)return null;const h=D.slice().sort((p,q)=>q.id-p.id).find(x=>x.note&&x.cat!=='其他'&&(x.note===s||(s.length>=2&&(x.note.includes(s)||s.includes(x.note)))));if(h)return h.cat;const s2=s.replace(/[・･\s\-－]/g,'');for(const c in KW)if((KW[c].test(s)||KW[c].test(s2))&&CATS.includes(c))return c;return null};
 const DEF_PM=[['paypay','PayPay','--pp'],['card','PayPay卡','--cd'],['rakuten','乐天卡','--cr'],['cash','现金','--cs']];
 const PMCOL=['--pp','--cd','--cr','--cs','--c5','--c6','--c7','--c8'];
 let PM=null;
@@ -903,13 +903,16 @@ async function importRakuten(files){
  saveRV();save();
  toast(`${[...ums].sort().map(m=>+m.slice(5)+'月').join('、')}消费(按刷卡日期记账):导入 ${add} 笔,重复 ${dup} 笔${rec?',自动对账 '+rec+' 笔':''}${sus?',疑似重复 '+sus+' 笔待确认':''}${nf?','+nf+' 个文件无法识别':''}${(n=>n?',发现 '+n+' 组疑似重复扣款':'')(dupCharges().length)}${items.length||unc.length||dupCharges().length?'。需确认的项目见下方':''}`);render();
 }
+document.addEventListener('click',e=>{const t=e.target.closest('button[data-uck]');if(!t)return;RV.unc=[];saveRV();toast('好的,不再询问');render()});
+/* 一次性:导入时因为认不出而记成「其他」的,用改进后的规则重新分类 */
+function reguessOnce(){if(UI.rg2)return;let k=0;D.forEach(x=>{if(x.ref&&x.cat==='其他'){const c=guess(x.note);if(c&&c!=='其他'){x.cat=c;k++}}});UI.rg2=1;saveC();if(k){save();setTimeout(()=>toast('已自动给 '+k+' 笔「其他」重新分类'),800)}}
 function rvPanel(){
  const un=RV.unc.map(id=>D.find(x=>x.id===id)).filter(x=>x&&x.cat==='其他'),ig=Object.entries(RV.ign);
  if(!RV.items.length&&!un.length&&!ig.length)return '';
  let h=`<div class='box'><h2>导入后需要确认</h2>`;
  if(ig.length)h+=`<p class='sub' style='margin:0 0 8px'>已自动忽略(不算消费):${ig.map(([k,v])=>esc(k)+' '+v+' 条').join('、')}</p>`;
  if(RV.items.length)h+=`<p class='sub' style='margin:8px 0 0'>以下记录没有导入,请逐条决定。转到自己的账户或投资的,选「忽略」即可。</p>`+RV.items.map((x,i)=>`<div class='row'><div class='rm'><div>${esc(x.note)}</div><span>${x.date.slice(5)} · ${esc(x.kind)} · ${x.dupOf!==undefined?'与手动记录「'+esc((D.find(z=>z.id===x.dupOf)||{}).note||'无备注')+'」同日同金额 '+yen(x.amt):(x.dir==='in'?'收到':'送出')+' '+yen(x.amt)}</span></div><div style='display:flex;flex-direction:column'>${x.dupOf!==undefined?`<button class='del' data-rv='${i}' data-act='same'>是同一笔</button><button class='del' data-rv='${i}' data-act='new'>不是,导入</button>`:`<button class='del' data-rv='${i}' data-act='${x.dir}'>${x.dir==='in'?'记为收入':'记为支出'}</button>`}${x.dupOf!==undefined?'':`<button class='del' data-rv='${i}' data-act='ig'>忽略</button>`}</div></div>`).join('');
- if(un.length)h+=`<p class='sub' style='margin:12px 0 0'>以下支出分类不确定,请选择(之后同名商户会自动沿用):</p>`+un.map(x=>`<div class='row'><div class='rm'><div>${esc(x.note)}</div><span>${x.date.slice(5)} · ${yen(x.amt)}</span></div><select class='f' style='width:96px;padding:8px' data-uc='${x.id}' aria-label='分类'>${CATS.map(c=>`<option${c==='其他'?' selected':''}>${c}</option>`).join('')}</select></div>`).join('');
+ if(un.length)h+=`<div style='display:flex;justify-content:space-between;align-items:center;margin:12px 0 0'><p class='sub' style='margin:0'>分类不确定,请选择(同名商户会一起改):</p><button class='lk' data-uck='1' style='font-size:13px;flex:none'>都保持「其他」</button></div>`+un.map(x=>`<div class='row'><div class='rm'><div>${esc(x.note)}</div><span>${x.date.slice(5)} · ${yen(x.amt)}</span></div><select class='f' style='width:96px;padding:8px' data-uc='${x.id}' aria-label='分类'>${CATS.map(c=>`<option${c==='其他'?' selected':''}>${c}</option>`).join('')}</select></div>`).join('');
  return h+`</div>`;
 }
 function moreView(){if(MP==='s')MP='i';return tabBar('mp',MP,[['i','导入'],['x','导出'],['d','清空']])+moreRaw()}
@@ -989,7 +992,7 @@ document.addEventListener('input',e=>{if(e.target.id==='ce-sd'){const l=$('ce-sd
 document.addEventListener('input',e=>{if(e.target.id==='qs'){Q.t=e.target.value;updList()}});
 document.addEventListener('change',e=>{
  const t=e.target;
- if(t.dataset&&t.dataset.uc){const x=D.find(z=>z.id===+t.dataset.uc);if(x){x.cat=t.value;save();if(t.value!=='其他'){RV.unc=RV.unc.filter(i=>i!==x.id);saveRV()}render()}return}
+ if(t.dataset&&t.dataset.uc){const x=D.find(z=>z.id===+t.dataset.uc);if(x){const n=mkey(x.note);let k=0;D.forEach(z=>{if(z===x||(z.cat==='其他'&&mkey(z.note)===n)){z.cat=t.value;k++}});save();if(t.value!=='其他'){RV.unc=RV.unc.filter(i=>{const z=D.find(y=>y.id===i);return z&&z.cat==='其他'});saveRV()}if(k>1)toast('同名的 '+k+' 笔都改成了 '+t.value);render()}return}
  if(t.dataset&&t.dataset.sel){const id=t.dataset.sel[0]==='i'?t.dataset.sel:+t.dataset.sel;SEL.ids=t.checked?[...SEL.ids,id]:SEL.ids.filter(z=>z!==id);SEL.cf=false;updList();return}
  if(t.dataset.pmn){const k=t.dataset.pmn,n=t.value.trim();if(!n||pmSrc().some(m=>m[0]!==k&&m[1]===n)){toast(n?'已有同名支付方式':'请输入支付方式名称');if($('amt'))PF={amt:$('amt').value,note:$('note').value};render();return}
   if(!PM)PM=DEF_PM.map(m=>m.slice());const m=PM.find(z=>z[0]===k);if(m&&m[1]!==n&&!(LG()==='en'&&ZH2EN[m[1]]===n)){m[1]=n;applyPM();saveC()}if($('amt'))PF={amt:$('amt').value,note:$('note').value};render();return}
@@ -1256,6 +1259,7 @@ document.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault
 /* 邮件链接失效时(比如点了旧的重设密码邮件),Supabase 会带着错误跳回来:提示原因并打开账号页 */
 try{const hq=new URLSearchParams(location.hash.slice(1)),ec=hq.get('error_code')||hq.get('error');
  if(ec){history.replaceState(null,'',location.pathname+'#me/acct');setTimeout(()=>toast(/expired|otp/.test(ec)?'这个邮件链接已失效或已被用过。请在 App 里重新点「忘记密码」,并打开最新的那封邮件':'邮件链接无法使用:'+(hq.get('error_description')||ec)),300)}}catch(e){}
+try{reguessOnce()}catch(e){}
 render();
 i18nStart();i18nRun();
 try{if(localStorage.getItem(AUK)||/access_token=|type=recovery/.test(location.hash))sbBoot().catch(()=>{})}catch(e){}
