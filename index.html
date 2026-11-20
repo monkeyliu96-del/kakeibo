@@ -97,7 +97,7 @@ button.bar:active,button.lg:active{opacity:.6}
 .addrow button{flex:none;border:0;background:var(--ac);color:var(--on);font-weight:700;border-radius:999px;padding:9px 20px;font-size:15px;cursor:pointer}
 .days .dc{flex:1;height:100%;display:flex;align-items:flex-end;border:0;background:none;padding:0;cursor:pointer}.days .dc i{width:100%;flex:none}.days .dc:active i{opacity:.5}
 .dro{min-height:26px;margin-top:6px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px}.dro button{border:0;background:none;color:var(--ac);font-size:14px;cursor:pointer;padding:0}.days .dc.on i{opacity:1;outline:2px solid var(--tx);outline-offset:0}
-.cpg{touch-action:pan-x pan-y;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain;position:relative;-webkit-overflow-scrolling:touch}.cpg::-webkit-scrollbar{display:none}.cpg>.grid4{flex:0 0 100%;scroll-snap-align:start;grid-template-rows:repeat(2,minmax(42px,auto));align-content:start}#ms>.grid4{grid-template-rows:none}#ms .chip{min-height:34px;padding:4px 2px;font-size:14px;border-radius:11px}.rcs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;touch-action:pan-x pan-y;-webkit-overflow-scrolling:touch}.rcs::-webkit-scrollbar{display:none}.pdots{display:flex;justify-content:center;gap:6px;margin-top:8px}.pdots i{width:6px;height:6px;border-radius:50%;background:var(--ln)}.pdots i.on{background:var(--ac)}
+.cpg{touch-action:pan-x pan-y;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain;position:relative;-webkit-overflow-scrolling:touch}.cpg::-webkit-scrollbar{display:none}.cpg>.grid4{flex:0 0 100%;scroll-snap-align:start;grid-template-rows:repeat(2,minmax(42px,auto));align-content:start}#ms>.grid4{grid-template-rows:none}#ms .chip{min-height:34px;padding:4px 2px;font-size:14px;border-radius:11px}.rcs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;touch-action:pan-x pan-y;-webkit-overflow-scrolling:touch}.rcs::-webkit-scrollbar{display:none}.tg{display:inline-block;margin-left:6px;padding:0 6px;border-radius:6px;font-size:11px;line-height:17px;background:var(--sel);color:var(--mu);vertical-align:1px}.tg.bad{background:color-mix(in srgb,var(--pp) 14%,transparent);color:var(--pp)}.tbud{font-size:13px;color:var(--mu);margin:-2px 0 6px}.tbud b{color:var(--in);font-weight:700}.tbud b.over{color:var(--pp)}.pdots{display:flex;justify-content:center;gap:6px;margin-top:8px}.pdots i{width:6px;height:6px;border-radius:50%;background:var(--ln)}.pdots i.on{background:var(--ac)}
 .lrow input.sw{padding:0;appearance:none;-webkit-appearance:none;flex:0 0 46px;width:46px;height:28px;border-radius:14px;background:rgba(120,120,128,.28);position:relative;margin:8px 0;cursor:pointer;transition:background .2s}.lrow input.sw:before{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}.lrow input.sw:checked{background:var(--ac)}.lrow input.sw:checked:before{transform:translateX(18px)}.cord{margin:8px 0 0;padding:0;list-style:none}.cord li{display:flex;align-items:center;gap:10px;background:var(--sf);border:1px solid var(--ln);border-radius:12px;padding:0 6px 0 0;margin-bottom:6px;position:relative}.cord li.drg{z-index:5;box-shadow:0 8px 20px rgba(0,0,0,.18);border-color:var(--ac)}.cord .hd{touch-action:none;cursor:grab;padding:10px 12px;color:var(--mu);font-size:18px;line-height:1;user-select:none;-webkit-user-select:none}.cord .nm{flex:1;font-size:15px}.cord .dl2{background:none;border:0;color:var(--mu);font-size:14px;padding:8px 10px;cursor:pointer}
 .addrow button.dl{background:none;color:var(--pp);padding:9px 14px;font-weight:600}
 .lhead{background:var(--bg);padding:8px max(16px,calc((100% - 488px)/2)) 0;border-bottom:1px solid var(--ln)}.lhead .srch{margin:2px 0}.lhead>.chips{margin:6px 0 2px!important}.lsum{padding:0 0 6px}.lsum .big{font-size:28px;margin:0}.lsum .big small{font-size:14px}.lsum .sub{margin:0 0 2px;font-size:13px}.lsum .pg{margin:4px 0 2px}
@@ -174,7 +174,7 @@ const ZH2EN={
 "收入请在「记一笔」里添加。":"Add income from the \"Add\" tab.","请填写名称和市值":"Enter a name and value","已添加固定支出":"Recurring expense added","已添加分类":"Category added","已添加":"Added","请先输入收入金额":"Enter an income amount first",
 "橙色":"Orange","青绿":"Green","蓝色":"Blue","紫色":"Purple","粉红":"Pink",
 "导出失败,请改用「复制备份内容」":"Export failed. Use \"Copy backup\" instead.","没有找到「取引日」列,请确认是 PayPay 导出的 CSV":"Column 取引日 not found. Make sure this is a PayPay CSV export.","没有找到「出金金額」列":"Column 出金金額 not found.",
-"疑似重复":"Possible duplicate","导入后需要确认":"Needs review after import","导入 PayPay 记录":"Import PayPay records","导入乐天卡明细":"Import Rakuten Card statement","+ 添加投资资产":"+ Add investment","按券商或交易所显示的日元市值填写,点一项可修改。":"Enter the yen market value shown by your broker. Tap an item to edit.","还没有投资资产。":"No investments yet.","起算余额":"Starting balance","起算日以来收入":"Income since start date","起算日以来支出":"Spending since start date","修改起算余额 / 起算日":"Edit starting balance / start date","当前余额 = 起算余额 + 收入 − 支出。收入请在「记一笔」里添加。":"Current balance = starting balance + income − spending. Add income on the Add page.","立即更新":"Update now","汇率已更新":"Rates updated","获取汇率失败,请检查网络后再试":"Couldn't fetch rates. Check your connection and try again.","打开资产页时会自动从网上获取汇率。":"Rates are fetched online when you open Assets. ","也可以手动修改,当天不会被覆盖。总资产按所选币种显示,所有金额都以日元记录。":"You can also edit them; manual values are kept for the day. Totals show in the selected currency; all amounts are stored in yen.","固定支出":"Fixed expense","房租、话费、订阅等":"Rent, phone, subscriptions","由「固定支出」自动生成":"Created from a recurring expense","已取消固定支出标签":"Fixed tag removed","按住左边的 ≡ 上下拖动调整顺序;点「删除」删掉分类(「其他」固定在最后,不能删除)":"Drag ≡ to reorder. Tap Delete to remove a category (Other always stays last and can't be deleted).","选择 PDF 文件":"Choose PDF files","正在读取 PDF…":"Reading PDF…","PDF 解析组件加载失败,请联网后再试":"Could not load the PDF reader. Connect to the internet and try again.","没有识别到明细,请确认是乐天卡 e-NAVI 的请款明细 PDF":"No entries found. Make sure this is a Rakuten e-NAVI statement PDF.","在乐天 e-NAVI 下载「ご利用代金請求明細書」PDF,可以一次选多张卡的文件。按利用日记账,支付方式记为乐天卡;退款需要你确认,PayPay 充值会跳过,重复导入同一份明细会自动忽略。首次使用需要联网加载 PDF 解析组件。":"Download the statement PDF (ご利用代金請求明細書) from Rakuten e-NAVI. You can pick several cards at once. Entries use the purchase date and the Rakuten Card payment method; refunds need your review, PayPay top-ups are skipped, and re-importing the same statement is ignored. The first import needs internet to load the PDF reader.","退款":"Refund","导入备份":"Import backup","导入":"Import","已导入":"Imported",
+"疑似重复":"Possible duplicate","导入后需要确认":"Needs review after import","导入 PayPay 记录":"Import PayPay records","导入乐天卡明细":"Import Rakuten Card statement","待对账":"Unmatched","未对上":"Not on statement","+ 添加投资资产":"+ Add investment","按券商或交易所显示的日元市值填写,点一项可修改。":"Enter the yen market value shown by your broker. Tap an item to edit.","还没有投资资产。":"No investments yet.","起算余额":"Starting balance","起算日以来收入":"Income since start date","起算日以来支出":"Spending since start date","修改起算余额 / 起算日":"Edit starting balance / start date","当前余额 = 起算余额 + 收入 − 支出。收入请在「记一笔」里添加。":"Current balance = starting balance + income − spending. Add income on the Add page.","立即更新":"Update now","汇率已更新":"Rates updated","获取汇率失败,请检查网络后再试":"Couldn't fetch rates. Check your connection and try again.","打开资产页时会自动从网上获取汇率。":"Rates are fetched online when you open Assets. ","也可以手动修改,当天不会被覆盖。总资产按所选币种显示,所有金额都以日元记录。":"You can also edit them; manual values are kept for the day. Totals show in the selected currency; all amounts are stored in yen.","固定支出":"Fixed expense","房租、话费、订阅等":"Rent, phone, subscriptions","由「固定支出」自动生成":"Created from a recurring expense","已取消固定支出标签":"Fixed tag removed","按住左边的 ≡ 上下拖动调整顺序;点「删除」删掉分类(「其他」固定在最后,不能删除)":"Drag ≡ to reorder. Tap Delete to remove a category (Other always stays last and can't be deleted).","选择 PDF 文件":"Choose PDF files","正在读取 PDF…":"Reading PDF…","PDF 解析组件加载失败,请联网后再试":"Could not load the PDF reader. Connect to the internet and try again.","没有识别到明细,请确认是乐天卡 e-NAVI 的请款明细 PDF":"No entries found. Make sure this is a Rakuten e-NAVI statement PDF.","在乐天 e-NAVI 下载「ご利用代金請求明細書」PDF,可以一次选多张卡的文件。按利用日记账,支付方式记为乐天卡;退款需要你确认,PayPay 充值会跳过,重复导入同一份明细会自动忽略。首次使用需要联网加载 PDF 解析组件。":"Download the statement PDF (ご利用代金請求明細書) from Rakuten e-NAVI. You can pick several cards at once. Entries use the purchase date and the Rakuten Card payment method; refunds need your review, PayPay top-ups are skipped, and re-importing the same statement is ignored. The first import needs internet to load the PDF reader.","退款":"Refund","导入备份":"Import backup","导入":"Import","已导入":"Imported",
 "已自动忽略(不算消费):":"Ignored automatically (not spending): ","以下记录没有导入,请逐条决定。转到自己的账户或投资的,选「忽略」即可。":"These were not imported. Decide one by one. For transfers to your own account or investments, choose \"Ignore\".",
 "无备注":"no note","收到":"Received","送出":"Sent","是同一笔":"Same entry","不是,导入":"No, import it","记为收入":"Record as income","记为支出":"Record as spending","忽略":"Ignore",
 "以下支出分类不确定,请选择(之后同名商户会自动沿用):":"Category unsure for these. Pick one (the same merchant will reuse it):",
@@ -204,7 +204,7 @@ const RX=[
  [/^(\d+)日$/,'$1'],
  [/^(\d+)日 (¥.*)$/,'Day $1 $2'],
  [/(\d{4}-\d\d) 收入 (¥[\d,]+) 支出 (¥[\d,]+)/,'$1 income $2, spending $3'],
- [/导入 (\d+) 笔,重复 (\d+) 笔/,'Imported $1, duplicates $2'],[/,疑似重复 (\d+) 笔待确认/,', $1 possible duplicates to review'],[/,(\d+) 个文件无法识别/,', $1 file(s) not recognized'],[/^汇率日期 (\S+)\(欧洲央行参考汇率\),每天自动更新。$/,'Rates as of $1 (ECB reference), updated daily. '],[/^(\S+) 起算$/,'From $1'],[/^已标为固定支出 (\d+) 笔$/,'Marked $1 as fixed'],[/^标为固定支出\((\d+) 笔\)$/,'Mark as fixed ($1)'],[/^取消固定支出标签\((\d+) 笔\)$/,'Remove fixed tag ($1)'],
+ [/导入 (\d+) 笔,重复 (\d+) 笔/,'Imported $1, duplicates $2'],[/,疑似重复 (\d+) 笔待确认/,', $1 possible duplicates to review'],[/,(\d+) 个文件无法识别/,', $1 file(s) not recognized'],[/,自动对账 (\d+) 笔/,', $1 auto-matched'],[/^汇率日期 (\S+)\(欧洲央行参考汇率\),每天自动更新。$/,'Rates as of $1 (ECB reference), updated daily. '],[/^(\S+) 起算$/,'From $1'],[/^已标为固定支出 (\d+) 笔$/,'Marked $1 as fixed'],[/^标为固定支出\((\d+) 笔\)$/,'Mark as fixed ($1)'],[/^取消固定支出标签\((\d+) 笔\)$/,'Remove fixed tag ($1)'],
  [/,?共 (\d+) 笔/g,(m,n)=>', '+n+(n==1?' item':' items')],
  [/(\d+) 笔/g,(m,n)=>n+(n==1?' item':' items')],
  [/共 (\d+) 项,每月自动记账/,(m,n)=>n+' recurring '+(n==1?'item':'items')+', logged automatically each month'],
@@ -308,7 +308,7 @@ function listBody(){
   const dt=new Date(d+'T00:00:00'),wd='日一二三四五六'[dt.getDay()],ei=sum(g[d].filter(x=>x.inc)),eo=sum(g[d].filter(x=>!x.inc));
   h+=`<div class="day"><span>${+d.slice(5,7)}月${+d.slice(8)}日 周${wd}</span><span>${eo?yen(eo):''}${eo&&ei?' · ':''}${ei?'收入 +'+yen(ei):''}</span></div><div class="box">`;
   g[d].forEach(x=>{
-   const inf=x.inc?`<i class="dot" style="background:var(--in)"></i><div class="rm"><div>${esc(x.note||'收入')}</div><span>收入</span></div><div class="amt" style="color:var(--in)">+${yen(x.amt)}</div>`:`<i class="dot" style="background:var(${mcol(x.method)})"></i><div class="rm"><div>${esc(x.note||x.cat)}</div><span>${esc(x.cat)} · ${mname(x.method)}${isFix(x)?' · 固定':''}</span></div><div class="amt">${yen(x.amt)}</div>`;
+   const inf=x.inc?`<i class="dot" style="background:var(--in)"></i><div class="rm"><div>${esc(x.note||'收入')}</div><span>收入</span></div><div class="amt" style="color:var(--in)">+${yen(x.amt)}</div>`:`<i class="dot" style="background:var(${mcol(x.method)})"></i><div class="rm"><div>${esc(x.note||x.cat)}</div><span>${esc(x.cat)} · ${mname(x.method)}${isFix(x)?' · 固定':''}${reconTag(x)}</span></div><div class="amt">${yen(x.amt)}</div>`;
    const btn=x.inc?`<button class="del" data-iedit="${x.id}">编辑</button><button class="del${ip===x.id?' on':''}" data-idel="${x.id}">${ip===x.id?'确认删除':'删除'}</button>`:`<button class="del" data-edit="${x.id}">编辑</button><button class="del${pending===x.id?' on':''}" data-del="${x.id}">${pending===x.id?'确认删除':'删除'}</button>`;
    h+=SEL.on?`<label class="row" style="cursor:pointer"><input type="checkbox" data-sel="${x.key}"${SEL.ids.includes(x.key)?' checked':''} style="width:22px;height:22px;flex:none;accent-color:var(--ac)" aria-label="选择">${inf}</label>`:`<div class="row">${inf}${btn}</div>`});
   h+='</div>';
@@ -338,13 +338,18 @@ function recentNotes(inn){
  for(const x of src){const n=(x.note||'').trim();if(!n||seen.has(n))continue;seen.add(n);out.push(inn?{note:n,amt:x.amt}:{note:n,cat:x.cat,method:x.method});if(out.length>=5)break}
  RC=out;return out;
 }
+function todayBud(){if(!(B.total>0))return '';
+ const td=today(),m=td.slice(0,7),[y,mo,d]=td.split('-').map(Number),dl=new Date(y,mo,0).getDate()-d+1;
+ const spent=sum(D.filter(x=>x.date.startsWith(m))),tdS=sum(D.filter(x=>x.date===td)),rest=B.total-spent,left=(B.total-spent+tdS)/dl-tdS;
+ if(rest<0)return `<div class="tbud">本月已超出预算 <b class="over">${yen(-rest)}</b></div>`;
+ return `<div class="tbud">本月预算还剩 ${yen(rest)} · ${left>=0?`今天还能花 <b>${yen(left)}</b>`:`今天已超 <b class="over">${yen(-left)}</b>`}</div>`}
 function addView(){
  const e=E?D.find(x=>x.id===E):null,ei=EI?A.inc.find(x=>x.id===EI):null,cur=e||ei,inn=F.type==='in',pf=cur?null:PF;
  const av=cur?cur.amt:(pf&&pf.amt)||'',nv=cur?(cur.note||''):(pf&&pf.note)||'',dv=cur?cur.date:today(),rc=recentNotes(inn);
 if(!MT.some(m=>m[0]===F.method))F.method=MT[0][0];
  const hint=(!cur&&hintOn()&&!D.length&&!A.inc.length)?`<div class="box" style="margin:12px 0 24px"><h2>欢迎使用记账本</h2><p class="sub" style="margin:6px 0">记录只保存在这台手机上,不会上传,也不会同步到其他设备。</p><p class="sub" style="margin:6px 0">换手机、删除 App 或清除网站数据前,请先在「更多 → 导出」里备份。</p><p class="sub" style="margin:6px 0 10px">用 Safari 打开后,点「分享 → 添加到主屏幕」,就能像 App 一样使用。</p><button class="go" data-hint="1" style="margin:0;padding:11px">知道了</button></div>`:'';
  const bg=bkGet(),bkb=(!cur&&!hint&&bkDue())?`<div class="box" style="margin:12px 0 24px"><h2>该备份了</h2><p class="sub" style="margin:6px 0 10px">${bg.last?'上次备份是 '+bg.last+'(已过 '+dayDiff(bg.last,today())+' 天)。':'你还没有备份过数据。'}数据只保存在这台手机上,建议现在备份一份。选「存储到“文件”」→ iCloud Drive 即可同步到云端。</p><div style="display:flex;gap:8px"><button class="go" data-bkn="1" style="margin:0;padding:10px;flex:1">立即备份</button><button class="go alt" data-bkl="1" style="margin:0;padding:10px;flex:1">稍后提醒</button></div></div>`:'';
- return hint+bkb+`<div class="strip"><input id="amt" class="amtin" inputmode="numeric" pattern="[0-9]*" placeholder="金额(日元)" autocomplete="off" aria-label="金额" value="${esc(av)}"></div>
+ return hint+bkb+`<div class="strip"><input id="amt" class="amtin" inputmode="numeric" pattern="[0-9]*" placeholder="金额(日元)" autocomplete="off" aria-label="金额" value="${esc(av)}">${inn||cur?'':todayBud()}</div>
  ${inn?'':`<div class="sec"><div class="sech"><span>支付方式</span><button data-epm="1">${EPM?'完成':'添加/编辑'}</button></div><div class="cpg" id="ms">${Array.from({length:Math.ceil(MT.length/8)},(_,p)=>`<div class="grid4">${MT.slice(p*8,p*8+8).map(m=>`<button class="chip" data-mt="${m[0]}" aria-pressed="${F.method===m[0]}">${m[1]}</button>`).join('')}</div>`).join('')}</div>${MT.length>8?`<div class="pdots" id="msd">${Array.from({length:Math.ceil(MT.length/8)},(_,p)=>`<i${p?'':' class="on"'}></i>`).join('')}</div>`:''}${EPM?`<p class="sub" style="margin:12px 0 0">改完名称后点别处即可保存。有记录在使用的支付方式不能删除。</p>${pmSrc().map(m=>`<div class="addrow" style="margin-top:8px"><input data-pmn="${esc(m[0])}" value="${esc(LG()==='en'&&ZH2EN[m[1]]?ZH2EN[m[1]]:m[1])}" maxlength="12" aria-label="支付方式"><button class="dl" data-pmdel="${esc(m[0])}">删除</button></div>`).join('')}<div class="addrow" style="margin-top:8px"><input id="pmnew" placeholder="新支付方式名称(最多 12 个字)" maxlength="12" autocomplete="off"><button id="pmadd">添加</button></div>`:''}</div>
  <div class="sec"><div class="sech"><span>分类</span><button data-ecat="1">${ECAT?'完成':'添加/编辑'}</button></div><div class="cpg" id="cs">${Array.from({length:Math.ceil(CATS.length/8)},(_,p)=>`<div class="grid4">${CATS.slice(p*8,p*8+8).map(c=>`<button class="chip" data-ct="${c}" aria-pressed="${F.cat===c}">${c}</button>`).join('')}</div>`).join('')}</div>${CATS.length>8?`<div class="pdots" id="csd">${Array.from({length:Math.ceil(CATS.length/8)},(_,p)=>`<i${p?'':' class="on"'}></i>`).join('')}</div>`:''}${ECAT?`<div class="addrow"><input id="ccn" placeholder="新分类名称(最多 8 个字)" maxlength="8" autocomplete="off"><button id="ccadd">添加</button></div><p class="sub" style="margin:12px 0 0">按住左边的 ≡ 上下拖动调整顺序;点「删除」删掉分类(「其他」固定在最后,不能删除)</p><ul class="cord" id="cord">${CATS.filter(c=>c!=='其他').map(c=>`<li data-c="${esc(c)}"><span class="hd" aria-hidden="true">≡</span><span class="nm">${esc(c)}</span><button class="dl2" data-ccdel="${esc(c)}"${CDP===c?' style="color:var(--pp);font-weight:600"':''}>${CDP===c?'确认删除':'删除'}</button></li>`).join('')}</ul>`:''}</div>`}
  <div class="lrow"><label for="note">备注</label><input id="note" placeholder="${inn?'工资、奖金、副业':'商户或品名'}" autocomplete="off" value="${esc(nv)}"></div>
@@ -610,12 +615,22 @@ function applyRec(){
 }
 applyRec();
 const parseCSV=t=>{const rows=[];let r=[],c='',q=false;for(let i=0;i<t.length;i++){const ch=t[i];if(q){if(ch==='"'){if(t[i+1]==='"'){c+='"';i++}else q=false}else c+=ch}else if(ch==='"')q=true;else if(ch===','){r.push(c);c=''}else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&t[i+1]==='\n')i++;r.push(c);c='';if(r.some(x=>x!==''))rows.push(r);r=[]}else c+=ch}r.push(c);if(r.some(x=>x!==''))rows.push(r);return rows};
+/* 导入时和手动记录对账:同日+同金额+同支付方式 → 自动合并;同日同金额(方式不同)或相差一天 → 让你确认 */
+const dd=(a,b)=>Math.abs((new Date(a)-new Date(b))/864e5);
+function matchManual(date,amt,method,claimed){const pool=D.filter(z=>!z.ref&&!z.rid&&z.amt===amt&&!claimed.has(z.id));
+ const ex=pool.find(z=>z.date===date&&z.method===method);if(ex)return {auto:ex};
+ const nr=pool.find(z=>z.date===date)||pool.find(z=>z.method===method&&dd(z.date,date)<=1);return nr?{ask:nr}:null}
+function linkManual(z,ref,note){z.ref=ref;if(!z.note)z.note=note}
+const IMPM=['paypay','card','rakuten'];
+function reconTag(x){if(x.ref||x.rid||!IMPM.includes(x.method))return '';
+ const last=D.reduce((m,z)=>z.ref&&z.method===x.method&&z.date>m?z.date:m,'');
+ return last&&x.date<=last?'<span class="tg bad">未对上</span>':'<span class="tg">待对账</span>'}
 function importPay(t){
  const rows=parseCSV(t.replace(/^﻿/,'')),hi=rows.findIndex(r=>r.some(x=>x.includes('取引日')));
  if(hi<0){toast('没有找到「取引日」列,请确认是 PayPay 导出的 CSV');return}
  const H=rows[hi],col=n=>H.findIndex(x=>x.includes(n)),di=col('取引日'),oi=col('出金金額'),ii=col('入金金額'),ci=col('取引内容'),mi=col('取引先'),ti=col('取引方法'),ni=col('取引番号');
  if(oi<0){toast('没有找到「出金金額」列');return}
- let add=0,dup=0,sus=0;const claimed=new Set(),items=[],ign={},unc=[],yn=v=>num((v||'').replace(/[,円]/g,''));
+ let add=0,dup=0,sus=0,rec=0;const claimed=new Set(),items=[],ign={},unc=[],yn=v=>num((v||'').replace(/[,円]/g,''));
  rows.slice(hi+1).forEach(r=>{
   const kind=ci>=0?(r[ci]||'').trim():'',out=yn(r[oi]),inn=ii>=0?yn(r[ii]):NaN;
   const m=(r[di]||'').match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);if(!m)return;
@@ -624,8 +639,9 @@ function importPay(t){
   if(/支払い/.test(kind)&&out>0){
    if(D.some(x=>x.ref===ref)){dup++;return}
    const pm=ti>=0?r[ti]||'':'',cat=guess(note)||'其他',method=vm(/クレジット|カード/.test(pm)?'card':'paypay'),ra=Math.round(out);
-   const cand=D.find(x=>!x.ref&&x.date===date&&x.amt===ra&&!claimed.has(x.id));
-   if(cand){claimed.add(cand.id);items.push({ref,date,amt:ra,dir:'out',kind:'疑似重复',note,dupOf:cand.id,method,cat});sus++;return}
+   const mm=matchManual(date,ra,method,claimed);
+   if(mm&&mm.auto){claimed.add(mm.auto.id);linkManual(mm.auto,ref,note);rec++;return}
+   if(mm){const cand=mm.ask;claimed.add(cand.id);items.push({ref,date,amt:ra,dir:'out',kind:'疑似重复',note,dupOf:cand.id,method,cat});sus++;return}
    const id=nid();D.push({id,amt:ra,method,cat,note,date,ref,...(fixOf(note)?{fix:true}:{})});add++;if(cat==='其他')unc.push(id);return}
   if(/チャージ|投資|ポイント/.test(kind)||!(amt>0)){const k=kind||'其他';ign[k]=(ign[k]||0)+1;return}
   if(D.some(x=>x.ref===ref)||A.inc.some(x=>x.ref===ref)||RV.dis.includes(ref)||items.some(x=>x.ref===ref))return;
@@ -634,7 +650,7 @@ function importPay(t){
  RV.ign=ign;
  RV.unc=[...RV.unc.filter(id=>D.some(x=>x.id===id&&x.cat==='其他')),...unc];
  saveRV();save();
- toast(`导入 ${add} 笔,重复 ${dup} 笔${sus?',疑似重复 '+sus+' 笔待确认':''}。需确认的项目见下方`);render();
+ toast(`导入 ${add} 笔,重复 ${dup} 笔${rec?',自动对账 '+rec+' 笔':''}${sus?',疑似重复 '+sus+' 笔待确认':''}。需确认的项目见下方`);render();
 }
 /* ===== 乐天卡 PDF 明细导入 ===== */
 const PDFJS='https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/';
@@ -659,7 +675,7 @@ function rkParse(pages){
 async function importRakuten(files){
  toast('正在读取 PDF…');
  let m;try{m=await loadPdfjs()}catch(e){toast('PDF 解析组件加载失败,请联网后再试');return}
- let add=0,dup=0,sus=0,nf=0;const claimed=new Set(),items=[],ign={},unc=[];
+ let add=0,dup=0,sus=0,nf=0,rec=0;const claimed=new Set(),items=[],ign={},unc=[];
  for(const f of files){
   let r;
   try{const doc=await m.getDocument({data:new Uint8Array(await f.arrayBuffer()),cMapUrl:PDFJS+'cmaps/',cMapPacked:true}).promise;const pages=[];
@@ -673,7 +689,9 @@ async function importRakuten(files){
    if(D.some(z=>z.ref===ref)){dup++;return}
    if(x.neg){if(!A.inc.some(z=>z.ref===ref)&&!RV.dis.includes(ref))items.push({ref,date:x.date,amt:x.amt,dir:'in',kind:'退款',note:x.note,method:vm('rakuten')});return}
    const cat=guess(x.note)||'其他',method=vm('rakuten');
-   const cand=D.find(z=>!z.ref&&z.date===x.date&&z.amt===x.amt&&!claimed.has(z.id));
+   const mm=matchManual(x.date,x.amt,method,claimed);
+   if(mm&&mm.auto){claimed.add(mm.auto.id);linkManual(mm.auto,ref,x.note);rec++;return}
+   const cand=mm&&mm.ask;
    if(cand){if(!RV.dis.includes(ref)){claimed.add(cand.id);items.push({ref,date:x.date,amt:x.amt,dir:'out',kind:'疑似重复',note:x.note,dupOf:cand.id,method,cat});sus++}return}
    const id=nid();D.push({id,amt:x.amt,method,cat,note:x.note,date:x.date,ref,...(fixOf(x.note)?{fix:true}:{})});add++;if(cat==='其他')unc.push(id)});
  }
@@ -682,7 +700,7 @@ async function importRakuten(files){
  if(Object.keys(ign).length)RV.ign=ign;
  RV.unc=[...RV.unc.filter(id=>D.some(x=>x.id===id&&x.cat==='其他')),...unc];
  saveRV();save();
- toast(`导入 ${add} 笔,重复 ${dup} 笔${sus?',疑似重复 '+sus+' 笔待确认':''}${nf?','+nf+' 个文件无法识别':''}${items.length||unc.length?'。需确认的项目见下方':''}`);render();
+ toast(`导入 ${add} 笔,重复 ${dup} 笔${rec?',自动对账 '+rec+' 笔':''}${sus?',疑似重复 '+sus+' 笔待确认':''}${nf?','+nf+' 个文件无法识别':''}${items.length||unc.length?'。需确认的项目见下方':''}`);render();
 }
 function rvPanel(){
  const un=RV.unc.map(id=>D.find(x=>x.id===id)).filter(x=>x&&x.cat==='其他'),ig=Object.entries(RV.ign);
