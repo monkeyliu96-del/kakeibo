@@ -371,7 +371,7 @@ function statsRaw(){
  const bc={};a.forEach(x=>bc[x.cat]=(bc[x.cat]||0)+x.amt);
  const mxio=Math.max(it,tot,1),pi=sum(A.inc.filter(x=>x.date.startsWith(prevM(ym))));
  const src={};inc.forEach(x=>{const k=x.note||'收入';src[k]=(src[k]||0)+x.amt});
- h+=`<div class="box" data-g="o"><h2>收支</h2><div class="bar"><span class="n">收入</span><span class="t"><i style="width:${it/mxio*100}%"></i></span><span class="v">+${yen(it)}</span></div><div class="bar"><span class="n">支出</span><span class="t"><i style="width:${tot/mxio*100}%;background:var(--pp)"></i></span><span class="v">${yen(tot)}</span></div><p class="sub" style="margin:8px 0 0">结余 <b style="color:var(${it>=tot?'--in':'--pp'})">${sgn(it-tot)}</b>${it>0?' · 储蓄率 '+Math.round((it-tot)/it*100)+'%':''}${pi?'<br>上月收入 '+yen(pi)+',本月'+(it>=pi?'多':'少')+' '+yen(Math.abs(it-pi)):''}${a.length?'<br>日均 '+yen(tot/elapsed)+' · 单笔最高 '+yen(Math.max(...a.map(x=>x.amt))):''}</p>`+(inc.length?`<p class="sub" style="margin:12px 0 2px">收入来源</p>`+Object.entries(src).sort((p,q)=>q[1]-p[1]).map(([k,v])=>`<button class="bar" data-si="${esc(k)}"><span class="n" style="width:auto;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(k)}</span><span style="flex:1"></span><span class="v">+${yen(v)}</span></button>`).join(''):'')+`</div>`;
+ h+=`<div class="box" data-g="o"><h2>收支</h2><div class="bar"><span class="n">收入</span><span class="t"><i style="width:${it/mxio*100}%"></i></span><span class="v">+${yen(it)}</span></div><div class="bar"><span class="n">支出</span><span class="t"><i style="width:${tot/mxio*100}%;background:var(--pp)"></i></span><span class="v">${yen(tot)}</span></div><p class="sub" style="margin:8px 0 0">结余 <b style="color:var(${it>=tot?'--in':'--pp'})">${sgn(it-tot)}</b>${pi?'<br>上月收入 '+yen(pi)+',本月'+(it>=pi?'多':'少')+' '+yen(Math.abs(it-pi)):''}${a.length?'<br>日均 '+yen(tot/elapsed)+' · 单笔最高 '+yen(Math.max(...a.map(x=>x.amt))):''}</p>`+`</div>`;
  const bk=Object.keys(B.cats);
  if(B.total>0||bk.length){
   const row=(nm,u,l)=>`<div style="margin:10px 0 0"><div style="display:flex;justify-content:space-between;font-size:14px"><span>${esc(nm)}</span><span style="color:var(${u>l?'--pp':'--mu'})">${yen(u)} / ${yen(l)}${u>l?' · 超出 '+yen(u-l):''}</span></div><div class="pg"><i style="width:${Math.min(100,u/l*100)}%;background:var(${u>l?'--pp':'--ac'})"></i></div></div>`;
@@ -766,16 +766,16 @@ document.addEventListener('change',e=>{
   const cs=$('cs');if(cs){const p=document.createElement('div');p.innerHTML=addView();const n=p.querySelector('#cs');if(n)cs.innerHTML=n.innerHTML}};
  document.addEventListener('pointerup',end);document.addEventListener('pointercancel',end);
 })();
-/* ===== 左右滑动:先切顶部标签,到头后切换底部导航页面 ===== */
+/* ===== 内容区左右滑动切换顶部标签;底部导航栏左右滑动切换页面 ===== */
 (()=>{let s=null;const VIEWS=['add','list','stats','assets','more'];
  const curView=()=>{const v=hv().slice(1);return VIEWS.includes(v)?v:'list'};
  const tabs=()=>{const h=document.querySelector('#app .fhead');if(!h)return null;const b=[...h.querySelectorAll('button.chip')].filter(x=>x.dataset.st||x.dataset.at||x.dataset.mp);return b.length>1?b:null};
  const hscroll=el=>{for(;el&&el.id!=='sc';el=el.parentElement){if(el.scrollWidth>el.clientWidth+2){const o=getComputedStyle(el).overflowX;if(o==='auto'||o==='scroll')return true}}return false};
- const target=(c,dir)=>{if(c.b){const ni=c.i+dir;if(ni>=0&&ni<c.b.length)return {tab:ni}}const vi=VIEWS.indexOf(c.v)+dir;return vi>=0&&vi<VIEWS.length?{view:VIEWS[vi]}:null};
+ const target=(c,dir)=>{if(c.b){const ni=c.i+dir;if(ni>=0&&ni<c.b.length)return {tab:ni}}return null};
  const slideIn=dir=>{const n=$('sc');if(!n)return;const w=n.clientWidth;n.scrollTop=0;n.style.transition='none';n.style.transform=`translateX(${dir*w*.35}px)`;n.style.opacity='0';n.offsetWidth;
   n.style.transition='transform .2s ease-out,opacity .2s ease-out';n.style.transform='';n.style.opacity=''};
  document.addEventListener('touchstart',e=>{s=null;if(e.touches.length!==1)return;const sc=$('sc');if(!sc||!sc.contains(e.target))return;if(E||EI||SEL.on)return;
-  if(e.target.closest('input,select,textarea,.hd,.cord')||hscroll(e.target))return;const t=e.touches[0],b=tabs();
+  if(e.target.closest('input,select,textarea,.hd,.cord')||hscroll(e.target))return;const t=e.touches[0],b=tabs();if(!b)return;
   s={x:t.clientX,y:t.clientY,t:Date.now(),b,i:b?b.findIndex(x=>x.getAttribute('aria-pressed')==='true'):0,v:curView(),m:0,sc,dx:0}},{passive:true});
  document.addEventListener('touchmove',e=>{if(!s)return;if(e.touches.length!==1){s.sc.style.transform='';s=null;return}const t=e.touches[0],dx=t.clientX-s.x,dy=t.clientY-s.y;
   if(!s.m){if(Math.abs(dx)<8&&Math.abs(dy)<8)return;s.m=Math.abs(dx)>Math.abs(dy)*1.2?1:2;if(s.m===1)s.sc.style.transition='none'}
@@ -789,6 +789,13 @@ document.addEventListener('change',e=>{
    window.addEventListener('hashchange',()=>{if(dir<0){const b=tabs();if(b)b[b.length-1].click()}slideIn(dir)},{once:true});
    location.hash='#'+tg.view},150)};
  document.addEventListener('touchend',fin);document.addEventListener('touchcancel',fin);
+ let n=null;const nav=document.querySelector('nav');
+ nav.addEventListener('touchstart',e=>{n=e.touches.length===1?{x:e.touches[0].clientX,y:e.touches[0].clientY,t:Date.now(),dx:0}:null},{passive:true});
+ nav.addEventListener('touchmove',e=>{if(!n)return;const dx=e.touches[0].clientX-n.x,dy=e.touches[0].clientY-n.y;n.dx=dx;if(Math.abs(dx)>10&&Math.abs(dx)>Math.abs(dy))e.preventDefault()},{passive:false});
+ nav.addEventListener('touchend',e=>{if(!n)return;const c=n;n=null;if(Math.abs(c.dx)<40)return;e.preventDefault();
+  const dir=c.dx<0?1:-1,vi=VIEWS.indexOf(curView())+dir;if(vi<0||vi>=VIEWS.length)return;
+  const sc=$('sc');if(sc){sc.style.transition='transform .14s ease-in,opacity .14s';sc.style.transform=`translateX(${-dir*sc.clientWidth*.3}px)`;sc.style.opacity='0'}
+  setTimeout(()=>{window.addEventListener('hashchange',()=>slideIn(dir),{once:true});location.hash='#'+VIEWS[vi]},130)});
 })();
 /* ===== 禁止双指缩放 / 双击缩放 ===== */
 ['gesturestart','gesturechange','gestureend'].forEach(t=>document.addEventListener(t,e=>e.preventDefault(),{passive:false}));
