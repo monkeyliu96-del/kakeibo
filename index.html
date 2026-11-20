@@ -1117,6 +1117,9 @@ document.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)r
 document.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault()},{passive:false});
 (function(){try{const q=location.hash.split('?')[1]||location.search.slice(1),p=new URLSearchParams(q);
  if(p.get('a')||p.get('n')){PF={amt:(p.get('a')||'').replace(/[^0-9]/g,''),note:p.get('n')||''};const m=p.get('m');if(MT.some(x=>x[0]===m))F.method=m;if(p.get('t')==='in')F.type='in';const c=guess(PF.note);if(c)F.cat=c}}catch(e){}})();
+/* 邮件链接失效时(比如点了旧的重设密码邮件),Supabase 会带着错误跳回来:提示原因并打开账号页 */
+try{const hq=new URLSearchParams(location.hash.slice(1)),ec=hq.get('error_code')||hq.get('error');
+ if(ec){history.replaceState(null,'',location.pathname+'#me/acct');setTimeout(()=>toast(/expired|otp/.test(ec)?'这个邮件链接已失效或已被用过。请在 App 里重新点「忘记密码」,并打开最新的那封邮件':'邮件链接无法使用:'+(hq.get('error_description')||ec)),300)}}catch(e){}
 render();
 i18nStart();i18nRun();
 try{if(localStorage.getItem(AUK)||/access_token=|type=recovery/.test(location.hash))sbBoot().catch(()=>{})}catch(e){}
