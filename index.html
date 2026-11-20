@@ -178,6 +178,7 @@ select.f,.fr select{-webkit-appearance:none;appearance:none;background-image:url
 #sheet .shh{flex:none;display:flex;align-items:center;justify-content:space-between;padding:14px 18px 8px;font-size:16px}#sheet .shh:before{content:'';position:absolute;top:6px;left:50%;width:36px;height:5px;margin-left:-18px;border-radius:3px;background:var(--ln)}
 #sheet .shb{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:4px 16px calc(14px + env(safe-area-inset-bottom,0px));-webkit-overflow-scrolling:touch}
 #sheet #cancel{display:none!important}
+.dupb{display:flex;align-items:center;gap:10px;width:100%;margin:2px 0 10px;padding:11px 14px;border:0;border-radius:16px;background:color-mix(in srgb,var(--pp) 12%,var(--sf));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--pp) 35%,transparent);color:var(--pp);font:inherit;text-align:left;cursor:pointer}.dupb svg{flex:none;width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}.dupb span{flex:1;min-width:0;font-weight:700;font-size:15px}.dupb small{display:block;font-weight:400;font-size:12.5px;opacity:.85}.dupb b{flex:none;font-size:14px}.fhead .dupb{width:calc(100% - 32px);max-width:488px;margin:0 auto 8px;display:flex}
 .dupc{border-color:color-mix(in srgb,var(--pp) 40%,var(--ln));background:color-mix(in srgb,var(--pp) 5%,var(--sf))}.dupc h2{display:flex;align-items:center;gap:6px;color:var(--pp)}.dupc h2 svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}.dupg{border-top:1px solid var(--ln);padding:10px 0 2px}.dupt{display:flex;justify-content:space-between;gap:8px}.dupt b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dupt span{font-weight:700;color:var(--pp);flex:none}.dupg .btns .go{padding:9px;font-size:14px}
 .tg{display:inline-block;margin-left:6px;padding:0 6px;border-radius:6px;font-size:11px;line-height:17px;background:var(--sel);color:var(--mu);vertical-align:1px}.tg.bad{background:color-mix(in srgb,var(--pp) 14%,transparent);color:var(--pp)}.tbud{font-size:13px;color:var(--mu);margin:-2px 0 6px}.tbud b{color:var(--in);font-weight:700}.tbud b.over{color:var(--pp)}.pdots{display:flex;justify-content:center;gap:6px;margin-top:8px}.pdots i{width:6px;height:6px;border-radius:50%;background:var(--ln)}.pdots i.on{background:var(--ac)}
 .lrow input.sw{padding:0;appearance:none;-webkit-appearance:none;flex:0 0 46px;width:46px;height:28px;border-radius:14px;background:rgba(120,120,128,.28);position:relative;margin:8px 0;cursor:pointer;transition:background .2s}.lrow input.sw:before{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}.lrow input.sw:checked{background:var(--ac)}.lrow input.sw:checked:before{transform:translateX(18px)}.cord{margin:8px 0 0;padding:0;list-style:none}.cord li{display:flex;align-items:center;gap:10px;background:var(--sf);border:1px solid var(--ln);border-radius:12px;padding:0 6px 0 0;margin-bottom:6px;position:relative}.cord li.drg{z-index:5;box-shadow:0 8px 20px rgba(0,0,0,.18);border-color:var(--ac)}.cord .hd{touch-action:none;cursor:grab;padding:10px 12px;color:var(--mu);font-size:18px;line-height:1;user-select:none;-webkit-user-select:none}.cord .nm{flex:1;font-size:15px}.cord .dl2{background:none;border:0;color:var(--mu);font-size:14px;padding:8px 10px;cursor:pointer}
@@ -405,7 +406,7 @@ function listBody(){
    const inf=x.inc?`<i class="dot" style="background:var(--in)"></i><div class="rm"><div>${esc(x.note||'收入')}</div><span>收入</span></div><div class="amt" style="color:var(--in)">+${yen(x.amt)}</div>`:`<i class="dot" style="background:var(${mcol(x.method)})"></i><div class="rm"><div>${esc(x.note||x.cat)}</div><span>${esc(x.cat)} · ${mname(x.method)}${isFix(x)?' · 固定':''}${reconTag(x)}</span></div><div class="amt">${yen(x.amt)}</div>`;
    const btn=x.inc?`<button class="del" data-iedit="${x.id}">编辑</button><button class="del${ip===x.id?' on':''}" data-idel="${x.id}">${ip===x.id?'确认删除':'删除'}</button>`:`<button class="del" data-edit="${x.id}">编辑</button><button class="del${pending===x.id?' on':''}" data-del="${x.id}">${pending===x.id?'确认删除':'删除'}</button>`;
    h+=SEL.on?`<label class="row" style="cursor:pointer"><input type="checkbox" data-sel="${x.key}"${SEL.ids.includes(x.key)?' checked':''} style="width:22px;height:22px;flex:none;accent-color:var(--ac)" aria-label="选择">${inf}</label>`:`<div class="row">${inf}${btn}</div>`});
-  h+='</div>';if(!fl&&!SEL.on&&LV!=='cal')h+=dupCard(dupCharges(ym));
+  h+='</div>';
  }
  return h;
 }
@@ -524,7 +525,8 @@ function render(){
  const v0=hv().slice(1),v=v0==='more'?'me':v0.split('/')[0];MESUB=v==='me'?(v0.split('/')[1]||''):'';
  const view=['add','stats','assets','me'].includes(v)?v:'list';if(view!=='me')window.__back=view;if(MESUB==='ui')OPEN.ui=true;if(MESUB==='bud')OPEN.bud=true;if(MESUB==='rs')RSO=true;
  $('band').innerHTML='<div class="bi">'+bandHTML(view)+'</div>'+(view==='me'?'':`<button class="avb" data-me="1" aria-label="账号">${avHTML()}</button>`);document.documentElement.style.setProperty('--bh',$('band').offsetHeight+'px');const lv=view+'/'+MESUB,os=$('sc'),st=(os&&window.__lv===lv)?os.scrollTop:0;window.__lv=lv;
- const html=view==='me'?meView():view==='add'?addView():view==='stats'?statsView():view==='assets'?assetsView():view==='more'?moreView():listView(),hi=html.indexOf('<!--H-->');
+ const dg=(view===(UI.home||'add')&&(view==='add'||view==='list')&&!E&&!EI)?dupCharges():[],ban=dg.length?`<button class="dupb" data-sub="dup"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg><span>发现 ${dg.length} 组疑似重复扣款<small>可能多扣了 ${yen(dg.reduce((q,o)=>q+o.amt*(o.xs.length-1),0))}</small></span><b>查看 ›</b></button>`:'';
+ const html0=view==='me'?meView():view==='add'?addView():view==='stats'?statsView():view==='assets'?assetsView():view==='more'?moreView():listView(),h0i=html0.indexOf('<!--H-->'),html=!ban?html0:h0i>=0?html0.slice(0,h0i+8)+ban+html0.slice(h0i+8):ban+html0,hi=html.indexOf('<!--H-->');
  $('app').innerHTML=(hi>=0?'<div class="fhead">'+html.slice(0,hi)+'</div>':'')+'<div id="sc">'+(hi>=0?html.slice(hi+8):html)+'</div>';if(st)$('sc').scrollTop=st;['cs','ms'].forEach(id=>{const cs=$(id),b=cs&&cs.querySelector('[aria-pressed="true"]');if(b&&b.parentElement.offsetLeft)cs.scrollLeft=b.parentElement.offsetLeft});
  ['list','add','stats','assets'].forEach(k=>$('n-'+k).classList.toggle('on',k===view));
  if(view==='add'&&!E&&!EI){F.manual=false}
@@ -851,7 +853,7 @@ function importPay(t){
  RV.ign=ign;
  RV.unc=[...RV.unc.filter(id=>D.some(x=>x.id===id&&x.cat==='其他')),...unc];
  saveRV();save();
- const dg=dupCharges().length;toast(`导入 ${add} 笔,重复 ${dup} 笔${rec?',自动对账 '+rec+' 笔':''}${sus?',疑似重复 '+sus+' 笔待确认':''}${dg?',发现 '+dg+' 组疑似重复扣款':''}。需确认的项目见下方`);render();
+ const dg=dupCharges().length;toast(`导入 ${add} 笔,重复 ${dup} 笔${rec?',自动对账 '+rec+' 笔':''}${sus?',疑似重复 '+sus+' 笔待确认':''}${dg?',发现 '+dg+' 组疑似重复扣款,首页顶部可查看':''}。需确认的项目见下方`);render();
 }
 /* ===== 乐天卡 PDF 明细导入 ===== */
 const PDFJS='https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/';
@@ -901,7 +903,7 @@ async function importRakuten(files){
  if(Object.keys(ign).length)RV.ign=ign;
  RV.unc=[...RV.unc.filter(id=>D.some(x=>x.id===id&&x.cat==='其他')),...unc];
  saveRV();save();
- toast(`${[...ums].sort().map(m=>+m.slice(5)+'月').join('、')}消费(按刷卡日期记账):导入 ${add} 笔,重复 ${dup} 笔${rec?',自动对账 '+rec+' 笔':''}${sus?',疑似重复 '+sus+' 笔待确认':''}${nf?','+nf+' 个文件无法识别':''}${(n=>n?',发现 '+n+' 组疑似重复扣款':'')(dupCharges().length)}${items.length||unc.length||dupCharges().length?'。需确认的项目见下方':''}`);render();
+ toast(`${[...ums].sort().map(m=>+m.slice(5)+'月').join('、')}消费(按刷卡日期记账):导入 ${add} 笔,重复 ${dup} 笔${rec?',自动对账 '+rec+' 笔':''}${sus?',疑似重复 '+sus+' 笔待确认':''}${nf?','+nf+' 个文件无法识别':''}${(n=>n?',发现 '+n+' 组疑似重复扣款,首页顶部可查看':'')(dupCharges().length)}${items.length||unc.length||dupCharges().length?'。需确认的项目见下方':''}`);render();
 }
 document.addEventListener('click',e=>{const t=e.target.closest('button[data-uck]');if(!t)return;RV.unc=[];saveRV();toast('好的,不再询问');render()});
 /* 一次性:导入时因为认不出而记成「其他」的,用改进后的规则重新分类 */
@@ -935,7 +937,7 @@ function moreRaw(){
  h+=`<div class='box' data-k='rk' data-g='i'><h2 class='sh'>导入乐天卡明细</h2><p class='sub' style='margin:0'>在乐天 e-NAVI 下载「ご利用代金請求明細書」PDF,可以一次选多张卡的文件。按利用日记账,支付方式记为乐天卡;退款需要你确认,PayPay 充值会跳过,重复导入同一份明细会自动忽略。首次使用需要联网加载 PDF 解析组件。</p><label for='rkf'>选择 PDF 文件</label><input id='rkf' type='file' accept='.pdf,application/pdf' multiple class='f'></div>`;
  h+=`<div class='box' data-k='clr' data-g='d'><h2 class='sh'>清空消费记录</h2><p class='sub' style='margin:0'>删除全部消费记录(所有月份)。收入、资产、预算和固定支出不受影响。建议先导出备份。</p><button class='go alt' id='clr' style='color:var(--pp)'>${clrc?'确认清空 '+D.length+' 笔消费':'清空所有消费记录'}</button></div>`;
  h+=`<div class='box' data-k='wipe' data-g='d'><h2 class='sh'>清空全部数据</h2><p class='sub' style='margin:0'>删除所有消费、收入、资产、预算和固定支出,不能撤销。主题、语言、自定义分类和支付方式会保留。请先导出备份。</p><button class='go alt' id='wipe-bk'>导出备份文件</button><input id='wipein' class='f' style='margin-top:10px' placeholder='输入「${LG()==='en'?'DELETE':'清空'}」确认' autocomplete='off' autocapitalize='off'><button class='go alt' id='wipe' style='color:var(--pp)'>清空全部数据</button></div>`;
- h+='<div data-k="rv" data-g="i">'+dupCard(dupCharges())+rvPanel()+'</div>';
+ h+='<div data-k="rv" data-g="i">'+rvPanel()+'</div>';
  h+=`<div class='box' data-k='bk' data-g='x'><h2 class='sh'>备份</h2><p class='sub' style='margin:0 0 6px'>${bkGet().last?'上次备份:'+bkGet().last:'还没有备份过'}</p><p class='sub' style='margin:0'>导出时选「存储到“文件”」→ iCloud Drive,即可同步到云端。</p><button class='go alt' id='bk-exp'>导出备份文件</button><button class='go alt' id='bk-copy'>复制备份内容(换设备用)</button></div>`;
  h+=`<details class='box' data-k='rs' data-g='x' id='rsd'${RSO?' open':''}><summary style='font-weight:700;cursor:pointer'>恢复备份</summary><p class='sub' style='margin:6px 0 0'>恢复会覆盖现有数据。</p><label for='bkf'>选择备份文件</label><input id='bkf' type='file' accept='.json,.txt,application/json' class='f'><label for='bkt'>或粘贴备份内容</label><textarea id='bkt' class='f'></textarea><button class='go alt' id='bk-imp'>导入备份</button></details>`;
  h+=`<div class='box' data-k='csv' data-g='x'><h2 class='sh'>导出表格(CSV)</h2><p class='sub' style='margin:4px 0 0'>把消费记录导出成 CSV 表格,可以用 Excel 或 Numbers 打开。</p><div style='display:flex;gap:8px;margin-top:10px'><button class='go alt' id='expm' style='flex:1;padding:10px 4px;font-size:14px;margin:0'>导出本月(CSV)</button><button class='go alt' id='exp' style='flex:1;padding:10px 4px;font-size:14px;margin:0'>导出全部(CSV)</button></div></div>`;
@@ -1089,7 +1091,7 @@ const SI={ui:['#8e6cf0','<path d="M12 3a9 9 0 100 18c1 0 1.5-.8 1.5-1.6 0-.9-.6-
  csv:['#2f9e8f','<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>'],
  clr:['#d8444f','<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>'],
  wipe:['#a8323b','<path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/>']};
-const SETL={acct:'账号',ui:'自定义界面',bud:'预算',fix:'固定支出',pp:'导入 PayPay 记录',rk:'导入乐天卡明细',bk:'备份',rs:'恢复备份',csv:'导出表格(CSV)',clr:'清空消费记录',wipe:'清空全部数据'};
+const SETL={dup:'疑似重复扣款',acct:'账号',ui:'自定义界面',bud:'预算',fix:'固定支出',pp:'导入 PayPay 记录',rk:'导入乐天卡明细',bk:'备份',rs:'恢复备份',csv:'导出表格(CSV)',clr:'清空消费记录',wipe:'清空全部数据'};
 function srow(k,sub,val){const ic=SI[k];return `<button class='srow' data-sub='${k}'><span class='si' style='background:${ic[0]}'><svg viewBox='0 0 24 24'>${ic[1]}</svg></span><span class='sl'${k==='clr'||k==='wipe'?" style='color:var(--pp)'":''}>${SETL[k]}${sub?`<small>${sub}</small>`:''}</span>${val||''}<span class='chev'>›</span></button>`}
 var LEM='';
 const IC={mail:'<path d="M3 6.5A1.5 1.5 0 014.5 5h15A1.5 1.5 0 0121 6.5v11a1.5 1.5 0 01-1.5 1.5h-15A1.5 1.5 0 013 17.5z"/><path d="M3.5 6l8.5 7 8.5-7"/>',lock:'<rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 018 0v3"/>',eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',cloud:'<path d="M7 18a5 5 0 01-.5-10A6 6 0 0118 9a4.5 4.5 0 01-1 9z"/>',key:'<circle cx="8" cy="15" r="4"/><path d="M10.8 12.2L20 3M16 7l3 3"/>',out:'<path d="M15 4h3a2 2 0 012 2v12a2 2 0 01-2 2h-3M10 17l5-5-5-5M15 12H3"/>',sync:'<path d="M21 12a9 9 0 01-15.5 6.3L3 16M3 12A9 9 0 0118.5 5.7L21 8"/><path d="M21 3v5h-5M3 21v-5h5"/>'};
@@ -1111,6 +1113,7 @@ function acctBox(){
 function meView(){
  const em=SESS?SESS.user.email:'';
  if(MESUB==='acct')return `<div class='acc'><label class='avl acav' for='avf' aria-label='更换头像'>${avHTML()}</label><input id='avf' type='file' accept='image/*' style='display:none'><input id='nick' class='nick' maxlength='16' placeholder='设置昵称' value='${esc(UI.nick||'')}' autocomplete='off'><p class='sub' style='margin:2px 0 0'>${em?esc(em):'点头像更换照片'}</p></div>`+acctBox();
+ if(MESUB==='dup'){const gs=dupCharges();return gs.length?dupCard(gs):`<div class='box' style='text-align:center;padding:28px 16px'><p style='font-size:17px;font-weight:700;margin:0 0 6px'>没有疑似重复扣款</p><p class='sub' style='margin:0'>只检查乐天卡和订阅服务(Apple、Netflix、Amazon 等)。</p></div>`}
  if(MESUB==='bud')return budPage();
  if(MESUB==='fix')return fixPage();
  if(MESUB&&SETL[MESUB]){const ks=MESUB==='pp'||MESUB==='rk'?`:not([data-k="${MESUB}"]):not([data-k="rv"])`:`:not([data-k="${MESUB}"])`;
@@ -1120,6 +1123,7 @@ function meView(){
  const st=SESS?(SYNC.st==='err'?'同步失败':SYNC.st==='ing'?'同步中…':'云同步已开启'):'未登录 · 点这里登录或注册';
  let h=`<button class='prow' data-sub='acct'><span class='avl'>${avHTML()}</span><span style='flex:1;min-width:0'><b style='font-size:18px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>${esc(UI.nick||(em?em.split('@')[0]:'我的记账本'))}</b><span class='sub' style='margin:0;font-size:13px'>${em?esc(em)+'<br>':''}${st}</span></span><span class='chev' style='color:var(--mu);font-size:20px'>›</span></button>`;
  h+=`<p class='sgt'>设置</p><div class='sgrp'>`+srow('ui','主题 '+TH[UI.theme]+' · 强调色 '+ACC[UI.accent][0])+srow('bud',B.total>0?'每月 '+yen(B.total):'未设置')+srow('fix',R.length?R.length+' 项 · 每月 '+yen(R.reduce((q,r)=>q+r.amt,0)):'房租、话费、订阅')+`</div>`;
+ {const n=dupCharges().length;if(n)h+=`<p class='sgt'>需要留意</p><div class='sgrp'><button class='srow' data-sub='dup'><span class='si' style='background:var(--pp)'><svg viewBox='0 0 24 24'><path d='M12 9v4M12 17h.01'/><path d='M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z'/></svg></span><span class='sl'>疑似重复扣款</span><span class='bdg'>${n}</span><span class='chev'>›</span></button></div>`}
  h+=`<p class='sgt'>导入</p><div class='sgrp'>`+srow('pp','',rv?`<span class='bdg'>${rv}</span>`:'')+srow('rk','',rv?`<span class='bdg'>${rv}</span>`:'')+`</div>`;
  h+=`<p class='sgt'>备份与导出</p><div class='sgrp'>`+srow('bk',bk?'上次备份 '+bk:'还没有备份过')+srow('rs','从备份文件恢复')+srow('csv','用 Excel、Numbers 打开')+`</div>`;
  h+=`<p class='sgt'>清空数据</p><div class='sgrp'>`+srow('clr')+srow('wipe')+`</div>`;
@@ -1128,7 +1132,7 @@ function shrinkImg(f){return new Promise((ok,no)=>{const u=URL.createObjectURL(f
  g.drawImage(im,(im.width-k)/2,(im.height-k)/2,k,k,0,0,S,S);URL.revokeObjectURL(u);ok(c.toDataURL('image/jpeg',.82))};im.onerror=no;im.src=u})}
 document.addEventListener('click',async e=>{const t=e.target.closest('button');if(!t)return;
  if(t.dataset.me){location.hash='#me';return}
- if(t.dataset.back){location.hash=MESUB?'#me':'#'+(window.__back||'add');return}
+ if(t.dataset.back){location.hash=MESUB&&MESUB!=='dup'?'#me':'#'+(window.__back||'add');return}
  if(t.dataset.sub){location.hash='#me/'+t.dataset.sub;return}
  if(t.dataset.authm){const e=$('lem');if(e)LEM=e.value;AUTHM=t.dataset.authm;render();return}
  if(t.dataset.eye){const i=$(t.dataset.eye);if(i){i.type=i.type==='password'?'text':'password';t.classList.toggle('on',i.type==='text')}return}
