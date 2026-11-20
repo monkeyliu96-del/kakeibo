@@ -812,15 +812,14 @@ const IMPM=['paypay','card','rakuten'];
 function reconTag(x){if(x.ref||x.rid||!IMPM.includes(x.method))return '';
  const last=D.reduce((m,z)=>z.ref&&z.method===x.method&&z.date>m?z.date:m,'');
  return last&&x.date<=last?'<span class="tg bad">未对上</span>':'<span class="tg">待对账</span>'}
-/* ===== 疑似重复扣款:导入的账单里同一商户、同一金额在同一个月出现多次 ===== */
+/* ===== 疑似重复扣款:只看乐天卡和订阅服务 —— 同一商户、同一金额在同一个月被扣了多次 ===== */
 const SUBRE=/APPLE|ICLOUD|ITUNES|NETFLIX|SPOTIFY|AMAZON|PRIME|GOOGLE|YOUTUBE|DISNEY|HULU|U-NEXT|ADOBE|MICROSOFT|OPENAI|CHATGPT|ANTHROPIC|CLAUDE|DAZN|ABEMA|NINTENDO|PLAYSTATION|DROPBOX|楽天モバイル|DOCOMO|SOFTBANK|AHAMO|POVO/i;
 const mkey=n=>String(n||'').normalize('NFKC').toUpperCase().replace(/\s+/g,' ').trim();
 function dupCharges(m){
  const ok=new Set(UI.dupok||[]),g={},seen={};
- D.forEach(x=>{if(!x.ref||!x.note)return;const b=mkey(x.note)+'|'+x.amt;(seen[b]=seen[b]||new Set()).add(x.date.slice(0,7));
+ D.forEach(x=>{if(!x.ref||!x.note||!(x.method==='rakuten'||SUBRE.test(mkey(x.note))))return;const b=mkey(x.note)+'|'+x.amt;(seen[b]=seen[b]||new Set()).add(x.date.slice(0,7));
   if(m&&!x.date.startsWith(m))return;const k=b+'|'+x.date.slice(0,7);(g[k]=g[k]||{k,b,n:x.note,amt:x.amt,mo:x.date.slice(0,7),xs:[]}).xs.push(x)});
- return Object.values(g).filter(o=>{if(o.xs.length<2||ok.has(o.k))return false;const ds=o.xs.map(x=>x.date).sort();
-  return SUBRE.test(mkey(o.n))||ds.some((d,i)=>i&&dd(ds[i-1],d)<=3)||seen[o.b].size>=2}).sort((p,q)=>q.mo.localeCompare(p.mo)||q.amt-p.amt)}
+ return Object.values(g).filter(o=>o.xs.length>=2&&!ok.has(o.k)).sort((p,q)=>q.mo.localeCompare(p.mo)||q.amt-p.amt)}
 function dupCard(gs){if(!gs.length)return '';
  return `<div class="box dupc"><h2><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>疑似重复扣款 · ${gs.length} 组</h2><p class="sub" style="margin:0 0 4px">同一商户、同一金额,同一个月被扣了不止一次。如果确实是重复扣款,可以联系商户(Apple 可在「设置 → Apple 账户 → 订阅 / 购买记录」里查看)或卡公司申请退款。</p>`
  +gs.map(o=>`<div class="dupg"><div class="dupt"><b>${esc(o.n)}</b><span>${yen(o.amt)} × ${o.xs.length}</span></div><p class="sub" style="margin:2px 0 8px">${+o.mo.slice(5)} 月 · ${o.xs.map(x=>+x.date.slice(5,7)+'/'+(+x.date.slice(8))).sort().join('、')} · ${mname(o.xs[0].method)} · 多扣了 ${yen(o.amt*(o.xs.length-1))}</p><div class="btns"><button class="go alt" data-dupv="${esc(o.n)}" data-dupm="${o.mo}">查看这几笔</button><button class="go alt" data-dupok="${esc(o.k)}">不是重复</button></div></div>`).join('')+`</div>`}
