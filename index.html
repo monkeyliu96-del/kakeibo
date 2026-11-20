@@ -130,7 +130,7 @@ button.bar:active,button.lg:active{opacity:.6}
 .addv .dfx input[type=date]{flex:0 1 auto;text-align:left}
 .calc{position:fixed;left:0;right:0;top:0;z-index:50;display:none;align-items:center;gap:6px;padding:6px 8px;background:var(--sf);border-top:1px solid var(--ln);box-shadow:0 -2px 10px rgba(0,0,0,.06)}
 .calc.on{display:flex}.calc button{flex:1;min-width:0;height:38px;border:0;border-radius:10px;background:var(--bg);color:var(--tx);font:inherit;font-size:20px;font-weight:600;cursor:pointer;-webkit-user-select:none;user-select:none}
-.calc button:active{background:var(--sel)}.calc button.eq{background:var(--ac);color:var(--on)}.calc .cr{flex:2.2;min-width:0;text-align:right;font-size:14px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.calc button:active,.calc button.hit{background:var(--sel)}.calc button.eq{background:var(--ac);color:var(--on)}.calc .cr{flex:2.2;min-width:0;text-align:right;font-size:14px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dwrap{position:relative;display:flex;align-items:center;justify-content:space-between}.dwrap .chev{color:var(--mu)}.dwrap input{position:absolute;inset:0;width:100%;height:100%;opacity:0;-webkit-appearance:none;appearance:none;border:0;margin:0;padding:0;cursor:pointer}.addv .vsep{width:1px;align-self:stretch;margin:10px 4px;background:var(--ln);margin-left:auto}.addv .dfx .fxl{font-size:15px;color:var(--tx);margin:0}
 .addv .dfx .sw{margin:8px 0}
 .addv{padding-top:0}.addv .strip,.addv .sec,.addv .grp{margin-bottom:8px}
@@ -607,10 +607,11 @@ const CALC=(()=>{
   bar.classList.add('on');bar.style.top=(vv.offsetTop+vv.height-bar.offsetHeight)+'px'};
  const prev=()=>{const c=bar.querySelector('.cr');if(!cur||!hasOp(cur.value)){c.textContent='';return}const r=ev(cur.value);c.textContent=isFinite(r)?'= '+Number(fmt(cur,r)).toLocaleString('ja-JP'):''};
  const ins=t=>{if(!cur)return;const v=cur.value,a=cur.selectionStart??v.length,b=cur.selectionEnd??v.length;cur.value=v.slice(0,a)+t+v.slice(b);try{cur.setSelectionRange(a+t.length,a+t.length)}catch(_){}cur.dispatchEvent(new Event('input',{bubbles:true}))};
- const keep=e=>{if(e.target.closest('.calc'))e.preventDefault()};
- bar.addEventListener('pointerdown',keep);bar.addEventListener('mousedown',keep);bar.addEventListener('touchstart',keep,{passive:false});
- bar.addEventListener('click',e=>{const b=e.target.closest('[data-ck]');if(!b||!cur)return;e.stopPropagation();const k=b.dataset.ck;
-  if(k==='='){commit(cur);prev();return}ins({'−':'-','×':'×','÷':'÷'}[k]||k);cur.focus()});
+ const act=e=>{e.preventDefault();e.stopPropagation();const b=e.target.closest('[data-ck]');if(!b||!cur)return;const k=b.dataset.ck;
+  b.classList.add('hit');setTimeout(()=>b.classList.remove('hit'),120);
+  if(k==='='){commit(cur);prev()}else ins({'−':'-'}[k]||k);cur.focus()};
+ bar.addEventListener('touchstart',act,{passive:false});bar.addEventListener('mousedown',act);
+ bar.addEventListener('click',e=>{e.preventDefault();e.stopPropagation()});
  document.addEventListener('focusin',e=>{if(isC(e.target)){cur=e.target;prev();setTimeout(pos,300);setTimeout(pos,650)}},true);
  document.addEventListener('focusout',e=>{if(isC(e.target)){commit(e.target);setTimeout(()=>{if(!isC(document.activeElement)){cur=null;pos()}},120)}},true);
  document.addEventListener('change',e=>commit(e.target),true);
