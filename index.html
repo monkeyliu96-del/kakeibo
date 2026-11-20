@@ -90,7 +90,7 @@ button.bar:active,button.lg:active{opacity:.6}
 .lrow{display:flex;align-items:center;gap:12px;margin:0 -16px;padding:0 20px;background:var(--sf);border-bottom:1px solid var(--ln)}
 .lrow label{margin:0;font-size:17px;color:var(--tx);flex:none}
 .lrow input{flex:1;min-width:0;border:0;background:none;text-align:right;font-size:17px;padding:11px 0;outline:0}
-.go.save{display:block;width:calc(100% - 48px);margin:14px auto 0;position:sticky;bottom:10px;z-index:4;border-radius:999px;font-size:19px;padding:12px;box-shadow:0 8px 20px rgba(0,0,0,.18)}
+.go.save{display:block;width:calc(100% - 48px);margin:14px auto 0;position:sticky;bottom:calc(var(--kbh,0px) + 10px);z-index:4;border-radius:999px;font-size:19px;padding:12px;box-shadow:0 8px 20px rgba(0,0,0,.18)}
 .addrow{display:flex;align-items:center;gap:6px;margin-top:10px;background:var(--sf);border:1.5px solid var(--ln);border-radius:999px;padding:4px 4px 4px 16px}
 .addrow:focus-within{border-color:var(--ac)}
 .addrow input{flex:1;min-width:0;border:0;background:none;outline:0;font-size:16px;padding:8px 0}
@@ -128,9 +128,12 @@ button.bar:active,button.lg:active{opacity:.6}
 .addv .pdots{margin-top:6px}
 .addv .grp .lrow input{padding:12px 0}.addv .grp .sec{padding:0 16px 10px}
 .addv .dfx input[type=date]{flex:0 1 auto;text-align:left}
-.calc{position:fixed;left:0;right:0;top:0;z-index:50;display:none;align-items:center;gap:6px;padding:6px 8px;background:var(--sf);border-top:1px solid var(--ln);box-shadow:0 -2px 10px rgba(0,0,0,.06)}
-.calc.on{display:flex}.calc button{flex:1;min-width:0;height:38px;border:0;border-radius:10px;background:var(--bg);color:var(--tx);font:inherit;font-size:20px;font-weight:600;cursor:pointer;-webkit-user-select:none;user-select:none}
-.calc button:active,.calc button.hit{background:var(--sel)}.calc button.eq{background:var(--ac);color:var(--on)}.calc .cr{flex:2.2;min-width:0;text-align:right;font-size:14px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kp{position:fixed;left:0;right:0;bottom:0;z-index:60;display:none;background:var(--sf);border-top:1px solid var(--ln);box-shadow:0 -4px 16px rgba(0,0,0,.08);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px))}
+.kp.on{display:block}.kpo .go.save{display:none}.kp .kr{display:flex;align-items:center;justify-content:space-between;padding:0 8px 4px;font-size:14px;color:var(--mu);min-height:22px}.kp .kr b{color:var(--tx);font-weight:600}
+.kp .kg{display:grid;grid-template-columns:repeat(4,1fr) 1.15fr;grid-auto-rows:44px;gap:5px;max-width:520px;margin:0 auto}
+.kp button{border:0;border-radius:10px;background:var(--bg);color:var(--tx);font:inherit;font-size:21px;font-weight:600;cursor:pointer;-webkit-user-select:none;user-select:none;touch-action:manipulation}
+.kp button.op{color:var(--ac)}.kp button.ok{grid-row:span 2;background:var(--ac);color:var(--on);font-size:17px}.kp button.eq{grid-row:span 2;font-size:24px}.kp button.hit{background:var(--sel)}
+input[data-calc]{caret-color:transparent}input[data-calc]:focus{border-color:var(--ac)}
 .dwrap{position:relative;display:flex;align-items:center;justify-content:space-between}.dwrap .chev{color:var(--mu)}.dwrap input{position:absolute;inset:0;width:100%;height:100%;opacity:0;-webkit-appearance:none;appearance:none;border:0;margin:0;padding:0;cursor:pointer}.addv .vsep{width:1px;align-self:stretch;margin:10px 4px;background:var(--ln);margin-left:auto}.addv .dfx .fxl{font-size:15px;color:var(--tx);margin:0}
 .addv .dfx .sw{margin:8px 0}
 .addv{padding-top:0}.addv .strip,.addv .sec,.addv .grp{margin-bottom:8px}
@@ -340,11 +343,12 @@ const $=id=>document.getElementById(id);
 document.addEventListener('toggle',e=>{if(e.target&&e.target.id==='rsd')RSO=e.target.open},true);
 (()=>{const fix=()=>{try{window.scrollTo(0,0);document.documentElement.scrollTop=0;document.body.scrollTop=0;const b=document.body;b.style.height='99.9%';void b.offsetHeight;b.style.height=''}catch(e){}};
 const isF=a=>a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&!['button','checkbox','radio','file','date'].includes(a.type);
-const kbAdj=()=>{const sc=$('sc'),vv=window.visualViewport,a=document.activeElement;if(!sc)return;
- const kb=vv?Math.max(0,window.innerHeight-vv.height):0;
- if(!(isF(a)&&sc.contains(a)&&kb>80)){sc.style.paddingBottom='';return}
- const cb=/^(numeric|decimal)$/.test(a.getAttribute('inputmode')||'')&&a.id!=='rd'?52:0;sc.style.paddingBottom=(kb+cb+24)+'px';fix();
- const r=a.getBoundingClientRect(),vis=vv.height-cb;if(r.top<70||r.bottom>vis-16)sc.scrollTop+=r.top+r.height/2-vis*0.42};
+const kbAdj=window.kbAdj=()=>{const sc=$('sc'),vv=window.visualViewport,a=document.activeElement,de=document.documentElement;if(!sc)return;
+ const sk=vv?Math.max(0,window.innerHeight-vv.height):0,kp=window.__kp||0,nav=document.querySelector('nav'),nh=nav?window.innerHeight-nav.getBoundingClientRect().top:0;
+ const kb=kp?Math.max(0,kp-nh):sk;
+ if(!(isF(a)&&sc.contains(a)&&(kp||sk>80))){sc.style.paddingBottom='';de.style.removeProperty('--kbh');return}
+ sc.style.paddingBottom=(kb+24)+'px';de.style.setProperty('--kbh',kb+'px');if(!kp)fix();
+ const vis=kp?window.innerHeight-kp:vv.height,r=a.getBoundingClientRect();if(r.top<70||r.bottom>vis-16)sc.scrollTop+=r.top+r.height/2-vis*0.42};
 document.addEventListener('focusin',e=>{if(isF(e.target)){setTimeout(kbAdj,350);setTimeout(kbAdj,700)}});
 document.addEventListener('focusout',()=>{setTimeout(fix,120);setTimeout(fix,500);setTimeout(kbAdj,150)});
 window.addEventListener('pageshow',fix);window.addEventListener('orientationchange',()=>setTimeout(fix,300));
@@ -590,36 +594,53 @@ document.addEventListener('input',e=>{
 });
 window.addEventListener('hashchange',()=>{pending=null;BE=null;BCS=null;CIP=null;if(/^#(me|more)/.test(hv()))sbBoot().catch(()=>{});AE=null;CE=false;clrc=false;SEL={on:false,ids:[],cf:false};if(hv()!=='#add'){E=null;EI=null;PF=null;DK='';ECAT=false;EPM=false}OPEN={};if(OUI){OPEN.ui=true;OUI=false}render()});
 
-/* calculator bar for amount fields */
+/* in-app keypad with calculator for amount fields */
 const CALC=(()=>{
- const isC=el=>el&&el.tagName==='INPUT'&&/^(numeric|decimal)$/.test(el.getAttribute('inputmode')||'')&&el.id!=='rd';
+ const isC=el=>el&&el.tagName==='INPUT'&&el.hasAttribute('data-calc');
+ const tag=()=>document.querySelectorAll('input[inputmode="numeric"],input[inputmode="decimal"]').forEach(el=>{if(el.id==='rd'||el.hasAttribute('data-calc'))return;el.dataset.calc=el.getAttribute('inputmode');el.setAttribute('inputmode','none');el.readOnly=true});
+ new MutationObserver(tag).observe(document.body,{childList:true,subtree:true});tag();
  const norm=v=>String(v).replace(/[,，\s]/g,'').replace(/[×xX]/g,'*').replace(/[÷]/g,'/').replace(/[−–—]/g,'-');
- const hasOp=v=>/[+\-*/()]/.test(norm(v).replace(/^-/,''));
- const ev=v=>{const e=norm(v);if(!e||!/^[0-9.+\-*/()]+$/.test(e))return NaN;try{const r=Function('"use strict";return ('+e+')')();return typeof r==='number'&&isFinite(r)?r:NaN}catch(_){return NaN}};
- const fmt=(el,r)=>el.getAttribute('inputmode')==='decimal'?String(Math.round(r*10000)/10000):String(Math.round(r));
+ const hasOp=v=>/[+\-*/]/.test(norm(v).replace(/^-/,''));
+ const ev=v=>{let e=norm(v).replace(/[+\-*/.]+$/,'');if(!e||!/^[0-9.+\-*/]+$/.test(e))return NaN;try{const r=Function('"use strict";return ('+e+')')();return typeof r==='number'&&isFinite(r)?r:NaN}catch(_){return NaN}};
+ const dec=el=>el.dataset.calc==='decimal';
+ const fmt=(el,r)=>dec(el)?String(Math.round(r*10000)/10000):String(Math.round(r));
  const commit=el=>{if(!isC(el)||!hasOp(el.value))return;const r=ev(el.value);if(isFinite(r)){el.value=fmt(el,r);el.dispatchEvent(new Event('input',{bubbles:true}))}};
- const bar=document.createElement('div');bar.className='calc';bar.setAttribute('role','toolbar');bar.setAttribute('aria-label','计算器');
- bar.innerHTML=['+','−','×','÷'].map(k=>`<button type="button" data-ck="${k}" aria-label="${k}">${k}</button>`).join('')+'<span class="cr"></span><button type="button" class="eq" data-ck="=" aria-label="计算">=</button>';
- document.body.appendChild(bar);
+ const kp=document.createElement('div');kp.className='kp';kp.setAttribute('role','group');kp.setAttribute('aria-label','数字键盘');
+ const K=(k,c,l)=>`<button type="button" data-ck="${k}"${c?` class="${c}"`:''} aria-label="${l||k}">${k}</button>`;
+ kp.innerHTML='<div class="kr"><span class="kx"></span><b class="kv"></b></div><div class="kg">'+
+  K('7')+K('8')+K('9')+K('⌫','','删除')+K('=','eq','计算')+
+  K('4')+K('5')+K('6')+K('+','op','加')+
+  K('1')+K('2')+K('3')+K('−','op','减')+K('完成','ok')+
+  K('.','','小数点')+K('0')+K('×','op','乘')+K('÷','op','除')+'</div>';
+ document.body.appendChild(kp);
  let cur=null;
- const pos=()=>{const vv=window.visualViewport;if(!cur||!vv){bar.classList.remove('on');return}
-  const kb=window.innerHeight-vv.height;if(kb<80){bar.classList.remove('on');return}
-  bar.classList.add('on');bar.style.top=(vv.offsetTop+vv.height-bar.offsetHeight)+'px'};
- const prev=()=>{const c=bar.querySelector('.cr');if(!cur||!hasOp(cur.value)){c.textContent='';return}const r=ev(cur.value);c.textContent=isFinite(r)?'= '+Number(fmt(cur,r)).toLocaleString('ja-JP'):''};
- const ins=t=>{if(!cur)return;const v=cur.value,a=cur.selectionStart??v.length,b=cur.selectionEnd??v.length;cur.value=v.slice(0,a)+t+v.slice(b);try{cur.setSelectionRange(a+t.length,a+t.length)}catch(_){}cur.dispatchEvent(new Event('input',{bubbles:true}))};
- const act=e=>{e.preventDefault();e.stopPropagation();const b=e.target.closest('[data-ck]');if(!b||!cur)return;const k=b.dataset.ck;
-  b.classList.add('hit');setTimeout(()=>b.classList.remove('hit'),120);
-  if(k==='='){commit(cur);prev()}else ins({'−':'-'}[k]||k);cur.focus()};
- bar.addEventListener('touchstart',act,{passive:false});bar.addEventListener('mousedown',act);
- bar.addEventListener('click',e=>{e.preventDefault();e.stopPropagation()});
- document.addEventListener('focusin',e=>{if(isC(e.target)){cur=e.target;prev();setTimeout(pos,300);setTimeout(pos,650)}},true);
- document.addEventListener('focusout',e=>{if(isC(e.target)){commit(e.target);setTimeout(()=>{if(!isC(document.activeElement)){cur=null;pos()}},120)}},true);
+ const okB=kp.querySelector('.ok'),dotB=kp.querySelector('[data-ck="."]');
+ const isSave=()=>cur&&cur.id==='amt'&&$('save');
+ const paint=()=>{if(!cur)return;okB.textContent=isSave()?'保存':'完成';dotB.style.visibility=dec(cur)?'':'hidden';
+  const v=cur.value,x=kp.querySelector('.kx'),y=kp.querySelector('.kv');
+  if(hasOp(v)){const r=ev(v);x.textContent=v;y.textContent=isFinite(r)?'= '+Number(fmt(cur,r)).toLocaleString('ja-JP'):''}else{x.textContent=cur.getAttribute('aria-label')||cur.placeholder||'';y.textContent=''}};
+ const open=el=>{cur=el;kp.classList.add('on');window.__kp=kp.offsetHeight;document.body.classList.add('kpo');paint();if(window.kbAdj)setTimeout(kbAdj,30)};
+ const close=()=>{if(cur)commit(cur);const c=cur;cur=null;kp.classList.remove('on');window.__kp=0;document.body.classList.remove('kpo');if(c&&document.activeElement===c)c.blur();if(window.kbAdj)kbAdj()};
+ const set=v=>{cur.value=v;cur.dispatchEvent(new Event('input',{bubbles:true}));paint()};
+ const press=k=>{if(!cur)return;let v=cur.value;
+  if(k==='⌫')return set(v.slice(0,-1));
+  if(k==='='){commit(cur);return paint()}
+  if(k==='完成'){if(isSave()){commit(cur);const b=$('save');close();b.click()}else close();return}
+  if(/[+−×÷]/.test(k)){const o={'−':'-'}[k]||k;if(!v&&o!=='-')return;if(/[+\-×÷*/]$/.test(v))v=v.slice(0,-1);return set(v+o)}
+  if(k==='.'){const seg=v.split(/[+\-×÷*/]/).pop();if(seg.includes('.'))return;return set(v+(seg?'':'0')+'.')}
+  const seg=v.split(/[+\-×÷*/]/).pop();if(seg==='0')v=v.slice(0,-1);set(v+k)};
+ let lastT=0;
+ const act=e=>{const b=e.target.closest('[data-ck]');e.preventDefault();e.stopPropagation();if(e.type==='touchstart')lastT=Date.now();else if(Date.now()-lastT<800)return;if(!b)return;
+  b.classList.add('hit');setTimeout(()=>b.classList.remove('hit'),110);press(b.dataset.ck)};
+ kp.addEventListener('touchstart',act,{passive:false});kp.addEventListener('mousedown',act);
+ kp.addEventListener('click',e=>{e.preventDefault();e.stopPropagation()});
+ document.addEventListener('focusin',e=>{if(isC(e.target))open(e.target);else if(cur)close()},true);
+ document.addEventListener('pointerdown',e=>{if(cur&&!e.target.closest('.kp')&&e.target!==cur&&!isC(e.target))close()},true);
  document.addEventListener('change',e=>commit(e.target),true);
- document.addEventListener('click',e=>{if(!e.target.closest('.calc')){document.querySelectorAll('input[inputmode]').forEach(commit)}},true);
- document.addEventListener('keydown',e=>{if(e.key==='Enter')commit(e.target)},true);
- document.addEventListener('input',e=>{if(e.target===cur)prev()},true);
- if(window.visualViewport){visualViewport.addEventListener('resize',pos);visualViewport.addEventListener('scroll',pos)}
- return {on:()=>bar.classList.contains('on')?bar.offsetHeight:0,commit};
+ document.addEventListener('click',e=>{if(!e.target.closest('.kp'))document.querySelectorAll('input[data-calc]').forEach(commit)},true);
+ window.addEventListener('hashchange',()=>{if(cur)close()});
+ document.addEventListener('keydown',e=>{if(!cur||e.target!==cur||e.metaKey||e.ctrlKey)return;const m={'Backspace':'⌫','Enter':'完成','Escape':'完成','*':'×','/':'÷','-':'−','+':'+','.':'.','=':'='}[e.key]||(/^[0-9]$/.test(e.key)?e.key:null);if(m){e.preventDefault();press(m)}},true);
+ return {commit,close};
 })();
 
 const AK='kakeibo.assets.v1';
