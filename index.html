@@ -232,7 +232,10 @@ const KW={
  '购物':/Yahoo|Amazon|アマゾン|楽天(?!モバイル)|ユニクロ|ZOZO|ヨドバシ|ビックカメラ|OLIVE ?YOUNG/i,
  '娱乐':/歌広場|映画|ゲーム|Netflix|Spotify|カラオケ|APPLE COM BILL|ICLOUD/i,
  '居住':/家賃|電気|ガス|水道|NTT|ドコモ|ソフトバンク|楽天モバイル/,
- '医疗':/病院|クリニック|薬局|歯科/};
+ '医疗':/病院|クリニック|薬局|歯科/,
+ /* 下面两个是自定义分类,只有你建了同名分类才会用到 */
+ '学习':/英会話|イングリ|ゴガツコウ|語学|語学校|HELLOTALK|UDEMY|DUOLINGO|スクール/i,
+ '旅游':/AGODA|アゴダ|TRIP\.COM|BOOKING\.COM|EXPEDIA|ホテル|HOTEL|旅館|\bOTA\b|空港|クウコウ|利用国(?!JPN)|GRAB|SOUVENIR/i};
 const isFix=x=>!!(x&&(x.rid||x.fix));
 const fixOf=s=>{s=(s||'').normalize('NFKC').trim();if(!s)return false;const h=D.slice().sort((p,q)=>q.id-p.id).find(x=>x.note===s);return !!(h&&h.fix)};
 /* 买加密货币、往证券账户入金 = 投资,不算消费 */
@@ -1076,7 +1079,11 @@ function acCard(){const un=(RV.ac||[]).map(id=>D.find(x=>x.id===id)).filter(x=>x
  return `<div class='box' style='margin-top:10px'><div style='display:flex;justify-content:space-between;align-items:center;gap:8px'><h2 style='margin:0'>新的店 · 选一下分类</h2><button class='lk' data-ack='1' style='font-size:13px;flex:none'>都保持「其他」</button></div><p class='sub' style='margin:4px 0 0'>选一次就行,以后同一家店会自动归类。</p>`
  +un.map(x=>`<div class='row'><div class='rm'><div>${esc(x.note)}</div><span>${x.date.slice(5)} · ${yen(x.amt)}</span></div><select class='f' style='width:96px;padding:8px' data-uc='${x.id}' aria-label='分类'>${CATS.map(c=>`<option${c==='其他'?' selected':''}>${c}</option>`).join('')}</select></div>`).join('')+`</div>`}
 /* 一次性:导入时因为认不出而记成「其他」的,用改进后的规则重新分类 */
-function reguessOnce(){if(UI.rg4)return;let k=0;D.forEach(x=>{if(x.ref&&x.cat==='其他'){const c=guess(x.note);if(c&&c!=='其他'){x.cat=c;k++}}});UI.rg4=1;saveC();if(k){save();setTimeout(()=>toast('已自动给 '+k+' 笔「其他」重新分类'),800)}}
+/* 一次性:按你的分类把剩下的「其他」分好 */
+function catFix1(){if(UI.cf1)return;const has=c=>CATS.includes(c),M=[[/AGODA|ZHI XIN OTA|TRIP\.COM|GRAB|ISLAND SOUVENIR|NOMAD EXPRESS|CHINA RAILWAY|ナリタ.*クウコウ|ナリタコクサイ/i,'旅游','交通'],[/HIGHWAYBUS/i,'交通'],[/エモツト/,'交通'],[/ワンコイングリ|ソウルメイトカンコクゴ|HELLOTALK/i,'学习','其他'],[/JINGDONG/i,'购物'],[/ドン・?キホ/,'日用品','购物']];let k=0;
+ D.forEach(x=>{if(x.cat!=='其他')return;const n=(x.note||'').normalize('NFKC');for(const [re,c,fb] of M)if(re.test(n)){const v=has(c)?c:fb&&has(fb)?fb:null;if(v&&v!=='其他'){x.cat=v;k++}break}});
+ UI.cf1=1;saveC();if(k){save();setTimeout(()=>toast('已帮你分好 '+k+' 笔「其他」'),1200)}}
+function reguessOnce(){try{catFix1()}catch(e){}if(UI.rg4)return;let k=0;D.forEach(x=>{if(x.ref&&x.cat==='其他'){const c=guess(x.note);if(c&&c!=='其他'){x.cat=c;k++}}});UI.rg4=1;saveC();if(k){save();setTimeout(()=>toast('已自动给 '+k+' 笔「其他」重新分类'),800)}}
 const UCS=new Set();
 document.addEventListener('change',e=>{const t=e.target;if(!t.dataset)return;
  if(t.dataset.ucs){const id=+t.dataset.ucs;if(t.checked)UCS.add(id);else UCS.delete(id);render();return}
