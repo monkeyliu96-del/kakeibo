@@ -525,7 +525,7 @@ function render(){
  const v0=hv().slice(1),v=v0==='more'?'me':v0.split('/')[0];MESUB=v==='me'?(v0.split('/')[1]||''):'';
  const view=['add','stats','assets','me'].includes(v)?v:'list';if(view!=='me')window.__back=view;if(MESUB==='ui')OPEN.ui=true;if(MESUB==='bud')OPEN.bud=true;if(MESUB==='rs')RSO=true;
  $('band').innerHTML='<div class="bi">'+bandHTML(view)+'</div>'+(view==='me'?'':`<button class="avb" data-me="1" aria-label="账号">${avHTML()}</button>`);document.documentElement.style.setProperty('--bh',$('band').offsetHeight+'px');const lv=view+'/'+MESUB,os=$('sc'),st=(os&&window.__lv===lv)?os.scrollTop:0;window.__lv=lv;
- const dg=(view===(UI.home||'add')&&(view==='add'||view==='list')&&!E&&!EI)?dupCharges():[],ban=dg.length?`<button class="dupb" data-sub="dup"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg><span>发现 ${dg.length} 组疑似重复扣款<small>可能多扣了 ${yen(dg.reduce((q,o)=>q+o.amt*(o.xs.length-1),0))}</small></span><b>查看 ›</b></button>`:'';
+ const hm=(view===(UI.home||'add')||view==='list')&&(view==='add'||view==='list')&&!E&&!EI,dg=(view===(UI.home||'add')&&(view==='add'||view==='list')&&!E&&!EI)?dupCharges():[],ban=(hm?acCard():'')+(dg.length?`<button class="dupb" data-sub="dup"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg><span>发现 ${dg.length} 组疑似重复扣款<small>可能多扣了 ${yen(dg.reduce((q,o)=>q+o.amt*(o.xs.length-1),0))}</small></span><b>查看 ›</b></button>`:'');
  const html0=view==='me'?meView():view==='add'?addView():view==='stats'?statsView():view==='assets'?assetsView():view==='more'?moreView():listView(),h0i=html0.indexOf('<!--H-->'),html=!ban?html0:h0i>=0?html0.slice(0,h0i+8)+ban+html0.slice(h0i+8):ban+html0,hi=html.indexOf('<!--H-->');
  $('app').innerHTML=(hi>=0?'<div class="fhead">'+html.slice(0,hi)+'</div>':'')+'<div id="sc">'+(hi>=0?html.slice(hi+8):html)+'</div>';if(st)$('sc').scrollTop=st;['cs','ms'].forEach(id=>{const cs=$(id),b=cs&&cs.querySelector('[aria-pressed="true"]');if(b&&b.parentElement.offsetLeft)cs.scrollLeft=b.parentElement.offsetLeft});
  ['list','add','stats','assets'].forEach(k=>$('n-'+k).classList.toggle('on',k===view));
@@ -914,6 +914,11 @@ async function importRakuten(files){
  toast(`${[...ums].sort().map(m=>+m.slice(5)+'月').join('、')}消费(按刷卡日期记账):导入 ${add} 笔,重复 ${dup} 笔${rec?',自动对账 '+rec+' 笔':''}${sus?',疑似重复 '+sus+' 笔待确认':''}${nf?','+nf+' 个文件无法识别':''}${(n=>n?',发现 '+n+' 组疑似重复扣款,首页顶部可查看':'')(dupCharges().length)}${items.length||unc.length||dupCharges().length?'。需确认的项目见下方':''}`);render();
 }
 document.addEventListener('click',e=>{const t=e.target.closest('button[data-uck]');if(!t)return;RV.unc=[];saveRV();toast('好的,不再询问');render()});
+document.addEventListener('click',e=>{const t=e.target.closest('button[data-ack]');if(!t)return;RV.ac=[];saveRV();toast('好的,都保持「其他」');render()});
+/* 自动记账(邮件 / Apple Pay / 截图)里第一次出现、认不出分类的店 */
+function acCard(){const un=(RV.ac||[]).map(id=>D.find(x=>x.id===id)).filter(x=>x&&x.cat==='其他');if(!un.length)return '';
+ return `<div class='box' style='margin-top:10px'><div style='display:flex;justify-content:space-between;align-items:center;gap:8px'><h2 style='margin:0'>新的店 · 选一下分类</h2><button class='lk' data-ack='1' style='font-size:13px;flex:none'>都保持「其他」</button></div><p class='sub' style='margin:4px 0 0'>选一次就行,以后同一家店会自动归类。</p>`
+ +un.map(x=>`<div class='row'><div class='rm'><div>${esc(x.note)}</div><span>${x.date.slice(5)} · ${yen(x.amt)}</span></div><select class='f' style='width:96px;padding:8px' data-uc='${x.id}' aria-label='分类'>${CATS.map(c=>`<option${c==='其他'?' selected':''}>${c}</option>`).join('')}</select></div>`).join('')+`</div>`}
 /* 一次性:导入时因为认不出而记成「其他」的,用改进后的规则重新分类 */
 function reguessOnce(){if(UI.rg2)return;let k=0;D.forEach(x=>{if(x.ref&&x.cat==='其他'){const c=guess(x.note);if(c&&c!=='其他'){x.cat=c;k++}}});UI.rg2=1;saveC();if(k){save();setTimeout(()=>toast('已自动给 '+k+' 笔「其他」重新分类'),800)}}
 function rvPanel(){
@@ -1002,7 +1007,7 @@ document.addEventListener('input',e=>{if(e.target.id==='ce-sd'){const l=$('ce-sd
 document.addEventListener('input',e=>{if(e.target.id==='qs'){Q.t=e.target.value;updList()}});
 document.addEventListener('change',e=>{
  const t=e.target;
- if(t.dataset&&t.dataset.uc){const x=D.find(z=>z.id===+t.dataset.uc);if(x){const n=mkey(x.note);let k=0;D.forEach(z=>{if(z===x||(z.cat==='其他'&&mkey(z.note)===n)){z.cat=t.value;k++}});save();if(t.value!=='其他'){RV.unc=RV.unc.filter(i=>{const z=D.find(y=>y.id===i);return z&&z.cat==='其他'});saveRV()}if(k>1)toast('同名的 '+k+' 笔都改成了 '+t.value);render()}return}
+ if(t.dataset&&t.dataset.uc){const x=D.find(z=>z.id===+t.dataset.uc);if(x){const n=mkey(x.note);let k=0;D.forEach(z=>{if(z===x||(z.cat==='其他'&&mkey(z.note)===n)){z.cat=t.value;k++}});save();if(t.value!=='其他'){const keep=i=>{const z=D.find(y=>y.id===i);return z&&z.cat==='其他'};RV.unc=RV.unc.filter(keep);RV.ac=(RV.ac||[]).filter(keep);saveRV()}if(k>1)toast('同名的 '+k+' 笔都改成了 '+t.value);render()}return}
  if(t.dataset&&t.dataset.sel){const id=t.dataset.sel[0]==='i'?t.dataset.sel:+t.dataset.sel;SEL.ids=t.checked?[...SEL.ids,id]:SEL.ids.filter(z=>z!==id);SEL.cf=false;updList();return}
  if(t.dataset.pmn){const k=t.dataset.pmn,n=t.value.trim();if(!n||pmSrc().some(m=>m[0]!==k&&m[1]===n)){toast(n?'已有同名支付方式':'请输入支付方式名称');if($('amt'))PF={amt:$('amt').value,note:$('note').value};render();return}
   if(!PM)PM=DEF_PM.map(m=>m.slice());const m=PM.find(z=>z[0]===k);if(m&&m[1]!==n&&!(LG()==='en'&&ZH2EN[m[1]]===n)){m[1]=n;applyPM();saveC()}if($('amt'))PF={amt:$('amt').value,note:$('note').value};render();return}
@@ -1083,7 +1088,7 @@ async function syncNow(){
    if(!res.data||!res.data.length)continue;
    sySet({uid,base:m});break}
   SYNC={st:'ok',at:Date.now(),err:''};
-  if(apIds.ids.length){await SB.from('kakeibo_inbox').delete().in('id',apIds.ids);if(apN)toast('Apple Pay 自动记了 '+apN+' 笔')}
+  if(apIds.ids.length){await SB.from('kakeibo_inbox').delete().in('id',apIds.ids);if(apN){const k=(RV.ac||[]).filter(i=>{const z=D.find(y=>y.id===i);return z&&z.cat==='其他'}).length;toast('自动记了 '+apN+' 笔'+(k?',有 '+k+' 家新店要选分类':''));render()}}
  }catch(e){SYNC={st:'err',at:SYNC.at,err:(e&&e.message)||String(e)}}
  SYNCING=false;paintSync();if(SYAGAIN){SYAGAIN=false;syncNow()}}
 function syncLabel(){const t=SYNC.at?new Date(SYNC.at).toTimeString().slice(0,5):'';
@@ -1194,7 +1199,9 @@ async function pullInbox(){
   const au=D.find(z=>z.ref&&AUTOR.test(z.ref)&&z.ref.slice(0,3)!==ref.slice(0,3)&&z.amt===r.amt&&z.date===date&&z.method===method&&!claimed.has(z.id));
   /* PayPay 截图带取引番号,和 CSV 的记录一致 → 把邮件 / Apple Pay 自动记的那笔换成这个编号,月底导入时直接对上 */
   if(au){if(ref.startsWith('pp:')){claimed.add(au.id);au.ref=ref;au.via='ss';if(note)au.note=note}return}
-  const cat=guess(note)||'其他';D.push({id:nid(),amt:r.amt,method,cat,note,date,ref,...(r.src==='pp'&&ref.startsWith('pp:')?{via:'ss'}:{}),...(fixOf(note)?{fix:true}:{})});n++});
+  const cat=guess(note)||'其他',id=nid();D.push({id,amt:r.amt,method,cat,note,date,ref,...(r.src==='pp'&&ref.startsWith('pp:')?{via:'ss'}:{}),...(fixOf(note)?{fix:true}:{})});n++;
+  /* 第一次出现的店认不出分类 → 首页让你选一次,之后同名的店自动沿用 */
+  if(cat==='其他'&&note){RV.ac=[...(RV.ac||[]),id];saveRV()}});
  save();if(n)setTimeout(()=>{if(!(document.activeElement&&document.activeElement.matches('#app input,#app textarea')))render()},0);
  return {ids:data.map(r=>r.id),n}}
 const qa=v=>String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
