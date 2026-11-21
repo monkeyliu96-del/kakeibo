@@ -1223,11 +1223,12 @@ function apPage(){
  +st(5,'完成。之后每 5 分钟检查一次新邮件,最近 3 天内的「利用速報」会自动记账(带「邮件」标签)。')
  +`<div class='btns' style='margin:8px 0 6px'><button class='go alt' data-cp="${qa(GAS)}">复制脚本</button><button class='go alt' data-cp="${qa(MAN)}">复制权限设置</button></div><p class='sub' style='margin:0 0 6px;font-size:12.5px'>已经按旧版设置过的:按第 2、3 步替换两处内容,再运行一次 setup,重新授权(这次只会要求「查看邮件」)。</p></div>`
  +`<p class='sgt'>PayPay 截图记账(只需设置一次)</p><div class='box' style='padding:6px 16px'>`
- +st(1,'打开「ショートカット」App →「ショートカット」页右上「+」新建,名字改成「PayPay记账」。点底部 ⓘ(詳細),打开「共有シートに表示」,输入类型只留「画像」。')
- +st(2,'添加操作「画像からテキストを抽出」(从图像中提取文本),图像选变量「ショートカットの入力」。')
+ +st(1,'打开「ショートカット」App →「ショートカット」页右上「+」新建,名字改成「PayPay记账」。')
+ +st(2,'添加操作「スクリーンショットを撮る」,再添加「画像からテキストを抽出」,图像选上一步的「スクリーンショット」。')
  +st(3,'添加「URLの内容を取得」,URL 粘贴下面的<b>截图记账 URL</b>;展开后方法选 <b>POST</b>;「ヘッダ」加 <b>apikey</b>(值同上);「本文を要求」选 <b>JSON</b>,加 2 个「テキスト」字段:<b>tok</b> = 上面的 tok,<b>txt</b> = 上一步的变量「画像から抽出されたテキスト」。')
  +st(4,'添加「辞書の値を取得」,键填 <b>msg</b>;再添加「通知を表示」,内容选变量「辞書の値」。')
- +st(5,'用法:PayPay 交易履历里打开那笔付款,<b>点「詳細を開く」展开</b>后截图 → 点左下角的截图预览 → 分享 →「PayPay记账」。会弹出「已记账:店名 金额」。展开后截的图带取引番号,月底导入 CSV 时能精确对上。')
+ +st(5,'打开 iPhone「設定」→「アクセシビリティ」→「タッチ」→「背面タップ」→「ダブルタップ」,选「PayPay记账」。')
+ +st(6,'用法:在 PayPay 打开那笔付款,<b>点「詳細を開く」展开</b>,然后<b>双击手机背面</b>。会弹出「已记账:店名 金额」。不用另外截图,也不会存进相册。')
  +`</div><div class='sgrp'>`+cpr('截图记账 URL',SUPA_URL+'/rest/v1/rpc/ss_push')+`</div>`
  +`<p class='sub' style='margin:10px 4px'>已自动记账:Apple Pay ${n} 笔,邮件 ${nm} 笔,截图 ${D.filter(x=>x.via==='ss'||(x.ref&&x.ref.startsWith('ss:'))).length} 笔。没截图的,月底导入 PayPay CSV 时也会补上。</p>`
  +`<button class='go alt danger' id='apgen' data-re='1'>重新生成密钥(旧的会失效)</button>`}
