@@ -1381,6 +1381,10 @@ render();
 i18nStart();i18nRun();
 try{if(localStorage.getItem(AUK)||/access_token=|type=recovery/.test(location.hash))sbBoot().catch(()=>{})}catch(e){}
 </script>
-<script>if('serviceWorker' in navigator&&location.protocol==='https:'){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}</script>
+<script>if('serviceWorker' in navigator&&location.protocol==='https:'){window.addEventListener('load',()=>{
+ /* 有新版本时:后台装好新的 service worker → 接管后自动刷新一次,不用手动关掉重开 */
+ const had=!!navigator.serviceWorker.controller;let done=false;
+ navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!had||done)return;done=true;const busy=document.activeElement&&document.activeElement.matches('input,textarea,select');if(!busy&&!E&&!EI&&!NEW)location.reload();else toast('新版本已就绪,下次打开生效')});
+ navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(reg=>{const up=()=>reg.update().catch(()=>{});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')up()});setInterval(up,30*60*1000)}).catch(()=>{})})}</script>
 </body>
 </html>
