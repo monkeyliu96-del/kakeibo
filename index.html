@@ -1241,8 +1241,9 @@ function asIn(r,asu){const x=A.assets.find(z=>z.src===r.ext);
 function asnCard(){const ps=RV.asn||[];if(!ps.length)return '';
  return ps.map(p=>`<div class='box'><p class='sub' style='margin:0'>截图识别到</p><p style='font-size:18px;font-weight:700;margin:2px 0 6px'>${esc(p.name)} ${yen(p.val)}</p><p class='sub' style='margin:0 0 8px'>要更新哪一项?选一次就行,以后同一个 App 的截图会自动更新它。</p><div class='chips' style='margin:0'>${A.assets.filter(x=>!x.src).map(x=>`<button class='chip' data-asl='${esc(p.key)}' data-to='${x.id}'>更新「${esc(x.name)}」</button>`).join('')}<button class='chip' data-asl='${esc(p.key)}' data-to='new'>新建「${esc(p.name)}」</button><button class='chip' data-asl='${esc(p.key)}' data-to='x'>忽略</button></div></div>`).join('')}
 document.addEventListener('click',e=>{const t=e.target.closest('button[data-asl]');if(!t)return;const p=(RV.asn||[]).find(z=>z.key===t.dataset.asl);if(!p)return;const to=t.dataset.to;
+ let nm=p.name;
  if(to==='new')A.assets.push({id:Date.now(),name:p.name,val:p.val,src:p.key,upd:today()});
- let nm=p.name;else if(to!=='x'){const x=A.assets.find(z=>z.id===+to);if(x){x.src=p.key;x.val=p.val;x.upd=today();nm=x.name}}
+ else if(to!=='x'){const x=A.assets.find(z=>z.id===+to);if(x){x.src=p.key;x.val=p.val;x.upd=today();nm=x.name}}
  RV.asn=RV.asn.filter(z=>z!==p);saveRV();saveA();try{autoSnap()}catch(err){}toast(to==='x'?'已忽略':'已更新「'+nm+'」'+yen(p.val));render()});
 async function pullInbox(){
  const rmN=dedupAuto();if(rmN)setTimeout(()=>{toast('合并了 '+rmN+' 笔重复记录');render()},0);
