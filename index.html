@@ -1083,7 +1083,14 @@ function acCard(){const un=(RV.ac||[]).map(id=>D.find(x=>x.id===id)).filter(x=>x
 function catFix1(){if(UI.cf1)return;const has=c=>CATS.includes(c),M=[[/AGODA|ZHI XIN OTA|TRIP\.COM|GRAB|ISLAND SOUVENIR|NOMAD EXPRESS|CHINA RAILWAY|ナリタ.*クウコウ|ナリタコクサイ/i,'旅游','交通'],[/HIGHWAYBUS/i,'交通'],[/エモツト/,'交通'],[/ワンコイングリ|ソウルメイトカンコクゴ|HELLOTALK/i,'学习','其他'],[/JINGDONG/i,'购物'],[/ドン・?キホ/,'日用品','购物']];let k=0;
  D.forEach(x=>{if(x.cat!=='其他')return;const n=(x.note||'').normalize('NFKC');for(const [re,c,fb] of M)if(re.test(n)){const v=has(c)?c:fb&&has(fb)?fb:null;if(v&&v!=='其他'){x.cat=v;k++}break}});
  UI.cf1=1;saveC();if(k){save();setTimeout(()=>toast('已帮你分好 '+k+' 笔「其他」'),1200)}}
-function reguessOnce(){try{catFix1()}catch(e){}if(UI.rg4)return;let k=0;D.forEach(x=>{if(x.ref&&x.cat==='其他'){const c=guess(x.note);if(c&&c!=='其他'){x.cat=c;k++}}});UI.rg4=1;saveC();if(k){save();setTimeout(()=>toast('已自动给 '+k+' 笔「其他」重新分类'),800)}}
+/* 一次性:同一家店分类不一致的统一一下 */
+function catFix2(){if(UI.cf2)return;let k=0;const has=c=>CATS.includes(c);
+ D.forEach(x=>{const n=(x.note||'').normalize('NFKC');let v=null;
+  if(/AMAP TAXI/i.test(n)&&x.cat!=='旅游'&&has('旅游'))v='旅游';
+  else if(/^カラオケ館/.test(n)&&x.cat==='交通')v='娱乐';
+  else if(/^麺尊RAGE/.test(n)&&x.cat==='旅游')v='餐饮';
+  if(v){x.cat=v;k++}});UI.cf2=1;saveC();if(k)save()}
+function reguessOnce(){try{catFix1()}catch(e){}try{catFix2()}catch(e){}if(UI.rg4)return;let k=0;D.forEach(x=>{if(x.ref&&x.cat==='其他'){const c=guess(x.note);if(c&&c!=='其他'){x.cat=c;k++}}});UI.rg4=1;saveC();if(k){save();setTimeout(()=>toast('已自动给 '+k+' 笔「其他」重新分类'),800)}}
 const UCS=new Set();
 document.addEventListener('change',e=>{const t=e.target;if(!t.dataset)return;
  if(t.dataset.ucs){const id=+t.dataset.ucs;if(t.checked)UCS.add(id);else UCS.delete(id);render();return}
