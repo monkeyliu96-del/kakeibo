@@ -1090,7 +1090,7 @@ function catFix2(){if(UI.cf2)return;let k=0;const has=c=>CATS.includes(c);
   else if(/^カラオケ館/.test(n)&&x.cat==='交通')v='娱乐';
   else if(/^麺尊RAGE/.test(n)&&x.cat==='旅游')v='餐饮';
   if(v){x.cat=v;k++}});UI.cf2=1;saveC();if(k)save()}
-function reguessOnce(){try{catFix1()}catch(e){}if(!UI.dk1){UI.dk1=1;UI.dupok=[...new Set([...(UI.dupok||[]),'APPLE COM BILL|1350|2026-10'])];saveC()}try{catFix2()}catch(e){}if(UI.rg4)return;let k=0;D.forEach(x=>{if(x.ref&&x.cat==='其他'){const c=guess(x.note);if(c&&c!=='其他'){x.cat=c;k++}}});UI.rg4=1;saveC();if(k){save();setTimeout(()=>toast('已自动给 '+k+' 笔「其他」重新分类'),800)}}
+function reguessOnce(){try{if(!UI.cf3){UI.cf3=1;let k=0;D.forEach(x=>{if(/AMAZON/i.test(x.note||'')&&((x.date==='2026-10-15'&&x.amt===159964)||(x.date==='2026-10-19'&&x.amt===79982))&&x.cat!==PX_CAT){x.cat=PX_CAT;k++}});saveC();if(k)save()}}catch(e){}try{catFix1()}catch(e){}if(!UI.dk1){UI.dk1=1;UI.dupok=[...new Set([...(UI.dupok||[]),'APPLE COM BILL|1350|2026-10'])];saveC()}try{catFix2()}catch(e){}if(UI.rg4)return;let k=0;D.forEach(x=>{if(x.ref&&x.cat==='其他'){const c=guess(x.note);if(c&&c!=='其他'){x.cat=c;k++}}});UI.rg4=1;saveC();if(k){save();setTimeout(()=>toast('已自动给 '+k+' 笔「其他」重新分类'),800)}}
 const UCS=new Set();
 document.addEventListener('change',e=>{const t=e.target;if(!t.dataset)return;
  if(t.dataset.ucs){const id=+t.dataset.ucs;if(t.checked)UCS.add(id);else UCS.delete(id);render();return}
