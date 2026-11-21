@@ -955,6 +955,12 @@ function applyRec(){
  if(ch){save();saveC()}
 }
 applyRec();
+/* 固定收入(工资):每月最后一天自动记一笔收入 */
+function applySal(){const S=A.sal;if(!S||!(S.amt>0))return false;const now=today(),cm=now.slice(0,7);let[y,m]=(S.last||prevM(cm)).split('-').map(Number),ch=false;
+ for(let k=0;k<24;k++){m++;if(m>12){m=1;y++}const mm=y+'-'+pad(m);if(mm>cm)break;const d=mm+'-'+pad(new Date(y,m,0).getDate());if(d>now)break;
+  if(!A.inc.some(x=>x.rid==='sal'&&x.date.startsWith(mm)))A.inc.push({id:nid(),amt:S.amt,note:'工资',date:d,rid:'sal'});S.last=mm;ch=true}
+ if(ch)saveA();return ch}
+try{applySal()}catch(e){}
 const parseCSV=t=>{const rows=[];let r=[],c='',q=false;for(let i=0;i<t.length;i++){const ch=t[i];if(q){if(ch==='"'){if(t[i+1]==='"'){c+='"';i++}else q=false}else c+=ch}else if(ch==='"')q=true;else if(ch===','){r.push(c);c=''}else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&t[i+1]==='\n')i++;r.push(c);c='';if(r.some(x=>x!==''))rows.push(r);r=[]}else c+=ch}r.push(c);if(r.some(x=>x!==''))rows.push(r);return rows};
 /* 导入时和手动记录对账:同日+同金额+同支付方式 → 自动合并;同日同金额(方式不同)或相差一天 → 让你确认 */
 const dd=(a,b)=>Math.abs((new Date(a)-new Date(b))/864e5);
@@ -1092,7 +1098,7 @@ function catFix2(){if(UI.cf2)return;let k=0;const has=c=>CATS.includes(c);
   else if(/^カラオケ館/.test(n)&&x.cat==='交通')v='娱乐';
   else if(/^麺尊RAGE/.test(n)&&x.cat==='旅游')v='餐饮';
   if(v){x.cat=v;k++}});UI.cf2=1;saveC();if(k)save()}
-function reguessOnce(){try{if(!UI.cf5){UI.cf5=1;const r=R.find(r=>r.name==='房租'&&r.cat==='居住');if(r)['2026-05','2026-06','2026-07','2026-08','2026-09','2026-10'].forEach(m=>{const d=m+'-'+pad(Math.min(r.day,28));if(!D.some(x=>x.rid===r.id&&x.date.startsWith(m)))D.push({id:nid(),amt:r.amt,method:r.method,cat:r.cat,note:r.name,date:d,rid:r.id})});save();saveC()}}catch(e){}try{if(!UI.cf4){UI.cf4=1;if(!A.inc.some(x=>x.ref==='yc:lucas:20261024')){A.inc.push({id:nid(),amt:240000,note:'LucasW(ゆうちょ)',date:'2026-10-24',ref:'yc:lucas:20261024',px:1});saveA()}saveC()}}catch(e){}try{if(!UI.cf3){UI.cf3=1;let k=0;D.forEach(x=>{if(/AMAZON/i.test(x.note||'')&&((x.date==='2026-10-15'&&x.amt===159964)||(x.date==='2026-10-19'&&x.amt===79982))&&x.cat!==PX_CAT){x.cat=PX_CAT;k++}});saveC();if(k)save()}}catch(e){}try{catFix1()}catch(e){}if(!UI.dk1){UI.dk1=1;UI.dupok=[...new Set([...(UI.dupok||[]),'APPLE COM BILL|1350|2026-10'])];saveC()}try{catFix2()}catch(e){}if(UI.rg4)return;let k=0;D.forEach(x=>{if(x.ref&&x.cat==='其他'){const c=guess(x.note);if(c&&c!=='其他'){x.cat=c;k++}}});UI.rg4=1;saveC();if(k){save();setTimeout(()=>toast('已自动给 '+k+' 笔「其他」重新分类'),800)}}
+function reguessOnce(){try{if(!UI.cf6){UI.cf6=1;if(!A.sal){A.sal={amt:370000,last:'2026-10'};['2026-05','2026-06','2026-07','2026-08','2026-09','2026-10'].forEach(m=>{const[y,mo]=m.split('-').map(Number);if(!A.inc.some(x=>x.rid==='sal'&&x.date.startsWith(m)))A.inc.push({id:nid(),amt:370000,note:'工资',date:m+'-'+pad(new Date(y,mo,0).getDate()),rid:'sal'})});saveA()}saveC()}}catch(e){}try{if(!UI.cf5){UI.cf5=1;const r=R.find(r=>r.name==='房租'&&r.cat==='居住');if(r)['2026-05','2026-06','2026-07','2026-08','2026-09','2026-10'].forEach(m=>{const d=m+'-'+pad(Math.min(r.day,28));if(!D.some(x=>x.rid===r.id&&x.date.startsWith(m)))D.push({id:nid(),amt:r.amt,method:r.method,cat:r.cat,note:r.name,date:d,rid:r.id})});save();saveC()}}catch(e){}try{if(!UI.cf4){UI.cf4=1;if(!A.inc.some(x=>x.ref==='yc:lucas:20261024')){A.inc.push({id:nid(),amt:240000,note:'LucasW(ゆうちょ)',date:'2026-10-24',ref:'yc:lucas:20261024',px:1});saveA()}saveC()}}catch(e){}try{if(!UI.cf3){UI.cf3=1;let k=0;D.forEach(x=>{if(/AMAZON/i.test(x.note||'')&&((x.date==='2026-10-15'&&x.amt===159964)||(x.date==='2026-10-19'&&x.amt===79982))&&x.cat!==PX_CAT){x.cat=PX_CAT;k++}});saveC();if(k)save()}}catch(e){}try{catFix1()}catch(e){}if(!UI.dk1){UI.dk1=1;UI.dupok=[...new Set([...(UI.dupok||[]),'APPLE COM BILL|1350|2026-10'])];saveC()}try{catFix2()}catch(e){}if(UI.rg4)return;let k=0;D.forEach(x=>{if(x.ref&&x.cat==='其他'){const c=guess(x.note);if(c&&c!=='其他'){x.cat=c;k++}}});UI.rg4=1;saveC();if(k){save();setTimeout(()=>toast('已自动给 '+k+' 笔「其他」重新分类'),800)}}
 const UCS=new Set();
 document.addEventListener('change',e=>{const t=e.target;if(!t.dataset)return;
  if(t.dataset.ucs){const id=+t.dataset.ucs;if(t.checked)UCS.add(id);else UCS.delete(id);render();return}
@@ -1199,6 +1205,7 @@ document.addEventListener('change',e=>{
  if(t.id==='qc'||t.id==='qm'){Q[t.id==='qc'?'c':'m']=t.value;if(Q.k==='in')Q.k='';render();return}
  if(t.id==='bt'){const n=num(t.value);B.total=n>0?n:0;saveC();toast('已保存预算');return}
  if(t.dataset&&t.dataset.bc){const n=num(t.value);if(n>0)B.cats[t.dataset.bc]=n;else delete B.cats[t.dataset.bc];saveC();toast('已保存预算');if(!(n>0))render();return}
+ if(t.id==='salA'){const v=Math.round(num(t.value)||0);if(v>0){A.sal=Object.assign({last:prevM(today().slice(0,7))},A.sal||{},{amt:v});applySal();toast('已设置工资 '+yen(v)+',每月最后一天自动记')}else{delete A.sal;toast('已取消固定工资')}saveA();return}
  if(t.id==='ppf'&&t.files[0]){const f=t.files[0];t.value='';readF(f).then(v=>{if(v.trim())importPay(v);else toast('文件是空的')})}
  if(t.id==='rkf'&&t.files.length){const fs=[...t.files];t.value='';importRakuten(fs)}
  if(t.id==='bkf'&&t.files[0])readF(t.files[0],'bkt');
@@ -1540,6 +1547,7 @@ function fixPage(){
  const re=RE?R.find(x=>x.id===RE):null,tot=R.reduce((q,r)=>q+r.amt,0);
  let h=`<div class="box hero"><div class="hl"><span>每月固定支出</span></div><p class="hv${R.length?'':' mu'}">${R.length?yen(tot):'¥0'}</p><p class="sub" style="margin:4px 0 0">${R.length?'共 '+R.length+' 项,到日子会自动记一笔':'房租、话费、订阅等每月固定的开销,到日子自动记账。'}</p></div>`;
  if(R.length)h+=`<div class="sgrp">`+R.slice().sort((p,q)=>p.day-q.day).map(r=>`<button class="srow" data-redit="${r.id}">${catIcon(r.cat)}<span class="sl">${esc(r.name)}<small>每月 ${r.day} 日 · ${esc(r.cat)} · ${mname(r.method)}</small></span><span class="sv" style="color:var(--tx);font-weight:600">${yen(r.amt)}</span><span class="chev">›</span></button>`).join('')+`</div>`;
+ h+=`<p class="sgt">固定收入</p><div class="sgrp frm"><label class="fr"><span>工资(每月最后一天)</span><input id="salA" inputmode="numeric" placeholder="不设置" value="${A.sal&&A.sal.amt||''}" autocomplete="off"></label></div><p class="sub" style="margin:4px 4px 12px">到月底自动记一笔收入;实际金额不一样时,在明细里改那一笔就行。</p>`;
  if(re||OPEN.fix){const dopt=Array.from({length:31},(_,i)=>`<option value="${i+1}"${(re?re.day:1)===i+1?' selected':''}>${i+1} 日</option>`).join('');
   h+=`<p class="sgt">${re?'编辑「'+esc(re.name)+'」':'添加固定支出'}</p><div class="sgrp frm">`
    +`<label class="fr"><span>名称</span><input id="rn" placeholder="例如 家賃" autocomplete="off" value="${esc(re?re.name:'')}"></label>`
