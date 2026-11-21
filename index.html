@@ -1341,5 +1341,6 @@ render();
 i18nStart();i18nRun();
 try{if(localStorage.getItem(AUK)||/access_token=|type=recovery/.test(location.hash))sbBoot().catch(()=>{})}catch(e){}
 </script>
+<script>if('serviceWorker' in navigator&&location.protocol==='https:'){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}</script>
 </body>
 </html>
