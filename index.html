@@ -1136,6 +1136,19 @@ function applyDoc(o){
  CC=Array.isArray(o.CC)?o.CC:[];PM=(Array.isArray(o.PM)&&o.PM.length&&o.PM.every(m=>Array.isArray(m)&&m[0]&&m[1]))?o.PM:null;
  applyPM();applyCats();applyUI();MUTE=true;save();saveA();saveC();MUTE=false;
  if(!(document.activeElement&&document.activeElement.matches('#app input,#app textarea')))render()}
+/* ===== 端对端加密:云端只存密文,解密钥匙只在用户自己的设备上 =====
+   加密密码 → PBKDF2(SHA-256, 31 万次) → AES-GCM 256。钥匙存在这台设备上,换设备时输入一次加密密码。 */
+const EKK='kakeibo.ek.v1';let EKEY=null,ESALT='',EENV=null,EDIS=false,EJUST=false;
+const b64e=u=>{let s='';for(let i=0;i<u.length;i+=8192)s+=String.fromCharCode.apply(null,u.subarray(i,i+8192));return btoa(s)};
+const b64d=t=>Uint8Array.from(atob(t),c=>c.charCodeAt(0));
+async function ekDerive(pw,salt){const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);
+ return crypto.subtle.deriveKey({name:'PBKDF2',salt:b64d(salt),iterations:310000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},true,['encrypt','decrypt'])}
+async function ekSave(uid){try{localStorage.setItem(EKK,J({uid,salt:ESALT,k:b64e(new Uint8Array(await crypto.subtle.exportKey('raw',EKEY)))}))}catch(e){}}
+async function ekLoad(uid){if(EKEY&&ESALT)return;try{const o=JSON.parse(localStorage.getItem(EKK)||'null');if(o&&o.uid===uid&&o.k){EKEY=await crypto.subtle.importKey('raw',b64d(o.k),'AES-GCM',true,['encrypt','decrypt']);ESALT=o.salt}}catch(e){}}
+function ekClear(){EKEY=null;ESALT='';try{localStorage.removeItem(EKK)}catch(e){}}
+async function encDoc(o){const iv=crypto.getRandomValues(new Uint8Array(12));
+ return {enc:1,salt:ESALT,iv:b64e(iv),ct:b64e(new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},EKEY,new TextEncoder().encode(J(o)))))}}
+async function decDoc(e,key){return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:b64d(e.iv)},key||EKEY,b64d(e.ct))))}
 async function syncNow(){
  if(!SB||!SESS)return;if(SYNCING){SYAGAIN=true;return}
  SYNCING=true;SYNC.st='ing';paintSync();const uid=SESS.user.id;
@@ -1144,21 +1157,29 @@ async function syncNow(){
   for(let t=0;t<4;t++){
    const sv=syGet(),base=sv.uid===uid?sv.base:null;
    const {data:row,error}=await SB.from('kakeibo_state').select('data,updated_at').eq('user_id',uid).maybeSingle();if(error)throw error;
-   const loc=localDoc(),m=row?mergeDoc(loc,row.data,base):loc;
+   await ekLoad(uid);
+   /* 云端是密文:这台设备没有钥匙(或钥匙不对)就停下,绝不拿本机数据覆盖云端 */
+   let rd=row?row.data:null;const isEnc=!!(rd&&rd.enc);
+   if(isEnc){EENV=rd;if(!EKEY||ESALT!==rd.salt)throw {needKey:1};try{rd=await decDoc(rd)}catch(e){throw {needKey:1}}}
+   const wantEnc=!!EKEY&&!EDIS;
+   const loc=localDoc(),m=row?mergeDoc(loc,rd,base):loc;
    if(J(m)!==J(loc))applyDoc(m);
-   if(row&&J(m)===J(row.data)){sySet({uid,base:m});break}
-   const now=new Date().toISOString();
-   const res=row?await SB.from('kakeibo_state').update({data:m,updated_at:now}).eq('user_id',uid).eq('updated_at',row.updated_at).select('updated_at')
-                :await SB.from('kakeibo_state').insert({user_id:uid,data:m,updated_at:now}).select('updated_at');
+   if(row&&J(m)===J(rd)&&isEnc===wantEnc){sySet({uid,base:m});break}
+   const now=new Date().toISOString(),pay=wantEnc?await encDoc(m):m;
+   const res=row?await SB.from('kakeibo_state').update({data:pay,updated_at:now}).eq('user_id',uid).eq('updated_at',row.updated_at).select('updated_at')
+                :await SB.from('kakeibo_state').insert({user_id:uid,data:pay,updated_at:now}).select('updated_at');
    if(res.error){if(!row&&res.error.code==='23505')continue;throw res.error}
    if(!res.data||!res.data.length)continue;
    sySet({uid,base:m});break}
   SYNC={st:'ok',at:Date.now(),err:''};
+  /* 刚开启加密:删掉云端备份里加密前的明文;刚关闭加密:清掉本机钥匙 */
+  if(EJUST&&EKEY&&!EDIS){EJUST=false;await SB.from('kakeibo_history').delete().eq('user_id',uid).is('data->enc',null)}
+  if(EDIS){EDIS=false;ekClear();toast('已关闭加密')}
   if(apIds.ids.length){await SB.from('kakeibo_inbox').delete().in('id',apIds.ids);if(apN){const k=(RV.ac||[]).filter(i=>{const z=D.find(y=>y.id===i);return z&&z.cat==='其他'}).length;toast('自动记了 '+apN+' 笔'+(k?',有 '+k+' 家新店要选分类':''));render()}}
- }catch(e){SYNC={st:'err',at:SYNC.at,err:(e&&e.message)||String(e)}}
+ }catch(e){SYNC=e&&e.needKey?{st:'key',at:SYNC.at,err:'需要加密密码'}:{st:'err',at:SYNC.at,err:(e&&e.message)||String(e)};if(e&&e.needKey)setTimeout(paintMe,0)}
  SYNCING=false;paintSync();if(SYAGAIN){SYAGAIN=false;syncNow()}}
 function syncLabel(){const t=SYNC.at?new Date(SYNC.at).toTimeString().slice(0,5):'';
- return SYNC.st==='ing'?'<i class="syn ing"></i>同步中…':SYNC.st==='ok'?`<i class="syn ok"></i>已同步 · ${t}`:SYNC.st==='err'?`<i class="syn err"></i>同步失败,联网后会自动重试`:'<i class="syn"></i>尚未同步'}
+ return SYNC.st==='ing'?'<i class="syn ing"></i>同步中…':SYNC.st==='ok'?`<i class="syn ok"></i>已同步 · ${t}`:SYNC.st==='key'?`<i class="syn err"></i>需要输入加密密码`:SYNC.st==='err'?`<i class="syn err"></i>同步失败,联网后会自动重试`:'<i class="syn"></i>尚未同步'}
 function paintSync(){const e=$('synst');if(e)e.innerHTML=syncLabel()}
 const authErr=m=>/Invalid login/i.test(m)?'邮箱或密码不正确':/not confirmed/i.test(m)?'邮箱还没有确认,请先点邮件里的确认链接':/already registered|already exists/i.test(m)?'这个邮箱已经注册过,请直接登录':/at least|Password should/i.test(m)?'密码至少 6 位':/valid email|invalid format/i.test(m)?'邮箱格式不正确':/rate limit|too many/i.test(m)?'操作太频繁,请稍后再试':/fetch|network/i.test(m)?'网络连接失败,请检查网络':m;
 var MESUB='';
@@ -1178,6 +1199,11 @@ function srow(k,sub,val){const ic=SI[k];return `<button class='srow' data-sub='$
 var LEM='';
 const IC={mail:'<path d="M3 6.5A1.5 1.5 0 014.5 5h15A1.5 1.5 0 0121 6.5v11a1.5 1.5 0 01-1.5 1.5h-15A1.5 1.5 0 013 17.5z"/><path d="M3.5 6l8.5 7 8.5-7"/>',lock:'<rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 018 0v3"/>',eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',cloud:'<path d="M7 18a5 5 0 01-.5-10A6 6 0 0118 9a4.5 4.5 0 01-1 9z"/>',key:'<circle cx="8" cy="15" r="4"/><path d="M10.8 12.2L20 3M16 7l3 3"/>',out:'<path d="M15 4h3a2 2 0 012 2v12a2 2 0 01-2 2h-3M10 17l5-5-5-5M15 12H3"/>',sync:'<path d="M21 12a9 9 0 01-15.5 6.3L3 16M3 12A9 9 0 0118.5 5.7L21 8"/><path d="M21 3v5h-5M3 21v-5h5"/>'};
 const ic=k=>`<svg viewBox="0 0 24 24" aria-hidden="true">${IC[k]}</svg>`;
+function encBox(){
+ const pw=(id,ph)=>`<label class='fld'>${ic('lock')}<input id='${id}' type='password' placeholder='${ph}' autocomplete='new-password'><button type='button' class='eye' data-eye='${id}' aria-label='显示密码'>${ic('eye')}</button></label>`;
+ if(SYNC.st==='key')return `<div class='box auth'><h2 class='ah'>输入加密密码</h2><p class='sub' style='margin:0 0 8px'>你的云端数据已加密。在这台设备上输入一次加密密码就能同步(这不是登录密码)。</p>${pw('ekin','加密密码')}<button class='go' id='ekuse'>解锁</button></div>`;
+ if(EKEY)return `<div class='box'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px'><span class='pill'>${ic('lock')} 云端数据已加密</span><button class='lk' id='ekoff' style='font-size:13px'>关闭加密</button></div><p class='sub' style='margin:8px 0 0'>云端只存密文,开发者也看不到你的账目。换设备时需要输入加密密码,忘了就无法找回云端数据。</p></div>`;
+ return `<div class='box auth'><h2 class='ah'>加密云端数据</h2><p class='sub' style='margin:0 0 8px'>开启后,数据在手机上加密再上传,云端只存密文,开发者也看不到。<b>加密密码忘了就无法找回云端数据</b>,请务必记好。</p>${pw('ekn1','设置加密密码(至少 8 位)')}${pw('ekn2','再输入一次')}<button class='go' id='ekon'>开启加密</button></div>`}
 function acctBox(){
  if(!SB){sbBoot().then(paintMe,()=>{});return `<div class='box auth'><p class='sub' style='margin:0;text-align:center'>正在连接云端…</p></div>`}
  const pw=(id,ph,ac)=>`<label class='fld'>${ic('lock')}<input id='${id}' type='password' placeholder='${ph}' autocomplete='${ac}'><button type='button' class='eye' data-eye='${id}' aria-label='显示密码'>${ic('eye')}</button></label>`;
@@ -1190,6 +1216,7 @@ function acctBox(){
   +`<button class='go' id='${up?'signup':'login'}'>${up?'注册并登录':'登录'}</button>`
   +`<p class='anote'>${ic('cloud')}<span>登录后数据自动同步到云端,换手机也能找回。首次登录会和这台手机上的记录合并。</span></p></div>`}
  return `<div class='box'><div style='display:flex;align-items:center;justify-content:space-between'><span class='pill' id='synst'>${syncLabel()}</span><button class='lk' id='syncnow' style='font-size:14px'>立即同步</button></div><p class='sub' style='margin:10px 0 0'>记账、资产、预算和设置都会自动同步。没网时照常记账,联网后自动补传。</p></div>`
+  +encBox()
   +(CPW?`<div class='box auth'><h2 class='ah'>修改密码</h2>${pw('npw','新密码(至少 6 位)','new-password')}<div style='display:flex;gap:8px'><button class='go' id='setpw' style='flex:1'>保存</button><button class='go alt' data-cpw='0' style='flex:1'>取消</button></div></div>`:'')
   +`<div class='sgrp'><button class='srow' data-cpw='1'><span class='si' style='background:#8f887e'>${ic('key')}</span><span class='sl'>修改密码</span><span class='chev'>›</span></button><button class='srow' id='logout'><span class='si' style='background:var(--pp)'>${ic('out')}</span><span class='sl' style='color:var(--pp)'>退出登录</span></button></div>`}
 function meView(){
@@ -1230,8 +1257,15 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button');i
  if(t.id==='setpw'){const pw=$('npw').value;if(pw.length<6){toast('密码至少 6 位');return}const r=await SB.auth.updateUser({password:pw});if(r.error){toast(authErr(r.error.message));return}RECOV=false;CPW=false;toast('密码已更新');render();return}
  if(t.dataset.cpw){CPW=t.dataset.cpw==='1';render();if(CPW){const e=$('npw');if(e)e.focus()}return}
  if(t.id==='syncnow'){syncNow();return}
+ if(t.id==='ekon'){const a=$('ekn1').value,b=$('ekn2').value;if(a.length<8){toast('加密密码至少 8 位');return}if(a!==b){toast('两次输入的不一样');return}
+  t.disabled=true;t.textContent='正在加密…';ESALT=b64e(crypto.getRandomValues(new Uint8Array(16)));EKEY=await ekDerive(a,ESALT);EJUST=true;await ekSave(SESS.user.id);await syncNow();
+  toast(SYNC.st==='ok'?'已开启加密':'加密已开启,联网后会自动上传');render();return}
+ if(t.id==='ekuse'){const a=$('ekin').value;if(!a||!EENV){toast('请输入加密密码');return}t.disabled=true;t.textContent='正在解锁…';
+  try{const k=await ekDerive(a,EENV.salt);await decDoc(EENV,k);EKEY=k;ESALT=EENV.salt;await ekSave(SESS.user.id);SYNC={st:'off',at:0,err:''};await syncNow();toast('已解锁');render()}
+  catch(e){t.disabled=false;t.textContent='解锁';toast('加密密码不对')}return}
+ if(t.id==='ekoff'){if(t.dataset.cf!=='1'){t.dataset.cf='1';t.textContent='确认关闭(云端改回明文)';return}EDIS=true;await syncNow();render();return}
  if(t.id==='logout'){if(t.dataset.cf!=='1'){t.dataset.cf='1';t.textContent='确认退出';return}
-  clearTimeout(SYT);await syncNow();await SB.auth.signOut();sySet({});toast('已退出登录,这台手机上的记录会保留');render();return}
+  clearTimeout(SYT);await syncNow();await SB.auth.signOut();sySet({});ekClear();EENV=null;toast('已退出登录,这台手机上的记录会保留');render();return}
 });
 document.addEventListener('change',async e=>{const t=e.target;
  if(t.id==='nick'){UI.nick=t.value.trim();saveC();paintMe();return}

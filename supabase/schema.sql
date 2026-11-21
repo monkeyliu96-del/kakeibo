@@ -47,6 +47,8 @@ create policy "own row: insert" on public.kakeibo_state for insert to authentica
 create policy "own row: update" on public.kakeibo_state for update to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 create policy "own row: delete" on public.kakeibo_state for delete to authenticated using ((select auth.uid()) = user_id);
 create policy "own history: select" on public.kakeibo_history for select to authenticated using ((select auth.uid()) = user_id);
+-- 开启加密后,App 会删掉自己备份里加密前的明文
+create policy "own history: delete" on public.kakeibo_history for delete to authenticated using ((select auth.uid()) = user_id);
 create policy "tok_own" on public.kakeibo_tokens for all to authenticated using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
 create policy "inbox_sel" on public.kakeibo_inbox for select to authenticated using (user_id = (select auth.uid()));
 create policy "inbox_del" on public.kakeibo_inbox for delete to authenticated using (user_id = (select auth.uid()));
