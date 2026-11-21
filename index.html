@@ -713,7 +713,7 @@ const CARD_DAY=27,isCredit=m=>m!=='paypay'&&m!=='cash';
 /* 每张卡:扣的是按记账算出的上个月刷卡合计(和导入的明细一致,方便核对);
    截过账单页(PayPay ウォレット、乐天卡 App)的话,旁边列出实际账单做对照,不一致就标红 */
 /* 账单和记账对不上时:列出最可能出问题的几笔 */
-function difSuspects(m,mth,df){const xs=D.filter(x=>x.date.startsWith(m)&&x.method===mth),out=[],seen=new Set(),add=(x,why)=>{const o=out.find(z=>z.x.id===x.id);if(o){if(!o.why.includes(why))o.why+=' · '+why;return}seen.add(x.id);out.push({x,why})};
+function difSuspects(m,mth,df){const xs=D.filter(x=>x.date.startsWith(m)&&x.method===mth&&!x.difok),out=[],seen=new Set(),add=(x,why)=>{const o=out.find(z=>z.x.id===x.id);if(o){if(!o.why.includes(why))o.why+=' · '+why;return}seen.add(x.id);out.push({x,why})};
  const ad=Math.abs(df);
  xs.filter(x=>x.amt===ad).forEach(x=>add(x,'金额正好等于差额'));
  if(df>0){const g={};xs.forEach(x=>{const k=x.date+'|'+x.amt;(g[k]=g[k]||[]).push(x)});Object.values(g).filter(a=>a.length>1).forEach(a=>a.forEach(x=>add(x,'同一天同金额,可能重复')))}
@@ -722,7 +722,7 @@ function difSuspects(m,mth,df){const xs=D.filter(x=>x.date.startsWith(m)&&x.meth
 function difBlock(u){const k='dif'+u.mth,op=OPEN[k],sus=op?difSuspects(u.m,u.mth,u.df):[];
  return `<button class='row arow' data-difx='${k}'><div class='rm'><div>减 ${esc(u.lbl)}</div><span style='color:var(--pp)'>${esc(u.sub)}</span></div><div class='amt' style='color:var(--pp)'>−${yen(u.v)}</div><span class='chev' style='transform:rotate(${op?90:0}deg)'>›</span></button>`
  +(op?`<div style='padding:0 0 10px'><p class='sub' style='margin:4px 0 6px'>记账 ${yen(u.v)} − 账单 ${yen(u.bill)} = ${u.df>0?'多记了':'少记了'} ${yen(Math.abs(u.df))}。${u.df>0?'先看有没有重复或已取消的。':'可能有漏记的,导入这张卡的明细就能补上。'}</p>`
-  +(sus.length?sus.map(({x,why})=>`<button class='row arow' data-edit='${x.id}'><div class='rm'><div>${esc(x.note||x.cat)}</div><span>${+x.date.slice(5,7)}/${+x.date.slice(8)} · ${esc(why)}</span></div><div class='amt'>${yen(x.amt)}</div><span class='chev'>›</span></button>`).join(''):`<p class='sub' style='margin:0'>没找到明显可疑的记录。</p>`)
+  +(sus.length?sus.map(({x,why})=>`<div class='row' style='gap:8px'><button class='arow' data-edit='${x.id}' style='flex:1;min-width:0;display:flex;align-items:center;gap:8px;border:0;padding:0'><div class='rm'><div>${esc(x.note||x.cat)}</div><span>${+x.date.slice(5,7)}/${+x.date.slice(8)} · ${esc(why)}</span></div><div class='amt'>${yen(x.amt)}</div></button><button class='lk' data-difok='${x.id}' style='flex:none;font-size:13px'>没问题</button></div>`).join(''):`<p class='sub' style='margin:0'>没找到明显可疑的记录。</p>`)
   +`<button class='lk' data-upc='${u.m}' data-upm='${u.mth}' style='margin-top:6px'>查看 ${+u.m.slice(5)}月全部 ${esc(u.nm)} 记录 ›</button></div>`:'')}
 const CARDS=[['card','ppc','PayPay卡'],['rakuten','rkc','乐天卡']];
 const unpaidCard=d=>{const items=[];if(!d||+d.slice(8)>=CARD_DAY)return {items,v:0};const B=A.bills||{},pm=prevM(d.slice(0,7));
@@ -825,6 +825,7 @@ document.addEventListener('click',e=>{
  if(t.dataset.rfetch){fetchRates(true);return}
  if(t.dataset.rtx){OPEN.rt=!OPEN.rt;render();return}
  if(t.dataset.upc){Q=t.dataset.upm?{t:'',c:'',m:t.dataset.upm,k:'out',f:''}:{t:'',c:'',m:'',k:'out',f:'',cr:1};ym=t.dataset.upc;LV='list';location.hash='#list';return}
+ if(t.dataset.difok){const x=D.find(z=>z.id===+t.dataset.difok);if(x){x.difok=1;save();toast('已标记,不再列出这笔')}render();return}
  if(t.dataset.difx){OPEN[t.dataset.difx]=!OPEN[t.dataset.difx];render();return}
  if(t.dataset.cssoff){delete A.cashSS;delete A.cashPP;saveA();try{autoSnap()}catch(e){}toast('已改回按收支推算');render();return}
  if(t.dataset.rg){A.rg=t.dataset.rg;saveA();render();return}
