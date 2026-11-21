@@ -712,11 +712,23 @@ const stockJ=()=>A.assets.reduce((s,x)=>s+x.val,0);
 const CARD_DAY=27,isCredit=m=>m!=='paypay'&&m!=='cash';
 /* 每张卡:扣的是按记账算出的上个月刷卡合计(和导入的明细一致,方便核对);
    截过账单页(PayPay ウォレット、乐天卡 App)的话,旁边列出实际账单做对照,不一致就标红 */
+/* 账单和记账对不上时:列出最可能出问题的几笔 */
+function difSuspects(m,mth,df){const xs=D.filter(x=>x.date.startsWith(m)&&x.method===mth),out=[],seen=new Set(),add=(x,why)=>{const o=out.find(z=>z.x.id===x.id);if(o){if(!o.why.includes(why))o.why+=' · '+why;return}seen.add(x.id);out.push({x,why})};
+ const ad=Math.abs(df);
+ xs.filter(x=>x.amt===ad).forEach(x=>add(x,'金额正好等于差额'));
+ if(df>0){const g={};xs.forEach(x=>{const k=x.date+'|'+x.amt;(g[k]=g[k]||[]).push(x)});Object.values(g).filter(a=>a.length>1).forEach(a=>a.forEach(x=>add(x,'同一天同金额,可能重复')))}
+ xs.filter(x=>!x.ref||AUTOR.test(x.ref)).forEach(x=>add(x,x.ref?'自动记的,还没和明细对上':'手动记的,还没和明细对上'));
+ return out}
+function difBlock(u){const k='dif'+u.mth,op=OPEN[k],sus=op?difSuspects(u.m,u.mth,u.df):[];
+ return `<button class='row arow' data-difx='${k}'><div class='rm'><div>减 ${esc(u.lbl)}</div><span style='color:var(--pp)'>${esc(u.sub)}</span></div><div class='amt' style='color:var(--pp)'>−${yen(u.v)}</div><span class='chev' style='transform:rotate(${op?90:0}deg)'>›</span></button>`
+ +(op?`<div style='padding:0 0 10px'><p class='sub' style='margin:4px 0 6px'>记账 ${yen(u.v)} − 账单 ${yen(u.bill)} = ${u.df>0?'多记了':'少记了'} ${yen(Math.abs(u.df))}。${u.df>0?'先看有没有重复或已取消的。':'可能有漏记的,导入这张卡的明细就能补上。'}</p>`
+  +(sus.length?sus.map(({x,why})=>`<button class='row arow' data-edit='${x.id}'><div class='rm'><div>${esc(x.note||x.cat)}</div><span>${+x.date.slice(5,7)}/${+x.date.slice(8)} · ${esc(why)}</span></div><div class='amt'>${yen(x.amt)}</div><span class='chev'>›</span></button>`).join(''):`<p class='sub' style='margin:0'>没找到明显可疑的记录。</p>`)
+  +`<button class='lk' data-upc='${u.m}' data-upm='${u.mth}' style='margin-top:6px'>查看 ${+u.m.slice(5)}月全部 ${esc(u.nm)} 记录 ›</button></div>`:'')}
 const CARDS=[['card','ppc','PayPay卡'],['rakuten','rkc','乐天卡']];
 const unpaidCard=d=>{const items=[];if(!d||+d.slice(8)>=CARD_DAY)return {items,v:0};const B=A.bills||{},pm=prevM(d.slice(0,7));
  CARDS.forEach(([mth,key,nm])=>{const v=sum(D.filter(x=>x.date.startsWith(pm)&&x.method===mth)),b=B[key],bill=b&&b.pay&&b.pay.slice(0,7)===d.slice(0,7)?b:null;
   if(!v&&!bill)return;const df=bill?v-bill.val:0;
-  items.push({nm,v,m:pm,mth,lbl:nm+' '+(+pm.slice(5))+'月消费',sub:bill?('账单 '+yen(bill.val)+(df?' · 差 '+(df>0?'+':'−')+yen(Math.abs(df)):' · 一致')):'本月'+CARD_DAY+'日扣款',bad:!!(bill&&df)})});
+  items.push({nm,v,m:pm,mth,df,bill:bill?bill.val:null,lbl:nm+' '+(+pm.slice(5))+'月消费',sub:bill?('账单 '+yen(bill.val)+(df?' · 差 '+(df>0?'+':'−')+yen(Math.abs(df)):' · 一致')):'本月'+CARD_DAY+'日扣款',bad:!!(bill&&df)})});
  const v=sum(D.filter(x=>x.date.startsWith(pm)&&isCredit(x.method)&&!CARDS.some(c=>c[0]===x.method)));if(v)items.push({nm:'其他卡',v,m:pm,lbl:'其他信用卡 '+(+pm.slice(5))+'月消费',sub:'本月'+CARD_DAY+'日扣款'});
  return {items,v:items.reduce((a,x)=>a+x.v,0)}};
 /* 现金 = ゆうちょ(减去还没扣的上月信用卡)+ PayPay残高;两者都没截过图时才按收支推算 */
@@ -773,7 +785,7 @@ function assetsRaw(){
  +(AE==='new'?aform(null):`<button class='go alt' data-anew='1' style='margin:10px 0 0;padding:9px'>+ 添加投资资产</button>`)+`</div>`;
  const snapb='',chb=OPEN.chg?chgBox(prev,fm,tot):'';
  const upc=A.cashSS?unpaidCard(A.cashSS.upd):{items:[],v:0},sd=d=>(+d.slice(5,7))+'/'+(+d.slice(8));
- const cashb=cashSSm()?`<div>${A.cashSS?`<div class='row'><div class='rm'><div>ゆうちょ 現在高</div><span>截图更新 · ${sd(A.cashSS.upd)}</span></div><div class='amt'>${yen(A.cashSS.val)}</div></div>`:''}${A.cashPP?`<div class='row'><div class='rm'><div>PayPay残高</div><span>截图更新 · ${sd(A.cashPP.upd)}</span></div><div class='amt'>${yen(A.cashPP.val)}</div></div>`:''}${(upc.items||[]).map(u=>u.m?`<button class='row arow' data-upc='${u.m}' data-upm='${u.mth||''}'><div class='rm'><div>减 ${esc(u.lbl)}</div><span${u.bad?" style='color:var(--pp)'":''}>${esc(u.sub)}</span></div><div class='amt' style='color:var(--pp)'>−${yen(u.v)}</div><span class='chev'>›</span></button>`:`<div class='row'><div class='rm'><div>减 ${esc(u.lbl)}</div><span>${esc(u.sub)}</span></div><div class='amt' style='color:var(--pp)'>−${yen(u.v)}</div></div>`).join('')}<p class='sub' style='margin:8px 0 0'>在ゆうちょ App 首页、PayPay ウォレット、乐天卡 App 的「合計お支払い金額」页双击手机背面就会更新。<button class='lk' data-cssoff='1'>改回按收支推算</button></p></div>`:`<div>`+(CE?`<label for='ce-cash'>起算日当天开始时的余额(日元)</label><input id='ce-cash' class='f' inputmode='numeric' value='${A.cash||''}' placeholder='0'><label for='ce-sd'>起算日</label><div class='dwrap f'><span id='ce-sdl'>${fmtD(A.start)}</span><span class='chev'>›</span><input id='ce-sd' type='date' value='${A.start}' aria-label='起算日'></div><p class='sub' style='margin:6px 0 0'>一般设一次就行。改了以后,现金会从新的起算日重新计算,已确认过的总资产数值不会变。</p><div style='display:flex;gap:6px;margin-top:12px'><button class='go' id='csave' style='margin:0;flex:1;padding:9px'>保存</button><button class='go alt' id='ccancel' style='margin:0;flex:1;padding:9px'>取消</button></div>`
+ const cashb=cashSSm()?`<div>${A.cashSS?`<div class='row'><div class='rm'><div>ゆうちょ 現在高</div><span>截图更新 · ${sd(A.cashSS.upd)}</span></div><div class='amt'>${yen(A.cashSS.val)}</div></div>`:''}${A.cashPP?`<div class='row'><div class='rm'><div>PayPay残高</div><span>截图更新 · ${sd(A.cashPP.upd)}</span></div><div class='amt'>${yen(A.cashPP.val)}</div></div>`:''}${(upc.items||[]).map(u=>u.bad?difBlock(u):u.m?`<button class='row arow' data-upc='${u.m}' data-upm='${u.mth||''}'><div class='rm'><div>减 ${esc(u.lbl)}</div><span${u.bad?" style='color:var(--pp)'":''}>${esc(u.sub)}</span></div><div class='amt' style='color:var(--pp)'>−${yen(u.v)}</div><span class='chev'>›</span></button>`:`<div class='row'><div class='rm'><div>减 ${esc(u.lbl)}</div><span>${esc(u.sub)}</span></div><div class='amt' style='color:var(--pp)'>−${yen(u.v)}</div></div>`).join('')}<p class='sub' style='margin:8px 0 0'>在ゆうちょ App 首页、PayPay ウォレット、乐天卡 App 的「合計お支払い金額」页双击手机背面就会更新。<button class='lk' data-cssoff='1'>改回按收支推算</button></p></div>`:`<div>`+(CE?`<label for='ce-cash'>起算日当天开始时的余额(日元)</label><input id='ce-cash' class='f' inputmode='numeric' value='${A.cash||''}' placeholder='0'><label for='ce-sd'>起算日</label><div class='dwrap f'><span id='ce-sdl'>${fmtD(A.start)}</span><span class='chev'>›</span><input id='ce-sd' type='date' value='${A.start}' aria-label='起算日'></div><p class='sub' style='margin:6px 0 0'>一般设一次就行。改了以后,现金会从新的起算日重新计算,已确认过的总资产数值不会变。</p><div style='display:flex;gap:6px;margin-top:12px'><button class='go' id='csave' style='margin:0;flex:1;padding:9px'>保存</button><button class='go alt' id='ccancel' style='margin:0;flex:1;padding:9px'>取消</button></div>`
   :`<div><div class='row'><div class='rm'><div>起算余额</div><span>${A.start} 起算</span></div><div class='amt'>${yen(A.cash||0)}</div></div><div class='row'><div class='rm'><div>起算日以来收入</div></div><div class='amt' style='color:var(--in)'>${sgn(f.i)}</div></div><div class='row'><div class='rm'><div>起算日以来支出</div></div><div class='amt'>${f.o?'−'+yen(f.o):yen(0)}</div></div></div><button class='go alt' id='cedit' style='margin:10px 0 0;padding:9px'>修改起算余额 / 起算日</button><p class='sub' style='margin:10px 0 0'>余额 = 起算余额 + 收入 − 支出</p>`)+`</div>`;
  let trb='';{const all=sn,RG=A.rg||'3m',lastD=all.length?all[all.length-1].date:td,dd0=(d,n)=>{const x=new Date(d+'T00:00:00');x.setDate(x.getDate()-n);return ymd(x)};
   const longer=all.length>1&&Date.parse(lastD)-Date.parse(all[0].date)>31*864e5,cutD=!longer||RG==='all'?'':dd0(lastD,RG==='1m'?30:91);
@@ -813,6 +825,7 @@ document.addEventListener('click',e=>{
  if(t.dataset.rfetch){fetchRates(true);return}
  if(t.dataset.rtx){OPEN.rt=!OPEN.rt;render();return}
  if(t.dataset.upc){Q=t.dataset.upm?{t:'',c:'',m:t.dataset.upm,k:'out',f:''}:{t:'',c:'',m:'',k:'out',f:'',cr:1};ym=t.dataset.upc;LV='list';location.hash='#list';return}
+ if(t.dataset.difx){OPEN[t.dataset.difx]=!OPEN[t.dataset.difx];render();return}
  if(t.dataset.cssoff){delete A.cashSS;delete A.cashPP;saveA();try{autoSnap()}catch(e){}toast('已改回按收支推算');render();return}
  if(t.dataset.rg){A.rg=t.dataset.rg;saveA();render();return}
  if(t.dataset.chgx){OPEN.chg=!OPEN.chg;render();return}
