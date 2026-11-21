@@ -64,7 +64,7 @@ nav a.on{background:var(--sel);color:var(--ac);font-weight:700}
 .toast{position:absolute;left:50%;bottom:112px;z-index:7;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s}
 .toast.on{opacity:1}.toast.act{pointer-events:auto;display:flex;gap:14px;align-items:center}.toast button{background:none;border:0;color:var(--ac);font-weight:700;font-size:14px;padding:0;cursor:pointer}
 :focus-visible{outline:2px solid var(--ac);outline-offset:2px}
-.pg{height:8px;background:var(--ln);border-radius:4px;overflow:hidden;margin:6px 0 4px}.pg i{display:block;height:100%}
+.pg{display:flex;height:8px;background:var(--ln);border-radius:4px;overflow:hidden;margin:6px 0 4px}.pg i{display:block;height:100%}
 textarea.f{min-height:34px;font-size:13px}
 .srch{display:flex;gap:8px;margin:6px 0 2px;align-items:center}.srch .sq{margin:0;font-size:15px;flex:1;min-width:0;display:flex;align-items:center;gap:6px;height:38px;padding:0 12px;background:var(--sf);border:1px solid var(--ln);border-radius:19px;transition:border-color .15s,box-shadow .15s;cursor:text}.srch .sq:focus-within{border-color:var(--ac);box-shadow:0 0 0 3px color-mix(in srgb,var(--ac) 18%,transparent)}.srch .sq svg{flex:none;width:17px;height:17px;stroke:var(--mu);fill:none;stroke-width:2.2;stroke-linecap:round}.srch .sq input{flex:1;min-width:0;border:0;background:none;outline:0;font:inherit;font-size:15px;color:var(--tx);padding:0;height:100%;-webkit-appearance:none}.srch .sq input::placeholder{color:var(--mu)}.srch .sq input::-webkit-search-decoration{-webkit-appearance:none}.srch .ss{flex:none;position:relative;display:flex}.srch .ss:after{content:'';position:absolute;right:12px;top:50%;width:6px;height:6px;margin-top:-5px;border:solid var(--mu);border-width:0 1.8px 1.8px 0;transform:rotate(45deg);pointer-events:none}.srch .ss select{-webkit-appearance:none;appearance:none;height:38px;max-width:112px;padding:0 28px 0 14px;border:1px solid var(--ln);border-radius:19px;background:var(--sf);color:var(--tx);font:inherit;font-size:14px;outline:0;text-overflow:ellipsis}.srch .ss.on select{background:color-mix(in srgb,var(--ac) 12%,var(--sf));border-color:color-mix(in srgb,var(--ac) 45%,transparent);color:var(--ac);font-weight:600}.srch .ss.on:after{border-color:var(--ac)}.srch .ss select:focus{border-color:var(--ac)}.srch .f{padding:9px 10px;font-size:15px;min-width:0}
 button.bar,button.lg{background:none;border:0;padding:0;text-align:left;cursor:pointer;font:inherit;color:inherit}
@@ -440,7 +440,7 @@ function listBody(){
  SEL.ids=SEL.ids.filter(k=>L.some(x=>x.key===k));
  const msb=L.length&&!SEL.on?`<button class="lk" data-s="on" style="float:right;font-size:13px;padding:0">多选</button>`:'';
  let h='<div class="lsum">'+(Q.k==='in'?`<p class="big" style="color:var(--in)"><small>+¥</small>${Math.round(sum(ia)).toLocaleString('ja-JP')}</p><p class="sub">${msb}${Q.t?'筛选结果':'本月收入'},共 ${ia.length} 笔</p>`:`<p class="big"><small>¥</small>${Math.round(tot).toLocaleString('ja-JP')}</p><p class="sub">${msb}${fl?'筛选结果':'本月支出'},共 ${a.length} 笔${Q.pt?(()=>{const c0=prevM(today().slice(0,7))+'-01',n=D.filter(x=>x.ptu&&x.date<c0).length;return n?`<br><button class="lk" data-ptold="1" style="font-size:13px;padding:0;margin-top:4px">${+c0.slice(5,7)}月之前的 ${n} 笔不处理了(按原价算)</button>`:''})():''}${!fl&&inM(ym)?' · 收入 '+yen(inM(ym))+' · 结余 '+sgn(inM(ym)-all):''}</p>`);
- if(!fl&&B.total>0)h+=`<div class="pg"><i style="width:${Math.min(100,all/B.total*100)}%;background:var(${all>B.total?'--pp':'--ac'})"></i></div><p class="sub">预算 ${yen(B.total)} · ${all>B.total?'已超出 '+yen(all-B.total):'剩余 '+yen(B.total-all)}</p>`;
+ if(!fl&&B.total>0){const uf=upFix(ym),al=all+uf.amt;h+=`<div class="pg"><i style="width:${Math.min(100,all/B.total*100)}%;background:var(${al>B.total?'--pp':'--ac'})"></i>${uf.amt?`<i style="width:${Math.max(0,Math.min(100-all/B.total*100,uf.amt/B.total*100))}%;background:var(--ac);opacity:.35"></i>`:''}</div><p class="sub">预算 ${yen(B.total)} · ${al>B.total?'已超出 '+yen(al-B.total):'剩余 '+yen(B.total-al)}${uf.amt?' · 已预留 '+esc(uf.txt):''}</p>`}
  /* 分类预算:平时只提醒快用完(≥80%)或已超的;按分类筛选时显示这个分类的预算 */
  const mcs=c=>sum(monthData().filter(x=>x.cat===c));
  if(!fl){const wn=Object.keys(B.cats).map(c=>[c,mcs(c),B.cats[c]]).filter(([c,u,l])=>l>0&&u>=l*.8).sort((p,q)=>q[1]/q[2]-p[1]/p[2]);
@@ -503,9 +503,11 @@ document.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)r
  if(t.dataset.ppla){const n=($('ppln').value||'').trim();if(!n){toast('请填写名字');return}UI.ppl=Object.assign({},UI.ppl,{[n]:t.dataset.ppla});done('已添加 '+n);return}
  if(t.dataset.pplt){const n=t.dataset.pplt;UI.ppl=Object.assign({},UI.ppl,{[n]:UI.ppl[n]==='px'?'aa':'px'});done('已修改 '+n);return}
  if(t.dataset.ppld){const n=t.dataset.ppld,o=Object.assign({},UI.ppl);delete o[n];UI.ppl=o;done('已删除 '+n);return}});
+/* 本月还没到扣款日的固定支出(房租等):预算里先预留 */
+function upFix(m){if(m!==today().slice(0,7))return {amt:0,txt:''};const xs=R.filter(r=>(r.last||'')<m&&r.cat!==PX_CAT&&r.cat!==INV_CAT);return {amt:xs.reduce((q,r)=>q+r.amt,0),txt:xs.map(r=>r.name+' '+yen(r.amt)).join('、')}}
 function todayBud(){if(!(B.total>0))return '';
  const td=today(),m=td.slice(0,7),[y,mo,d]=td.split('-').map(Number),dl=new Date(y,mo,0).getDate()-d+1;
- const spent=sum(D.filter(x=>x.date.startsWith(m)&&own(x))),tdS=sum(D.filter(x=>x.date===td&&own(x))),rest=B.total-spent,left=(B.total-spent+tdS)/dl-tdS;
+ const spent=sum(D.filter(x=>x.date.startsWith(m)&&own(x)))+upFix(m).amt,tdS=sum(D.filter(x=>x.date===td&&own(x))),rest=B.total-spent,left=(B.total-spent+tdS)/dl-tdS;
  if(rest<0)return `<div class="tbud">本月已超出预算 <b class="over">${yen(-rest)}</b></div>`;
  return `<div class="tbud">本月预算还剩 ${yen(rest)} · ${left>=0?`今天还能花 <b>${yen(left)}</b>`:`今天已超 <b class="over">${yen(-left)}</b>`}</div>`}
 const CCOL=['--pp','--c5','--cd','--cr','--c6','--cs','--c8','--c7'];
@@ -1090,7 +1092,7 @@ function catFix2(){if(UI.cf2)return;let k=0;const has=c=>CATS.includes(c);
   else if(/^カラオケ館/.test(n)&&x.cat==='交通')v='娱乐';
   else if(/^麺尊RAGE/.test(n)&&x.cat==='旅游')v='餐饮';
   if(v){x.cat=v;k++}});UI.cf2=1;saveC();if(k)save()}
-function reguessOnce(){try{if(!UI.cf4){UI.cf4=1;if(!A.inc.some(x=>x.ref==='yc:lucas:20261024')){A.inc.push({id:nid(),amt:240000,note:'LucasW(ゆうちょ)',date:'2026-10-24',ref:'yc:lucas:20261024',px:1});saveA()}saveC()}}catch(e){}try{if(!UI.cf3){UI.cf3=1;let k=0;D.forEach(x=>{if(/AMAZON/i.test(x.note||'')&&((x.date==='2026-10-15'&&x.amt===159964)||(x.date==='2026-10-19'&&x.amt===79982))&&x.cat!==PX_CAT){x.cat=PX_CAT;k++}});saveC();if(k)save()}}catch(e){}try{catFix1()}catch(e){}if(!UI.dk1){UI.dk1=1;UI.dupok=[...new Set([...(UI.dupok||[]),'APPLE COM BILL|1350|2026-10'])];saveC()}try{catFix2()}catch(e){}if(UI.rg4)return;let k=0;D.forEach(x=>{if(x.ref&&x.cat==='其他'){const c=guess(x.note);if(c&&c!=='其他'){x.cat=c;k++}}});UI.rg4=1;saveC();if(k){save();setTimeout(()=>toast('已自动给 '+k+' 笔「其他」重新分类'),800)}}
+function reguessOnce(){try{if(!UI.cf5){UI.cf5=1;const r=R.find(r=>r.name==='房租'&&r.cat==='居住');if(r)['2026-05','2026-06','2026-07','2026-08','2026-09','2026-10'].forEach(m=>{const d=m+'-'+pad(Math.min(r.day,28));if(!D.some(x=>x.rid===r.id&&x.date.startsWith(m)))D.push({id:nid(),amt:r.amt,method:r.method,cat:r.cat,note:r.name,date:d,rid:r.id})});save();saveC()}}catch(e){}try{if(!UI.cf4){UI.cf4=1;if(!A.inc.some(x=>x.ref==='yc:lucas:20261024')){A.inc.push({id:nid(),amt:240000,note:'LucasW(ゆうちょ)',date:'2026-10-24',ref:'yc:lucas:20261024',px:1});saveA()}saveC()}}catch(e){}try{if(!UI.cf3){UI.cf3=1;let k=0;D.forEach(x=>{if(/AMAZON/i.test(x.note||'')&&((x.date==='2026-10-15'&&x.amt===159964)||(x.date==='2026-10-19'&&x.amt===79982))&&x.cat!==PX_CAT){x.cat=PX_CAT;k++}});saveC();if(k)save()}}catch(e){}try{catFix1()}catch(e){}if(!UI.dk1){UI.dk1=1;UI.dupok=[...new Set([...(UI.dupok||[]),'APPLE COM BILL|1350|2026-10'])];saveC()}try{catFix2()}catch(e){}if(UI.rg4)return;let k=0;D.forEach(x=>{if(x.ref&&x.cat==='其他'){const c=guess(x.note);if(c&&c!=='其他'){x.cat=c;k++}}});UI.rg4=1;saveC();if(k){save();setTimeout(()=>toast('已自动给 '+k+' 笔「其他」重新分类'),800)}}
 const UCS=new Set();
 document.addEventListener('change',e=>{const t=e.target;if(!t.dataset)return;
  if(t.dataset.ucs){const id=+t.dataset.ucs;if(t.checked)UCS.add(id);else UCS.delete(id);render();return}
@@ -1519,11 +1521,11 @@ function iconPicker(c){const cur=(UI.cico||{})[c]||DEFI[c]||'';
  return `<div class="icp"><div class="sech"><span>为「${esc(c)}」选择图标</span><button data-pick="">${(UI.cico||{})[c]?'恢复默认':'关闭'}</button></div><div class="icg">${Object.keys(ICONS).map(k=>`<button class="icb" data-pick="${k}" aria-pressed="${cur===k}"><svg viewBox="0 0 24 24">${ICONS[k]}</svg></button>`).join('')}</div></div>`}
 const pbar=(u,l)=>`<div class="pb"><i style="width:${Math.min(100,l?u/l*100:0)}%;background:var(${u>l?'--pp':'--ac'})"></i></div>`;
 function budPage(){
- const m=today().slice(0,7),a=D.filter(x=>x.date.startsWith(m)),spent=sum(a),bc={};a.forEach(x=>bc[x.cat]=(bc[x.cat]||0)+x.amt);
+ const m=today().slice(0,7),a=D.filter(x=>x.date.startsWith(m)&&own(x)),uf=upFix(m),spent=sum(a)+uf.amt,bc={};a.forEach(x=>bc[x.cat]=(bc[x.cat]||0)+x.amt);
  const bks=Object.keys(B.cats).filter(c=>CATS.includes(c)),left=CATS.filter(c=>!B.cats[c]);
  let h=`<div class="box hero"><div class="hl"><span>每月总预算</span>${BE==='total'?'':`<button class="lk" data-be="total">${B.total>0?'修改':'设置'}</button>`}</div>`;
  if(BE==='total')h+=`<div class="fr inl"><span class="yen">¥</span><input id="bt2" inputmode="numeric" placeholder="不设置" value="${B.total||''}" autocomplete="off"></div><div class="btns"><button class="go" id="bsave" data-k="total">保存</button><button class="go alt" data-be="">取消</button></div>`;
- else if(B.total>0){const rest=B.total-spent;h+=`<p class="hv">${yen(B.total)}</p>${pbar(spent,B.total)}<p class="sub" style="margin:8px 0 0">本月已花 ${yen(spent)} · ${rest>=0?'剩余 '+yen(rest):'<b style="color:var(--pp)">已超出 '+yen(-rest)+'</b>'}</p>${todayBud().replace('class="tbud"','class="tbud" style="margin:4px 0 0"')}`}
+ else if(B.total>0){const rest=B.total-spent;h+=`<p class="hv">${yen(B.total)}</p>${pbar(spent,B.total)}<p class="sub" style="margin:8px 0 0">本月已花 ${yen(spent-uf.amt)}${uf.amt?' + 预留 '+esc(uf.txt):''} · ${rest>=0?'剩余 '+yen(rest):'<b style="color:var(--pp)">已超出 '+yen(-rest)+'</b>'}</p>${todayBud().replace('class="tbud"','class="tbud" style="margin:4px 0 0"')}`}
  else h+=`<p class="hv mu">未设置</p><p class="sub" style="margin:4px 0 0">设置后,记一笔页会显示「今天还能花多少」。</p>`;
  h+=`</div><p class="sgt">分类预算</p><div class="sgrp">`;
  bks.forEach(c=>{const u=bc[c]||0,l=B.cats[c];
