@@ -1167,12 +1167,19 @@ function apMethod(c){const s=mkey(c);
  if(/PAYPAY/.test(s))return vm('card');
  const h=s&&pmSrc().find(m=>{const n=mkey(m[1]);return m[0]!=='cash'&&m[0]!=='paypay'&&n&&(s.includes(n)||n.includes(s))});
  return h?h[0]:vm('card')}
+/* 自动记的那笔,如果已经有从明细导入的同一笔(同金额、同支付方式、日期差 ≤1 天)→ 以导入的为准,不重复记 */
+const stmtOf=(amt,date,method,claimed)=>D.find(z=>z.ref&&!AUTOR.test(z.ref)&&z.amt===amt&&z.method===method&&dd(z.date,date)<=1&&!claimed.has(z.id));
+function dedupAuto(){const claimed=new Set(),rm=new Set();
+ D.filter(x=>x.ref&&AUTOR.test(x.ref)).forEach(x=>{const z=stmtOf(x.amt,x.date,x.method,claimed);if(z){claimed.add(z.id);rm.add(x.id)}});
+ if(rm.size){D=D.filter(x=>!rm.has(x.id));save()}return rm.size}
 async function pullInbox(){
+ const rmN=dedupAuto();if(rmN)setTimeout(()=>{toast('合并了 '+rmN+' 笔重复记录');render()},0);
  const {data,error}=await SB.from('kakeibo_inbox').select('id,amt,merchant,card,at,src,ext').order('id');
  if(error||!data||!data.length)return {ids:[],n:0};
  let n=0;const claimed=new Set();
  data.forEach(r=>{const ref=r.src==='ml'&&r.ext?'ml:'+r.ext:'ap:'+r.id;if(D.some(x=>x.ref===ref))return;
   const date=ymd(new Date(r.at)),method=apMethod(r.card),note=(r.merchant||'').normalize('NFKC').trim();
+  const sm=stmtOf(r.amt,date,method,claimed);if(sm){claimed.add(sm.id);return}
   const ex=D.find(z=>!z.ref&&!z.rid&&z.amt===r.amt&&z.date===date&&z.method===method&&!claimed.has(z.id));
   if(ex){claimed.add(ex.id);linkManual(ex,ref,note);return}
   /* 同一笔被 Apple Pay 和邮件各报了一次(比如钱包里也勾了 PayPay 卡)→ 只记一次 */
@@ -1322,6 +1329,7 @@ document.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault
 try{const hq=new URLSearchParams(location.hash.slice(1)),ec=hq.get('error_code')||hq.get('error');
  if(ec){history.replaceState(null,'',location.pathname+'#me/acct');setTimeout(()=>toast(/expired|otp/.test(ec)?'这个邮件链接已失效或已被用过。请在 App 里重新点「忘记密码」,并打开最新的那封邮件':'邮件链接无法使用:'+(hq.get('error_description')||ec)),300)}}catch(e){}
 try{reguessOnce()}catch(e){}
+try{dedupAuto()}catch(e){}
 render();
 i18nStart();i18nRun();
 try{if(localStorage.getItem(AUK)||/access_token=|type=recovery/.test(location.hash))sbBoot().catch(()=>{})}catch(e){}
