@@ -973,13 +973,13 @@ function reconTag(x){
  if(x.ref||x.rid||!IMPM.includes(x.method))return '';
  const last=stmtLast(x.method);
  return last&&x.date<=last?'<span class="tg bad">未对上</span>':'<span class="tg">待对账</span>'}
-/* ===== 疑似重复扣款:只看乐天卡和订阅服务 —— 同一商户、同一金额在同一个月被扣了多次 ===== */
+/* ===== 疑似重复扣款:订阅服务 = 同一个月扣了多次;其他乐天卡消费 = 同一天同店同额多次(Suica 充值、麦当劳这种隔几天一次的不算) ===== */
 const SUBRE=/APPLE|ICLOUD|ITUNES|NETFLIX|SPOTIFY|AMAZON|PRIME|GOOGLE|YOUTUBE|DISNEY|HULU|U-NEXT|ADOBE|MICROSOFT|OPENAI|CHATGPT|ANTHROPIC|CLAUDE|DAZN|ABEMA|NINTENDO|PLAYSTATION|DROPBOX|楽天モバイル|DOCOMO|SOFTBANK|AHAMO|POVO/i;
 const mkey=n=>String(n||'').normalize('NFKC').toUpperCase().replace(/\s+/g,' ').trim();
 function dupCharges(m){
  const ok=new Set(UI.dupok||[]),g={},seen={};
  D.forEach(x=>{if(!x.ref||!x.note||!(x.method==='rakuten'||SUBRE.test(mkey(x.note))))return;const b=mkey(x.note)+'|'+x.amt;(seen[b]=seen[b]||new Set()).add(x.date.slice(0,7));
-  if(m&&!x.date.startsWith(m))return;const k=b+'|'+x.date.slice(0,7);(g[k]=g[k]||{k,b,n:x.note,amt:x.amt,mo:x.date.slice(0,7),xs:[]}).xs.push(x)});
+  if(m&&!x.date.startsWith(m))return;const k=b+'|'+(SUBRE.test(mkey(x.note))?x.date.slice(0,7):x.date);(g[k]=g[k]||{k,b,n:x.note,amt:x.amt,mo:x.date.slice(0,7),xs:[]}).xs.push(x)});
  return Object.values(g).filter(o=>o.xs.length>=2&&!ok.has(o.k)).sort((p,q)=>q.mo.localeCompare(p.mo)||q.amt-p.amt)}
 function dupCard(gs){if(!gs.length)return '';
  return `<div class="box dupc"><h2><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>疑似重复扣款 · ${gs.length} 组</h2><p class="sub" style="margin:0 0 4px">同一商户、同一金额,同一个月被扣了不止一次。如果确实是重复扣款,可以联系商户(Apple 可在「设置 → Apple 账户 → 订阅 / 购买记录」里查看)或卡公司申请退款。</p>`
@@ -1090,7 +1090,7 @@ function catFix2(){if(UI.cf2)return;let k=0;const has=c=>CATS.includes(c);
   else if(/^カラオケ館/.test(n)&&x.cat==='交通')v='娱乐';
   else if(/^麺尊RAGE/.test(n)&&x.cat==='旅游')v='餐饮';
   if(v){x.cat=v;k++}});UI.cf2=1;saveC();if(k)save()}
-function reguessOnce(){try{catFix1()}catch(e){}try{catFix2()}catch(e){}if(UI.rg4)return;let k=0;D.forEach(x=>{if(x.ref&&x.cat==='其他'){const c=guess(x.note);if(c&&c!=='其他'){x.cat=c;k++}}});UI.rg4=1;saveC();if(k){save();setTimeout(()=>toast('已自动给 '+k+' 笔「其他」重新分类'),800)}}
+function reguessOnce(){try{catFix1()}catch(e){}if(!UI.dk1){UI.dk1=1;UI.dupok=[...new Set([...(UI.dupok||[]),'APPLE COM BILL|1350|2026-10'])];saveC()}try{catFix2()}catch(e){}if(UI.rg4)return;let k=0;D.forEach(x=>{if(x.ref&&x.cat==='其他'){const c=guess(x.note);if(c&&c!=='其他'){x.cat=c;k++}}});UI.rg4=1;saveC();if(k){save();setTimeout(()=>toast('已自动给 '+k+' 笔「其他」重新分类'),800)}}
 const UCS=new Set();
 document.addEventListener('change',e=>{const t=e.target;if(!t.dataset)return;
  if(t.dataset.ucs){const id=+t.dataset.ucs;if(t.checked)UCS.add(id);else UCS.delete(id);render();return}
