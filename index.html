@@ -812,8 +812,14 @@ function matchManual(date,amt,method,claimed){const pool=D.filter(z=>(!z.ref||AU
 function linkManual(z,ref,note){z.ref=ref;if(!z.note)z.note=note}
 const IMPM=['paypay','card','rakuten'];
 const AUTOR=/^(ap|ml):/;
-function reconTag(x){if(x.ref&&AUTOR.test(x.ref))return '<span class="tg">'+(x.ref.startsWith('ml:')?'邮件':'Apple Pay')+'</span>';if(x.ref||x.rid||!IMPM.includes(x.method))return '';
- const last=D.reduce((m,z)=>z.ref&&z.method===x.method&&z.date>m?z.date:m,'');
+/* 明细导入覆盖到的最后日期(只算真正从明细导入的,不算自动记的) */
+const stmtLast=m=>D.reduce((a,z)=>z.ref&&!AUTOR.test(z.ref)&&z.method===m&&z.date>a?z.date:a,'');
+function reconTag(x){
+ if(x.ref&&AUTOR.test(x.ref)){const src=x.ref.startsWith('ml:')?'邮件':'Apple Pay',last=stmtLast(x.method);
+  /* 明细已经导入到这笔之后,却没对上 → 可能被取消/退款,或明细里金额不同 */
+  return last&&x.date<last?'<span class="tg bad">'+src+' · 未对上</span>':'<span class="tg">'+src+'</span>'}
+ if(x.ref||x.rid||!IMPM.includes(x.method))return '';
+ const last=stmtLast(x.method);
  return last&&x.date<=last?'<span class="tg bad">未对上</span>':'<span class="tg">待对账</span>'}
 /* ===== 疑似重复扣款:只看乐天卡和订阅服务 —— 同一商户、同一金额在同一个月被扣了多次 ===== */
 const SUBRE=/APPLE|ICLOUD|ITUNES|NETFLIX|SPOTIFY|AMAZON|PRIME|GOOGLE|YOUTUBE|DISNEY|HULU|U-NEXT|ADOBE|MICROSOFT|OPENAI|CHATGPT|ANTHROPIC|CLAUDE|DAZN|ABEMA|NINTENDO|PLAYSTATION|DROPBOX|楽天モバイル|DOCOMO|SOFTBANK|AHAMO|POVO/i;
