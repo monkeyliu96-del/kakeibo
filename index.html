@@ -405,7 +405,8 @@ let SEL={on:false,ids:[],cf:false},clrc=false;
 function selBar(a){
  if(!SEL.on)return '';
  const n=SEL.ids.length,all=a.length&&n===a.length;
- return `<div class="srch" style="gap:6px"><button class="go alt" style="margin:0;flex:1;padding:8px 6px;font-size:14px" data-s="all">${all?'取消全选':'全选 ('+a.length+')'}</button><button class="go" style="margin:0;flex:1;padding:8px 6px;font-size:14px;background:var(--pp);color:#fff${n?'':';opacity:.45'}" data-s="del"${n?'':' disabled'}>${SEL.cf?'确认删除 '+n+' 笔':'删除所选 '+n}</button><button class="go alt" style="margin:0;flex:0 0 auto;width:auto;padding:8px 16px;font-size:14px" data-s="off">完成</button></div>${(()=>{const xs=SEL.ids.map(k=>D.find(x=>x.id===k)).filter(x=>x&&!x.rid);if(!xs.length)return '';const on=xs.every(x=>x.fix);return `<button class="go alt" style="margin:6px 0 4px;padding:8px 6px;font-size:14px" data-s="fix">${on?'取消固定支出标签('+xs.length+' 笔)':'标为固定支出('+xs.length+' 笔)'}</button>`})()}`;
+ return `<div class="srch" style="gap:6px"><button class="go alt" style="margin:0;flex:1;padding:8px 6px;font-size:14px" data-s="all">${all?'取消全选':'全选 ('+a.length+')'}</button><button class="go" style="margin:0;flex:1;padding:8px 6px;font-size:14px;background:var(--pp);color:#fff${n?'':';opacity:.45'}" data-s="del"${n?'':' disabled'}>${SEL.cf?'确认删除 '+n+' 笔':'删除所选 '+n}</button><button class="go alt" style="margin:0;flex:0 0 auto;width:auto;padding:8px 16px;font-size:14px" data-s="off">完成</button></div>${(()=>{const xs=SEL.ids.map(k=>D.find(x=>x.id===k)).filter(x=>x&&!x.rid);if(!xs.length)return '';const on=xs.every(x=>x.fix),sel='margin:0;flex:1;min-width:0;padding:8px 10px;font-size:14px';
+  return `<div style="display:flex;gap:6px;margin:6px 0 0"><select class="f" data-sbc="1" style="${sel}" aria-label="改分类"><option value="">改分类(${xs.length} 笔)</option>${CATS.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')}</select><select class="f" data-sbm="1" style="${sel}" aria-label="改支付方式"><option value="">改支付方式</option>${MT.map(m=>`<option value="${m[0]}">${m[1]}</option>`).join('')}</select></div><button class="go alt" style="margin:6px 0 4px;padding:8px 6px;font-size:14px" data-s="fix">${on?'取消固定支出标签('+xs.length+' 笔)':'标为固定支出('+xs.length+' 笔)'}</button>`})()}`;
 }
 function listSplit(){const h=listBody(),i=h.indexOf('<!--S-->');return [h.slice(0,i),h.slice(i+8)]}
 function updList(){const r=listSplit();$('lsum').innerHTML=r[0];$('lst').innerHTML=r[1]}
@@ -438,6 +439,10 @@ function listBody(){
  return h;
 }
 let LV='list',SRCH=false;
+/* 多选:批量改分类 / 支付方式 */
+document.addEventListener('change',e=>{const t=e.target;if(!t.dataset||!(t.dataset.sbc||t.dataset.sbm)||!t.value)return;
+ const xs=SEL.ids.map(k=>D.find(x=>x.id===k)).filter(x=>x&&!x.rid);if(!xs.length)return;const v=t.value;
+ xs.forEach(x=>{if(t.dataset.sbc)x.cat=v;else x.method=v});save();toast((t.dataset.sbc?'已改为「'+v+'」':'已改为 '+mnr(v))+' · '+xs.length+' 笔');SEL.cf=false;updList()});
 document.addEventListener('click',e=>{if(!e.target.closest('button[data-qcr]'))return;delete Q.cr;render()});
 document.addEventListener('click',e=>{const t=e.target.closest('button[data-srx]');if(!t)return;const on=SRCH||Q.t||Q.c||Q.m;if(on){SRCH=false;Q.t='';Q.c='';Q.m='';render()}else{SRCH=true;render();const i=$('qs');if(i)i.focus()}});
 function calHtml(){
