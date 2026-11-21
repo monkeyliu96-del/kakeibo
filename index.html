@@ -1305,7 +1305,10 @@ async function pullInbox(){
  if(error||!data||!data.length)return {ids:[],n:0};
  let n=0;const claimed=new Set();
  const asu=[];
- data.forEach(r=>{if(r.src==='as'){asIn(r,asu);return}const ref=r.src==='ml'&&r.ext?'ml:'+r.ext:r.src==='pp'?(r.ext?'pp:'+r.ext:'ss:'+r.id):'ap:'+r.id;if(D.some(x=>x.ref===ref))return;
+ let inN=0;
+ data.forEach(r=>{if(r.src==='as'){asIn(r,asu);return}
+  /* 朋友转给我的钱(截图)→ 收入;取引番号和 CSV 一致,月底导入不会重复 */
+  if(r.src==='pi'){const ref=r.ext?'pp:'+r.ext:'pi:'+r.id;if(!A.inc.some(x=>x.ref===ref)){A.inc.push({id:nid(),amt:r.amt,note:(r.merchant||'收款').normalize('NFKC').trim(),date:ymd(new Date(r.at)),ref});inN++}return}const ref=r.src==='ml'&&r.ext?'ml:'+r.ext:r.src==='pp'?(r.ext?'pp:'+r.ext:'ss:'+r.id):'ap:'+r.id;if(D.some(x=>x.ref===ref))return;
   const date=ymd(new Date(r.at)),method=apMethod(r.card),note=(r.merchant||'').normalize('NFKC').trim();
   const sm=stmtOf(r.amt,date,method,claimed);if(sm){claimed.add(sm.id);return}
   const ex=D.find(z=>!z.ref&&!z.rid&&z.amt===r.amt&&z.date===date&&z.method===method&&!claimed.has(z.id));
@@ -1317,6 +1320,7 @@ async function pullInbox(){
   const cat=guess(note)||'其他',id=nid();D.push({id,amt:r.amt,method,cat,note,date,ref,...(r.src==='pp'&&ref.startsWith('pp:')?{via:'ss'}:{}),...(fixOf(note)?{fix:true}:{})});n++;
   /* 第一次出现的店认不出分类 → 首页让你选一次,之后同名的店自动沿用 */
   if(cat==='其他'&&note){RV.ac=[...(RV.ac||[]),id];saveRV()}});
+ if(inN){saveA();setTimeout(()=>{toast('记了 '+inN+' 笔收入');render()},200)}
  if(asu.length){saveA();try{autoSnap()}catch(e){}const ok=asu.filter(Boolean),nw=asu.length-ok.length;setTimeout(()=>{toast((ok.length?'已更新资产:'+ok.join('、'):'')+(nw?(ok.length?',':'')+'有 '+nw+' 项新资产待确认,在资产页选一下':''));render()},300)}
  save();if(n)setTimeout(()=>{if(!(document.activeElement&&document.activeElement.matches('#app input,#app textarea')))render()},0);
  return {ids:data.map(r=>r.id),n}}

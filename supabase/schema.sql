@@ -31,7 +31,7 @@ create table if not exists public.kakeibo_inbox (
   merchant text not null default '',
   card text not null default '',
   at timestamptz not null default now(),
-  src text not null default 'ap',   -- ap=Apple Pay, ml=邮件, pp=PayPay截图, as=资产截图
+  src text not null default 'ap',   -- ap=Apple Pay, ml=邮件, pp=PayPay付款/转出截图, pi=收款截图, as=资产截图
   ext text
 );
 create index if not exists kakeibo_inbox_user on public.kakeibo_inbox using btree (user_id);
@@ -178,16 +178,51 @@ begin
     'at', t, 'ext', nullif(replace(coalesce(r[1], ''), ' ', ''), ''));
 end $function$;
 
--- 快捷指令「截图 → 识别文字」调用的入口:先试资产截图,再试付款截图
+-- PayPay 送る/受け取る 详情页:{ok,dir:'out'|'in',amt,name,at,ext};不是转账页返回 null
+create or replace function public.ss_transfer(txt text) returns json
+language plpgsql immutable set search_path to '' as $function$
+declare s text; pat text := '(\d{4})\s*年\s*(\d{1,2})\s*月\s*(\d{1,2})\s*日\s*(\d{1,2})\s*時\s*(\d{1,2})\s*分';
+  dir text; nm text; m text[]; p1 int; a text[]; r text[];
+begin
+  s := left(normalize(coalesce(txt, ''), nfkc), 6000);
+  if s ~ 'さんに送る' then dir := 'out'; nm := (regexp_match(s, '([^\n]{1,40}?)\s*さんに送る'))[1];
+  elsif s ~ 'さんから(受け取る|受け取り|もらう|送られ)' or s ~ 'さんから' and s ~ '受け取' then dir := 'in'; nm := (regexp_match(s, '([^\n]{1,40}?)\s*さんから'))[1];
+  else return null; end if;
+  m := regexp_match(s, pat);
+  if m is null then return json_build_object('ok', false, 'error', '没找到转账时间'); end if;
+  p1 := regexp_instr(s, pat, 1, 1, 1);
+  a := regexp_match(substr(s, p1), '([0-9][0-9,]*)\s*円');
+  if a is null then return json_build_object('ok', false, 'error', '没找到金额'); end if;
+  r := regexp_match(s, '取引番号\D{0,12}([0-9 ]{15,40})');
+  if r is null then r := regexp_match(s, '(?:^|[^0-9])([0-9]{18,24})(?:[^0-9]|$)'); end if;
+  return json_build_object('ok', true, 'dir', dir, 'amt', replace(a[1], ',', '')::int, 'name', btrim(coalesce(nm, '')),
+    'at', make_timestamptz(m[1]::int, m[2]::int, m[3]::int, m[4]::int, m[5]::int, 0, 'Asia/Tokyo'),
+    'ext', nullif(replace(coalesce(r[1], ''), ' ', ''), ''));
+end $function$;
+
+-- 快捷指令「截图 → 识别文字」调用的入口:转账 → 资产截图 → 付款截图
 create or replace function public.ss_push(tok text, txt text)
  returns json language plpgsql security definer set search_path to ''
 as $function$
-declare uid uuid; n int; j json; e text; amt int; a json; x json; names text := '';
+declare uid uuid; n int; j json; e text; amt int; a json; x json; names text := ''; tr json; sr text;
 begin
   select user_id into uid from public.kakeibo_tokens where token = tok;
   if uid is null then return json_build_object('ok', false, 'msg', '密钥不对,请重新复制 tok'); end if;
   select count(*) into n from public.kakeibo_inbox where user_id = uid and kakeibo_inbox.at > now() - interval '1 day';
   if n >= 300 then return json_build_object('ok', false, 'msg', '今天记得太多了,请稍后再试'); end if;
+  /* 转账(送る → 支出 src=pp;受け取る → 收入 src=pi) */
+  tr := public.ss_transfer(txt);
+  if tr is not null then
+    if not (tr->>'ok')::boolean then return json_build_object('ok', false, 'msg', '没记上:' || (tr->>'error')); end if;
+    amt := (tr->>'amt')::int; e := tr->>'ext'; sr := case when tr->>'dir' = 'in' then 'pi' else 'pp' end;
+    if amt is null or amt <= 0 or amt > 10000000 then return json_build_object('ok', false, 'msg', '没记上:金额不对'); end if;
+    if e is not null and exists (select 1 from public.kakeibo_inbox where user_id = uid and src = sr and ext = e) then
+      return json_build_object('ok', true, 'msg', '这笔已经记过了');
+    end if;
+    insert into public.kakeibo_inbox(user_id, amt, merchant, card, at, src, ext)
+      values (uid, amt, left(tr->>'name', 120), 'PayPay残高', (tr->>'at')::timestamptz, sr, e);
+    return json_build_object('ok', true, 'msg', case when sr = 'pi' then '已记收入:' else '已记转账:' end || coalesce(nullif(tr->>'name', ''), 'PayPay') || ' ' || amt || '円');
+  end if;
   if normalize(coalesce(txt,''), nfkc) !~ '支払い(完了|受付)' then
     a := public.ss_assets(txt);
     if json_array_length(a) > 0 then
@@ -222,6 +257,7 @@ as $function$ select public.ss_push(tok, txt) $function$;
 revoke all on function public.ss_parse(text) from public, anon, authenticated;
 revoke all on function public.ss_assets(text) from public, anon, authenticated;
 revoke all on function public.ss_num(text) from public, anon, authenticated;
+revoke all on function public.ss_transfer(text) from public, anon, authenticated;
 revoke all on function public.kakeibo_keep_history() from public, anon, authenticated;
 revoke all on function public.ss_push(text, text) from public;
 revoke all on function public.ap_push(text, text) from public;
