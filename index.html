@@ -357,6 +357,8 @@ const kbAdj=window.kbAdj=()=>{const sc=$('sc'),vv=window.visualViewport,a=docume
  const sk=vv?Math.max(0,window.innerHeight-vv.height):0,kp=window.__kp||0,nav=document.querySelector('nav'),nh=nav?window.innerHeight-nav.getBoundingClientRect().top:0;
  const kb=Math.max(0,(kp||sk)-nh);
  document.body.classList.toggle('tko',!kp&&sk>80&&isF(a)&&!a.hasAttribute('data-calc'));
+ /* 弹出面板(记一笔)里:给面板底部留出键盘高度,输入框滚到键盘上方,下面的输入框也点得到(留白不立刻收回,免得点的瞬间内容跳动点偏) */
+ const shb=$('shb');if(shb){if(isF(a)&&shb.contains(a)&&(kp||sk>80)){shb.style.paddingBottom=((kp||sk)+16)+'px';const vis=kp?window.innerHeight-kp:vv.height,r=a.getBoundingClientRect();if(r.top<60||r.bottom>vis-16)shb.scrollTop+=r.top+r.height/2-vis*0.42}}
  if(!(isF(a)&&sc.contains(a)&&(kp||sk>80))){sc.style.paddingBottom='';de.style.removeProperty('--kbh');return}
  sc.style.paddingBottom=(kb+24)+'px';de.style.setProperty('--kbh',kb+'px');if(!kp)fix();
  const vis=kp?window.innerHeight-kp:vv.height,r=a.getBoundingClientRect();if(r.top<70||r.bottom>vis-16)sc.scrollTop+=r.top+r.height/2-vis*0.42};
@@ -1466,6 +1468,9 @@ document.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)r
   setTimeout(()=>{window.addEventListener('hashchange',()=>slideIn(dir),{once:true});location.hash='#'+VIEWS[vi]},150)};
  nav.addEventListener('touchend',nfin);nav.addEventListener('touchcancel',nfin);
 })();
+/* ===== iOS:弹出面板里点文字输入框有时不弹键盘(刚从数字键盘切过来、或点的瞬间面板重绘)→ 在手指抬起时主动聚焦 ===== */
+document.addEventListener('touchend',e=>{const t=e.target;if(!t||!t.closest)return;const i=t.closest('input,textarea');if(!i||i.readOnly||i.dataset.calc!==undefined||/^(checkbox|radio|file|date|range)$/.test(i.type))return;
+ const el=(i.isConnected?i:(i.id&&$(i.id)))||null;if(el&&document.activeElement!==el){try{el.focus()}catch(_){}}},{passive:true});
 /* ===== 禁止双指缩放 / 双击缩放 ===== */
 ['gesturestart','gesturechange','gestureend'].forEach(t=>document.addEventListener(t,e=>e.preventDefault(),{passive:false}));
 document.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault()},{passive:false});
