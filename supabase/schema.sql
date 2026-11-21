@@ -137,8 +137,9 @@ begin
   /* Binance 等 */
   if s ~ '(总资产估值|總資產估值|総資産評価額|推定残高|Estimated Balance|Total Balance)' then
     seg := substring(s from '(?:总资产估值|總資產估值|総資産評価額|推定残高|Estimated Balance|Total Balance)([\s\S]{0,120})');
-    select public.ss_num(x[1]) into v from regexp_matches(seg, '[¥￥]\s*([0-9][0-9,]*(?:\.[0-9]+)?)', 'g') as x limit 1;
-    if v is null then select public.ss_num(x[2]) into v from regexp_matches(seg, '(^|[^-0-9,])([0-9]{1,3}(?:,[0-9]{3})+(?:\.[0-9]+)?)', 'g') as x limit 1; end if;
+    /* 总额是不带小数的大数字;今日盈亏(带负号)、走势图刻度(带小数)都跳过。OCR 有时认不出 ¥,所以不依赖它 */
+    v := public.ss_num((regexp_match(seg, '(?:^|[^-0-9.,])[¥￥Y]?\s*([0-9]{1,3}(?:,[0-9]{3})+)(?![0-9.,])'))[1]);
+    if v is null then select public.ss_num(x[1]) into v from regexp_matches(seg, '[¥￥]\s*([0-9][0-9,]*(?:\.[0-9]+)?)', 'g') as x limit 1; end if;
     if v > 0 then it := it || jsonb_build_object('key','bnb','name','Binance','val',round(v)); end if;
     return it::json;
   end if;
