@@ -877,7 +877,8 @@ function linkManual(z,ref,note){z.ref=ref;if(!z.note)z.note=note}
 const IMPM=['paypay','card','rakuten'];
 const AUTOR=/^(ap|ml|ss):/;
 /* 明细导入覆盖到的最后日期(只算真正从明细导入的,不算自动记的) */
-const stmtLast=m=>D.reduce((a,z)=>z.ref&&!AUTOR.test(z.ref)&&z.method===m&&z.date>a?z.date:a,'');
+/* 截图记的那笔虽然带取引番号,但不算「明细已导入到这天」,否则同一天手动记的会被误标为未对上 */
+const stmtLast=m=>D.reduce((a,z)=>z.ref&&!AUTOR.test(z.ref)&&z.via!=='ss'&&z.method===m&&z.date>a?z.date:a,'');
 function reconTag(x){
  if(x.ref&&AUTOR.test(x.ref)){const src=x.ref.startsWith('ml:')?'邮件':x.ref.startsWith('ss:')?'截图':'Apple Pay',last=stmtLast(x.method);
   /* 明细已经导入到这笔之后,却没对上 → 可能被取消/退款,或明细里金额不同 */
