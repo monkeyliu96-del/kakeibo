@@ -207,7 +207,7 @@ const save=()=>{try{localStorage.setItem(K,JSON.stringify(D))}catch(e){toast('�
 const CATS=['餐饮','日用品','交通','购物','娱乐','居住','医疗','其他'];
 const BASE=CATS.slice();
 const KW={
- '餐饮':/餐|饭|飯|厨|食|料理|焼肉|寿司|すし|うどん|そば|カレー|バーガー|ピザ|中華|定食|デリ|コープ|ソムオー|レストラン|キッチン|[ヘへ]ジャンク|五右衛門|セブン|ローソン|ファミリーマート|ファミマ|マクド|マック|吉野家|すき家|スキヤ|松屋|サイゼリヤ|ガスト|コメダ|ドトール|スタバ|スターバックス|カフェ|ラーメン|食堂|居酒屋|弁当|パン/,
+ '餐饮':/餐|饭|飯|厨|食|料理|焼肉|寿司|すし|うどん|そば|カレー|バーガー|ピザ|中華|定食|デリ|コープ|ソムオー|レストラン|キッチン|[ヘへ]ジャンク|五右衛門|セブン|ローソン|ファミリーマート|ファミマ|マクド|マック|吉野家|すき家|スキヤ|松屋|サイゼリヤ|ガスト|コメダ|ドトール|スタバ|スターバックス|カフェ|ラーメン|食堂|居酒屋|弁当|パン|ベーカリー|丼|とんかつ|かつや|唐揚|からあげ|餃子|ぎょうざ|鳥貴族|焼鳥|やきとり|ホルモン|しゃぶ|お好み|たこ焼|鉄板|ステーキ|グリル|ビストロ|トラットリア|ダイニング|酒場|ビアホール|珈琲|喫茶|COFFEE|CAFE|CAFFE|BAKERY|DINING|KITCHEN|RESTAURANT|BURGER|PIZZA|SUSHI|RAMEN|マクドナルド|モスバーガー|ケンタッキー|KFC|ロッテリア|フレッシュネス|バーガーキング|サブウェイ|SUBWAY|ミスタードーナツ|ミスド|クリスピー|サーティワン|ゴンチャ|タリーズ|TULLY|エクセルシオール|ベローチェ|星乃珈琲|プロント|ルノアール|なか卯|はなまる|丸亀|天下一品|一蘭|一風堂|日高屋|幸楽苑|リンガーハット|大戸屋|やよい軒|てんや|松のや|CoCo壱|ココイチ|ココス|ジョナサン|バーミヤン|夢庵|デニーズ|ロイヤルホスト|びっくりドンキー|いきなり!?ステーキ|スシロー|くら寿司|はま寿司|かっぱ寿司|王将|ほっともっと|オリジン弁当|ミニストップ|デイリーヤマザキ|NEWDAYS|ニューデイズ|セイコーマート|成城石井|まいばすけっと|ウーバーイーツ|UBER ?EATS|出前館|Wolt|フードコート|ドミノ|ピザーラ|ピザハット|銀だこ|ペッパーランチ|牛角|温野菜|焼肉ライク|叙々苑|磯丸|塚田農場|魚民|白木屋|笑笑|和民|串カツ|海鮮|ビュッフェ|バイキング/i,
  '日用品':/ドン・?キ|MEGAドン|ダイソー|ドラッグ|マツモトキヨシ|マツキヨ|ウエルシア|ニトリ|セリア|スーパー/,
  '交通':/JR|Suica|京成|スカイライナ|スイカ|PASMO|ICOCA|メトロ|電車|駅|新幹線|バス|タクシー|ガソリン|交通/i,
  '购物':/Yahoo|Amazon|アマゾン|楽天(?!モバイル)|ユニクロ|ZOZO|ヨドバシ|ビックカメラ|OLIVE ?YOUNG/i,
@@ -1054,7 +1054,7 @@ function acCard(){const un=(RV.ac||[]).map(id=>D.find(x=>x.id===id)).filter(x=>x
  return `<div class='box' style='margin-top:10px'><div style='display:flex;justify-content:space-between;align-items:center;gap:8px'><h2 style='margin:0'>新的店 · 选一下分类</h2><button class='lk' data-ack='1' style='font-size:13px;flex:none'>都保持「其他」</button></div><p class='sub' style='margin:4px 0 0'>选一次就行,以后同一家店会自动归类。</p>`
  +un.map(x=>`<div class='row'><div class='rm'><div>${esc(x.note)}</div><span>${x.date.slice(5)} · ${yen(x.amt)}</span></div><select class='f' style='width:96px;padding:8px' data-uc='${x.id}' aria-label='分类'>${CATS.map(c=>`<option${c==='其他'?' selected':''}>${c}</option>`).join('')}</select></div>`).join('')+`</div>`}
 /* 一次性:导入时因为认不出而记成「其他」的,用改进后的规则重新分类 */
-function reguessOnce(){if(UI.rg2)return;let k=0;D.forEach(x=>{if(x.ref&&x.cat==='其他'){const c=guess(x.note);if(c&&c!=='其他'){x.cat=c;k++}}});UI.rg2=1;saveC();if(k){save();setTimeout(()=>toast('已自动给 '+k+' 笔「其他」重新分类'),800)}}
+function reguessOnce(){if(UI.rg3)return;let k=0;D.forEach(x=>{if(x.ref&&x.cat==='其他'){const c=guess(x.note);if(c&&c!=='其他'){x.cat=c;k++}}});UI.rg3=1;saveC();if(k){save();setTimeout(()=>toast('已自动给 '+k+' 笔「其他」重新分类'),800)}}
 const UCS=new Set();
 document.addEventListener('change',e=>{const t=e.target;if(!t.dataset)return;
  if(t.dataset.ucs){const id=+t.dataset.ucs;if(t.checked)UCS.add(id);else UCS.delete(id);render();return}
