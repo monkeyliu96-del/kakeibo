@@ -295,3 +295,9 @@ revoke all on function public.ap_push(text, text) from public;
 grant execute on function public.ss_push(text, text) to anon, authenticated;
 grant execute on function public.ap_push(text, text) to anon, authenticated;
 grant execute on function public.ap_push(text, text, text, text, text, text, text) to anon, authenticated;
+
+-- 手动保存的「原始数据」快照(不会被每日备份轮替掉)
+create table if not exists public.kakeibo_baseline(id bigserial primary key, user_id uuid not null references auth.users on delete cascade, label text, data jsonb not null, created_at timestamptz default now());
+alter table public.kakeibo_baseline enable row level security;
+create policy "own baseline read" on public.kakeibo_baseline for select using (auth.uid() = user_id);
+create policy "own baseline delete" on public.kakeibo_baseline for delete using (auth.uid() = user_id);
