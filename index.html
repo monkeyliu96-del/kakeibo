@@ -703,9 +703,11 @@ const sum=a=>a.reduce((s,x)=>s+x.amt,0);
 const inM=m=>sum(A.inc.filter(x=>x.date.startsWith(m)));
 const flow=()=>({i:sum(A.inc.filter(x=>x.date>=A.start)),o:sum(D.filter(x=>x.date>=A.start))});
 const stockJ=()=>A.assets.reduce((s,x)=>s+x.val,0);
-const totalA=()=>{const f=flow();return stockJ()+A.cash+f.i-f.o};
+/* 现金:有ゆうちょ截图时直接用截图余额,否则按「起算余额 + 收入 − 支出」推算 */
+const cashNow=()=>{if(A.cashSS&&A.cashSS.val>=0)return A.cashSS.val;const f=flow();return A.cash+f.i-f.o};
+const totalA=()=>stockJ()+cashNow();
 /* 每天自动记录一次总资产(打开 App / 资产页时),当天内数值变了就更新当天这条 */
-function autoSnap(){if(!(A.assets.length||A.cash||A.start))return;const td=today(),fl=flow(),sn={date:td,total:Math.round(totalA()),inv:Math.round(stockJ()),cash:Math.round(A.cash+fl.i-fl.o),items:A.assets.map(x=>[x.name,Math.round(x.val)])};
+function autoSnap(){if(!(A.assets.length||A.cash||A.start))return;const td=today(),fl=flow(),sn={date:td,total:Math.round(totalA()),inv:Math.round(stockJ()),cash:Math.round(cashNow()),items:A.assets.map(x=>[x.name,Math.round(x.val)])};
  const cur=A.snaps.find(x=>x.date===td);if(cur&&JSON.stringify(cur)===JSON.stringify(sn))return;A.snaps=A.snaps.filter(x=>x.date!==td);A.snaps.push(sn);saveA()}
 const sgn=n=>(n<0?'−':'+')+yen(Math.abs(n));
 const num=s=>{const n=parseFloat(String(s).replace(/,/g,''));return isFinite(n)?n:NaN};
@@ -722,8 +724,8 @@ function chgBox(p,fm,tot){if(!p)return '';
  const td=today(),inP=x=>x.date>p.date&&x.date<=td&&x.date>=A.start,inc=sum(A.inc.filter(inP)),out=sum(D.filter(inP)),rows=[],sg=v=>(v<0?'−':'+')+fm(Math.abs(v));
  if(p.items){const pm=new Map(p.items),cm=new Map(A.assets.map(x=>[x.name,x.val]));
   new Set([...pm.keys(),...cm.keys()]).forEach(n=>{const d=(cm.get(n)||0)-(pm.get(n)||0);if(Math.round(d))rows.push([n,d,!cm.has(n)?'已删除':!pm.has(n)?'新增':'','a:'+n])});
-  const f=flow(),adj=(A.cash+f.i-f.o)-p.cash-(inc-out);
-  if(inc)rows.push(['收入',inc,'','in']);if(out)rows.push(['支出',-out,'','out']);if(Math.round(adj))rows.push(['现金余额调整',adj,'修改了起算余额或起算日','cash'])}
+  const adj=cashNow()-p.cash-(inc-out);
+  if(A.cashSS){const dc0=cashNow()-p.cash;if(Math.round(dc0))rows.push(['现金 / 存款',dc0,'ゆうちょ截图','cash'])}else{if(inc)rows.push(['收入',inc,'','in']);if(out)rows.push(['支出',-out,'','out']);if(Math.round(adj))rows.push(['现金余额调整',adj,'修改了起算余额或起算日','cash'])}}
  else{if(inc)rows.push(['收入',inc,'','in']);if(out)rows.push(['支出',-out,'','out']);const o=tot-p.total-(inc-out);if(Math.round(o))rows.push(['投资等其他变化',o,'看投资','inv'])}
  const d=tot-p.total;
  return `<div class='box' data-g='o' style='padding:12px 16px 4px'><p class='sub' style='margin:0 0 2px'>和 ${+p.date.slice(5,7)}/${+p.date.slice(8)} 的 ${fm(p.total)} 相比,变化来自:</p>`
@@ -738,7 +740,7 @@ function assetsView(){setTimeout(()=>fetchRates(false),0);return assetsRaw()}
 const fmtD=d=>d?d.slice(0,4)+'年'+ +d.slice(5,7)+'月'+ +d.slice(8)+'日':'未设';
 function assetsRaw(){
  try{autoSnap()}catch(e){}
- const f=flow(),oth=A.cash+f.i-f.o,inv=stockJ(),tot=inv+oth,dc=A.disp||'JPY';
+ const f=flow(),oth=cashNow(),inv=stockJ(),tot=inv+oth,dc=A.disp||'JPY';
  const fm=n=>dc==='JPY'?yen(n):(dc==='USD'?'US$':'CN¥')+Math.round(n/A.rates[dc]).toLocaleString('en-US');
  const sn=A.snaps.slice().sort((p,q)=>p.date.localeCompare(q.date));
  const td=today(),prev=sn.filter(s=>s.date<td).pop(),cur=sn.find(s=>s.date===td),yd=(()=>{const x=new Date();x.setDate(x.getDate()-1);return ymd(x)})();
@@ -753,7 +755,7 @@ function assetsRaw(){
  +(A.assets.length?'':`<p class='sub' style='margin:8px 0 0'>还没有投资资产。</p>`)+`</div>`
  +(AE==='new'?aform(null):`<button class='go alt' data-anew='1' style='margin:10px 0 0;padding:9px'>+ 添加投资资产</button>`)+`</div>`;
  const snapb='',chb=OPEN.chg?chgBox(prev,fm,tot):'';
- const cashb=`<div>`+(CE?`<label for='ce-cash'>起算日当天开始时的余额(日元)</label><input id='ce-cash' class='f' inputmode='numeric' value='${A.cash||''}' placeholder='0'><label for='ce-sd'>起算日</label><div class='dwrap f'><span id='ce-sdl'>${fmtD(A.start)}</span><span class='chev'>›</span><input id='ce-sd' type='date' value='${A.start}' aria-label='起算日'></div><p class='sub' style='margin:6px 0 0'>一般设一次就行。改了以后,现金会从新的起算日重新计算,已确认过的总资产数值不会变。</p><div style='display:flex;gap:6px;margin-top:12px'><button class='go' id='csave' style='margin:0;flex:1;padding:9px'>保存</button><button class='go alt' id='ccancel' style='margin:0;flex:1;padding:9px'>取消</button></div>`
+ const cashb=A.cashSS?`<div><div class='row'><div class='rm'><div>ゆうちょ 現在高</div><span>截图更新 · ${+A.cashSS.upd.slice(5,7)}/${+A.cashSS.upd.slice(8)}</span></div><div class='amt'>${yen(A.cashSS.val)}</div></div><p class='sub' style='margin:8px 0 0'>在ゆうちょ App 首页双击手机背面就会更新。<button class='lk' data-cssoff='1'>改回按收支推算</button></p></div>`:`<div>`+(CE?`<label for='ce-cash'>起算日当天开始时的余额(日元)</label><input id='ce-cash' class='f' inputmode='numeric' value='${A.cash||''}' placeholder='0'><label for='ce-sd'>起算日</label><div class='dwrap f'><span id='ce-sdl'>${fmtD(A.start)}</span><span class='chev'>›</span><input id='ce-sd' type='date' value='${A.start}' aria-label='起算日'></div><p class='sub' style='margin:6px 0 0'>一般设一次就行。改了以后,现金会从新的起算日重新计算,已确认过的总资产数值不会变。</p><div style='display:flex;gap:6px;margin-top:12px'><button class='go' id='csave' style='margin:0;flex:1;padding:9px'>保存</button><button class='go alt' id='ccancel' style='margin:0;flex:1;padding:9px'>取消</button></div>`
   :`<div><div class='row'><div class='rm'><div>起算余额</div><span>${A.start} 起算</span></div><div class='amt'>${yen(A.cash||0)}</div></div><div class='row'><div class='rm'><div>起算日以来收入</div></div><div class='amt' style='color:var(--in)'>${sgn(f.i)}</div></div><div class='row'><div class='rm'><div>起算日以来支出</div></div><div class='amt'>${f.o?'−'+yen(f.o):yen(0)}</div></div></div><button class='go alt' id='cedit' style='margin:10px 0 0;padding:9px'>修改起算余额 / 起算日</button><p class='sub' style='margin:10px 0 0'>余额 = 起算余额 + 收入 − 支出</p>`)+`</div>`;
  let trb='';{const all=sn,RG=A.rg||'3m',lastD=all.length?all[all.length-1].date:td,dd0=(d,n)=>{const x=new Date(d+'T00:00:00');x.setDate(x.getDate()-n);return ymd(x)};
   const longer=all.length>1&&Date.parse(lastD)-Date.parse(all[0].date)>31*864e5,cutD=!longer||RG==='all'?'':dd0(lastD,RG==='1m'?30:91);
@@ -779,7 +781,7 @@ function assetsRaw(){
 document.addEventListener('click',e=>{
  const t=e.target.closest('button');if(!t)return;
  if(t.dataset.sp!==undefined){const r=$('sro');if(r){r.textContent=t.dataset.lb;document.querySelectorAll('.sp.on').forEach(b=>b.classList.remove('on'));t.classList.add('on')}return}
- if(t.id==='snap'){const td=today();A.snaps=A.snaps.filter(s=>s.date!==td);const fl=flow();A.snaps.push({date:td,total:Math.round(totalA()),inv:Math.round(stockJ()),cash:Math.round(A.cash+fl.i-fl.o),items:A.assets.map(x=>[x.name,Math.round(x.val)])});saveA();toast('已确认今日总资产');render();return}
+ if(t.id==='snap'){const td=today();A.snaps=A.snaps.filter(s=>s.date!==td);const fl=flow();A.snaps.push({date:td,total:Math.round(totalA()),inv:Math.round(stockJ()),cash:Math.round(cashNow()),items:A.assets.map(x=>[x.name,Math.round(x.val)])});saveA();toast('已确认今日总资产');render();return}
  if(t.dataset.disp){A.disp=t.dataset.disp;saveA();render();return}
  if(t.dataset.qn){$('an').value=t.dataset.qn;$('av').focus();return}
  if(t.dataset.aed){AE=+t.dataset.aed;ap=null;render();const e=$('av');if(e)e.focus();return}
@@ -792,6 +794,7 @@ document.addEventListener('click',e=>{
  if(t.id==='csave'){const n=num($('ce-cash').value);A.cash=isFinite(n)?n:0;A.start=$('ce-sd').value||today();CE=false;saveA();toast('已保存');render();return}
  if(t.dataset.rfetch){fetchRates(true);return}
  if(t.dataset.rtx){OPEN.rt=!OPEN.rt;render();return}
+ if(t.dataset.cssoff){delete A.cashSS;saveA();try{autoSnap()}catch(e){}toast('已改回按收支推算');render();return}
  if(t.dataset.rg){A.rg=t.dataset.rg;saveA();render();return}
  if(t.dataset.chgx){OPEN.chg=!OPEN.chg;render();return}
  if(t.dataset.axp){const k=t.dataset.axp;OPEN[k]=!OPEN[k];if(!OPEN.inv)AE=null;if(!OPEN.cash)CE=false;render();return}
@@ -1235,7 +1238,8 @@ function dedupAuto(){const claimed=new Set(),rm=new Set();
  D.filter(x=>x.ref&&AUTOR.test(x.ref)).forEach(x=>{const z=stmtOf(x.amt,x.date,x.method,claimed);if(z){claimed.add(z.id);rm.add(x.id)}});
  if(rm.size){D=D.filter(x=>!rm.has(x.id));save()}return rm.size}
 /* 资产截图:已关联的直接更新市值;第一次出现的来源先放进待确认,让你选更新哪一项 */
-function asIn(r,asu){const x=A.assets.find(z=>z.src===r.ext);
+function asIn(r,asu){if(r.ext==='jpb'){A.cashSS={val:r.amt,upd:ymd(new Date(r.at))};asu.push('现金(ゆうちょ)');return}
+ const x=A.assets.find(z=>z.src===r.ext);
  if(x){x.val=r.amt;x.upd=ymd(new Date(r.at));asu.push(x.name)}
  else{RV.asn=[...(RV.asn||[]).filter(p=>p.key!==r.ext),{key:r.ext,name:r.merchant||'投资',val:r.amt}];saveRV();asu.push(null)}}
 function asnCard(){const ps=RV.asn||[];if(!ps.length)return '';
