@@ -400,7 +400,7 @@ function filt(){const q=Q.t.trim().toLowerCase();return (Q.pt?D.filter(x=>x.ptu)
 function listItems(){
  const q=Q.t.trim().toLowerCase();
  const ex=Q.k==='in'?[]:filt().map(x=>({...x,key:x.id}));
- const inc=(Q.c||Q.m||Q.f||Q.k==='out')?[]:A.inc.filter(x=>(Q.r?inR(x):x.date.startsWith(ym))&&(!Q.d||x.date===Q.d)&&(!q||(x.note||'').toLowerCase().includes(q)||'收入'.includes(q))).map(x=>({...x,inc:true,key:'i'+x.id}));
+ const inc=(Q.c||Q.m||Q.f||Q.pt||Q.k==='out')?[]:A.inc.filter(x=>(Q.r?inR(x):x.date.startsWith(ym))&&(!Q.d||x.date===Q.d)&&(!q||(x.note||'').toLowerCase().includes(q)||'收入'.includes(q))).map(x=>({...x,inc:true,key:'i'+x.id}));
  return [...ex,...inc].sort((p,q)=>q.date.localeCompare(p.date)||q.id-p.id);
 }
 let SEL={on:false,ids:[],cf:false},clrc=false;
@@ -414,10 +414,10 @@ function listSplit(){const h=listBody(),i=h.indexOf('<!--S-->');return [h.slice(
 function updList(){const r=listSplit();$('lsum').innerHTML=r[0];$('lst').innerHTML=r[1]}
 function listBody(){
  const L=listItems(),a=L.filter(x=>!x.inc);
- const ia=L.filter(x=>x.inc),fl=Q.t||Q.c||Q.m||Q.k||Q.d||Q.f||Q.r||Q.cr||Q.pt,all=sum(monthData().filter(own)),tot=sum(Q.c===PX_CAT?a:a.filter(own));
+ const ia=L.filter(x=>x.inc),fl=Q.t||Q.c||Q.m||Q.k||Q.d||Q.f||Q.r||Q.cr||Q.pt,all=sum(monthData().filter(own)),tot=sum(Q.c===PX_CAT||Q.pt?a:a.filter(own));
  SEL.ids=SEL.ids.filter(k=>L.some(x=>x.key===k));
  const msb=L.length&&!SEL.on?`<button class="lk" data-s="on" style="float:right;font-size:13px;padding:0">多选</button>`:'';
- let h='<div class="lsum">'+(Q.k==='in'?`<p class="big" style="color:var(--in)"><small>+¥</small>${Math.round(sum(ia)).toLocaleString('ja-JP')}</p><p class="sub">${msb}${Q.t?'筛选结果':'本月收入'},共 ${ia.length} 笔</p>`:`<p class="big"><small>¥</small>${Math.round(tot).toLocaleString('ja-JP')}</p><p class="sub">${msb}${fl?'筛选结果':'本月支出'},共 ${a.length} 笔${!fl&&inM(ym)?' · 收入 '+yen(inM(ym))+' · 结余 '+sgn(inM(ym)-all):''}</p>`);
+ let h='<div class="lsum">'+(Q.k==='in'?`<p class="big" style="color:var(--in)"><small>+¥</small>${Math.round(sum(ia)).toLocaleString('ja-JP')}</p><p class="sub">${msb}${Q.t?'筛选结果':'本月收入'},共 ${ia.length} 笔</p>`:`<p class="big"><small>¥</small>${Math.round(tot).toLocaleString('ja-JP')}</p><p class="sub">${msb}${fl?'筛选结果':'本月支出'},共 ${a.length} 笔${Q.pt?(()=>{const c0=prevM(today().slice(0,7))+'-01',n=D.filter(x=>x.ptu&&x.date<c0).length;return n?`<br><button class="lk" data-ptold="1" style="font-size:13px;padding:0;margin-top:4px">${+c0.slice(5,7)}月之前的 ${n} 笔不处理了(按原价算)</button>`:''})():''}${!fl&&inM(ym)?' · 收入 '+yen(inM(ym))+' · 结余 '+sgn(inM(ym)-all):''}</p>`);
  if(!fl&&B.total>0)h+=`<div class="pg"><i style="width:${Math.min(100,all/B.total*100)}%;background:var(${all>B.total?'--pp':'--ac'})"></i></div><p class="sub">预算 ${yen(B.total)} · ${all>B.total?'已超出 '+yen(all-B.total):'剩余 '+yen(B.total-all)}</p>`;
  /* 分类预算:平时只提醒快用完(≥80%)或已超的;按分类筛选时显示这个分类的预算 */
  const mcs=c=>sum(monthData().filter(x=>x.cat===c));
@@ -446,6 +446,7 @@ document.addEventListener('change',e=>{const t=e.target;if(!t.dataset||!(t.datas
  const xs=SEL.ids.map(k=>D.find(x=>x.id===k)).filter(x=>x&&!x.rid);if(!xs.length)return;const v=t.value;
  xs.forEach(x=>{if(t.dataset.sbc)x.cat=v;else x.method=v});save();toast((t.dataset.sbc?'已改为「'+v+'」':'已改为 '+mnr(v))+' · '+xs.length+' 笔');SEL.cf=false;updList()});
 document.addEventListener('click',e=>{if(!e.target.closest('button[data-qcr]'))return;delete Q.cr;render()});
+document.addEventListener('click',e=>{if(!e.target.closest('button[data-ptold]'))return;const c0=prevM(today().slice(0,7))+'-01';let n=0;D.forEach(x=>{if(x.ptu&&x.date<c0){delete x.ptu;n++}});save();if(!D.some(x=>x.ptu))delete Q.pt;toast('已忽略 '+n+' 笔');render()});
 document.addEventListener('click',e=>{if(!e.target.closest('button[data-qpt]'))return;if(Q.pt)delete Q.pt;else{Q.pt=1;if(!D.some(x=>x.ptu))delete Q.pt}render()});
 document.addEventListener('click',e=>{const t=e.target.closest('button[data-srx]');if(!t)return;const on=SRCH||Q.t||Q.c||Q.m;if(on){SRCH=false;Q.t='';Q.c='';Q.m='';render()}else{SRCH=true;render();const i=$('qs');if(i)i.focus()}});
 function calHtml(){
