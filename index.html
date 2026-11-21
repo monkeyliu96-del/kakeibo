@@ -811,13 +811,14 @@ function matchManual(date,amt,method,claimed){const pool=D.filter(z=>(!z.ref||AU
  const nr=pool.find(z=>z.date===date)||pool.find(z=>z.method===method&&dd(z.date,date)<=1);return nr?{ask:nr}:null}
 function linkManual(z,ref,note){z.ref=ref;if(!z.note)z.note=note}
 const IMPM=['paypay','card','rakuten'];
-const AUTOR=/^(ap|ml):/;
+const AUTOR=/^(ap|ml|ss):/;
 /* 明细导入覆盖到的最后日期(只算真正从明细导入的,不算自动记的) */
 const stmtLast=m=>D.reduce((a,z)=>z.ref&&!AUTOR.test(z.ref)&&z.method===m&&z.date>a?z.date:a,'');
 function reconTag(x){
- if(x.ref&&AUTOR.test(x.ref)){const src=x.ref.startsWith('ml:')?'邮件':'Apple Pay',last=stmtLast(x.method);
+ if(x.ref&&AUTOR.test(x.ref)){const src=x.ref.startsWith('ml:')?'邮件':x.ref.startsWith('ss:')?'截图':'Apple Pay',last=stmtLast(x.method);
   /* 明细已经导入到这笔之后,却没对上 → 可能被取消/退款,或明细里金额不同 */
   return last&&x.date<last?'<span class="tg bad">'+src+' · 未对上</span>':'<span class="tg">'+src+'</span>'}
+ if(x.via==='ss')return '<span class="tg">截图</span>';
  if(x.ref||x.rid||!IMPM.includes(x.method))return '';
  const last=stmtLast(x.method);
  return last&&x.date<=last?'<span class="tg bad">未对上</span>':'<span class="tg">待对账</span>'}
@@ -1169,6 +1170,7 @@ document.addEventListener('change',async e=>{const t=e.target;
 var APT;
 const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 function apMethod(c){const s=mkey(c);
+ if(/残高/.test(s))return vm('paypay');
  if(/楽天|乐天|RAKUTEN/.test(s))return vm('rakuten');
  if(/PAYPAY/.test(s))return vm('card');
  const h=s&&pmSrc().find(m=>{const n=mkey(m[1]);return m[0]!=='cash'&&m[0]!=='paypay'&&n&&(s.includes(n)||n.includes(s))});
@@ -1183,14 +1185,16 @@ async function pullInbox(){
  const {data,error}=await SB.from('kakeibo_inbox').select('id,amt,merchant,card,at,src,ext').order('id');
  if(error||!data||!data.length)return {ids:[],n:0};
  let n=0;const claimed=new Set();
- data.forEach(r=>{const ref=r.src==='ml'&&r.ext?'ml:'+r.ext:'ap:'+r.id;if(D.some(x=>x.ref===ref))return;
+ data.forEach(r=>{const ref=r.src==='ml'&&r.ext?'ml:'+r.ext:r.src==='pp'?(r.ext?'pp:'+r.ext:'ss:'+r.id):'ap:'+r.id;if(D.some(x=>x.ref===ref))return;
   const date=ymd(new Date(r.at)),method=apMethod(r.card),note=(r.merchant||'').normalize('NFKC').trim();
   const sm=stmtOf(r.amt,date,method,claimed);if(sm){claimed.add(sm.id);return}
   const ex=D.find(z=>!z.ref&&!z.rid&&z.amt===r.amt&&z.date===date&&z.method===method&&!claimed.has(z.id));
-  if(ex){claimed.add(ex.id);linkManual(ex,ref,note);return}
+  if(ex){claimed.add(ex.id);linkManual(ex,ref,note);if(ref.startsWith('pp:'))ex.via='ss';return}
   /* 同一笔被 Apple Pay 和邮件各报了一次(比如钱包里也勾了 PayPay 卡)→ 只记一次 */
-  if(D.some(z=>z.ref&&AUTOR.test(z.ref)&&z.ref.slice(0,3)!==ref.slice(0,3)&&z.amt===r.amt&&z.date===date&&z.method===method))return;
-  const cat=guess(note)||'其他';D.push({id:nid(),amt:r.amt,method,cat,note,date,ref,...(fixOf(note)?{fix:true}:{})});n++});
+  const au=D.find(z=>z.ref&&AUTOR.test(z.ref)&&z.ref.slice(0,3)!==ref.slice(0,3)&&z.amt===r.amt&&z.date===date&&z.method===method&&!claimed.has(z.id));
+  /* PayPay 截图带取引番号,和 CSV 的记录一致 → 把邮件 / Apple Pay 自动记的那笔换成这个编号,月底导入时直接对上 */
+  if(au){if(ref.startsWith('pp:')){claimed.add(au.id);au.ref=ref;au.via='ss';if(note)au.note=note}return}
+  const cat=guess(note)||'其他';D.push({id:nid(),amt:r.amt,method,cat,note,date,ref,...(r.src==='pp'&&ref.startsWith('pp:')?{via:'ss'}:{}),...(fixOf(note)?{fix:true}:{})});n++});
  save();if(n)setTimeout(()=>{if(!(document.activeElement&&document.activeElement.matches('#app input,#app textarea')))render()},0);
  return {ids:data.map(r=>r.id),n}}
 const qa=v=>String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
@@ -1198,7 +1202,7 @@ const cpr=(k,v,show)=>`<div class='fr'><span>${k}</span><code style='flex:1;min-
 function apPage(){
  if(!SESS)return `<div class='box' style='text-align:center;padding:24px 16px'><p style='font-size:17px;font-weight:700;margin:0 0 6px'>需要先登录</p><p class='sub'>Apple Pay 刷卡记录会先存到你的云端账号,再同步到记账本。</p><button class='go' data-sub='acct'>去登录</button></div>`;
  if(APT===undefined){SB.from('kakeibo_tokens').select('token').maybeSingle().then(({data})=>{APT=data?data.token:null;render()},()=>{});return `<div class='box'><p class='sub' style='margin:0;text-align:center'>正在读取…</p></div>`}
- const intro=`<div class='box'><h2>自动记账</h2><p class='sub' style='margin:4px 0 0'><b>乐天卡</b>:用 iPhone「快捷指令」的「交易」自动化,刷 Apple Pay 时自动记。<br><b>PayPay 卡</b>(Apple Pay 和 PayPay App 都算):收到「利用速報」邮件时自动记。<br>打开记账本时入账;月底导入 PayPay / 乐天明细时会自动对上,不会重复。</p></div>`;
+ const intro=`<div class='box'><h2>自动记账</h2><p class='sub' style='margin:4px 0 0'><b>乐天卡</b>:用 iPhone「快捷指令」的「交易」自动化,刷 Apple Pay 时自动记。<br><b>PayPay 卡</b>(Apple Pay 和 PayPay App 都算):收到「利用速報」邮件时自动记。<br><b>没收到邮件的</b>(包括 PayPay 余额付款):截 PayPay 付款详情页的图,分享给快捷指令就能记。<br>打开记账本时入账;月底导入 PayPay / 乐天明细时会自动对上,不会重复。</p></div>`;
  if(!APT)return intro+`<button class='go' id='apgen'>生成我的专属密钥</button>`;
  const n=D.filter(x=>x.ref&&x.ref.startsWith('ap:')).length,nm=D.filter(x=>x.ref&&x.ref.startsWith('ml:')).length,MAN="{\n  \"timeZone\": \"Asia/Tokyo\",\n  \"runtimeVersion\": \"V8\",\n  \"exceptionLogging\": \"STACKDRIVER\",\n  \"dependencies\": {\n    \"enabledAdvancedServices\": [\n      {\n        \"userSymbol\": \"Gmail\",\n        \"serviceId\": \"gmail\",\n        \"version\": \"v1\"\n      }\n    ]\n  },\n  \"oauthScopes\": [\n    \"https://www.googleapis.com/auth/gmail.readonly\",\n    \"https://www.googleapis.com/auth/script.external_request\",\n    \"https://www.googleapis.com/auth/script.scriptapp\"\n  ]\n}",GAS="// 记账本:PayPay卡「利用速報」邮件 → 自动记账。每 5 分钟运行一次。只读 Gmail,不会修改或删除邮件。\nconst TOK='__TOK__';\nconst API='__URL__/rest/v1/rpc/ap_push',KEY='__KEY__';\nfunction setup(){ScriptApp.getProjectTriggers().forEach(t=>ScriptApp.deleteTrigger(t));ScriptApp.newTrigger('run').timeBased().everyMinutes(5).create();run()}\nfunction dec(d){return Utilities.newBlob(typeof d==='string'?Utilities.base64DecodeWebSafe(d):d).getDataAsString('UTF-8')}\nfunction bodyOf(p,mt){if(p.mimeType===mt&&p.body&&p.body.data)return dec(p.body.data);for(const c of (p.parts||[])){const r=bodyOf(c,mt);if(r)return r}return ''}\nfunction parse(plain,html){\n  let s=plain||'';\n  if(!/円/.test(s))s=(html||'').replace(/<br\\s*\\/?>|<\\/(p|div|td|tr|th|h\\d|li)>/gi,'\\n').replace(/<[^>]+>/g,'').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&');\n  const L=s.split(/\\r?\\n/).map(x=>x.replace(/\\s+/g,' ').trim()).filter(Boolean);\n  const DR=/(\\d{4})年\\s*(\\d{1,2})月\\s*(\\d{1,2})日\\s*(\\d{1,2}):(\\d{2})/;\n  const di=L.findIndex(x=>DR.test(x));if(di<0)return null;\n  const d=L[di].match(DR),p=n=>('0'+n).slice(-2);\n  let amt=null;\n  for(let i=di;i<Math.min(L.length,di+4);i++){const a=L[i].replace(DR,'').match(/([\\d,]+)\\s*円/);if(a){amt=a[1].replace(/,/g,'');break}}\n  if(!amt)return null;\n  let shop=L[di].replace(DR,'').replace(/([\\d,]+)\\s*円.*/,'').trim();\n  if(!shop&&di>0)shop=L[di-1];\n  if(/利用速報|PayPayカード/.test(shop))shop='';\n  return {amt,shop,at:d[1]+'-'+p(d[2])+'-'+p(d[3])+'T'+p(d[4])+':'+d[5]+':00+09:00'};\n}\nfunction run(){\n  const P=PropertiesService.getScriptProperties(),done=JSON.parse(P.getProperty('done')||'[]');\n  (Gmail.Users.Messages.list('me',{q:'subject:(PayPayカード 利用速報) newer_than:3d',maxResults:50}).messages||[]).forEach(({id})=>{\n    if(done.includes(id))return;\n    const m=Gmail.Users.Messages.get('me',id,{format:'full'}),subj=((m.payload.headers||[]).find(h=>/^subject$/i.test(h.name))||{}).value||'';\n    if(!/利用速報/.test(subj)){done.push(id);return}\n    const r=parse(bodyOf(m.payload,'text/plain'),bodyOf(m.payload,'text/html'));if(!r){done.push(id);return}\n    const res=UrlFetchApp.fetch(API,{method:'post',contentType:'application/json',headers:{apikey:KEY},muteHttpExceptions:true,\n      payload:JSON.stringify({tok:TOK,amount:r.amt,merchant:r.shop,card:'PayPayカード',at:r.at,src:'ml',ext:id})});\n    let ok=false;try{ok=res.getResponseCode()<300&&JSON.parse(res.getContentText()).ok}catch(e){}\n    if(ok)done.push(id);else console.log('失败',id,res.getContentText());\n  });\n  P.setProperty('done',JSON.stringify(done.slice(-500)));\n}\n".replace('__TOK__',APT).replace('__URL__',SUPA_URL).replace('__KEY__',SUPA_KEY);
  const st=(i,t)=>`<div style='display:flex;gap:10px;padding:8px 0;border-top:1px solid var(--ln)'><b style='flex:none;width:22px;height:22px;border-radius:50%;background:var(--ac);color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center'>${i}</b><span style='font-size:14.5px'>${t}</span></div>`;
@@ -1218,7 +1222,14 @@ function apPage(){
  +st(4,'上方函数选 <b>setup</b>,点「実行」。第一次会要求授权:选你的账号 →「詳細」→「(安全ではないページ)に移動」→ 允许。这是你自己写的脚本,只有你能用。')
  +st(5,'完成。之后每 5 分钟检查一次新邮件,最近 3 天内的「利用速報」会自动记账(带「邮件」标签)。')
  +`<div class='btns' style='margin:8px 0 6px'><button class='go alt' data-cp="${qa(GAS)}">复制脚本</button><button class='go alt' data-cp="${qa(MAN)}">复制权限设置</button></div><p class='sub' style='margin:0 0 6px;font-size:12.5px'>已经按旧版设置过的:按第 2、3 步替换两处内容,再运行一次 setup,重新授权(这次只会要求「查看邮件」)。</p></div>`
- +`<p class='sub' style='margin:10px 4px'>已自动记账:Apple Pay ${n} 笔,邮件 ${nm} 笔。用 PayPay 余额付款不会有邮件,月底导入 PayPay CSV 时补上。</p>`
+ +`<p class='sgt'>PayPay 截图记账(只需设置一次)</p><div class='box' style='padding:6px 16px'>`
+ +st(1,'打开「ショートカット」App →「ショートカット」页右上「+」新建,名字改成「PayPay记账」。点底部 ⓘ(詳細),打开「共有シートに表示」,输入类型只留「画像」。')
+ +st(2,'添加操作「画像からテキストを抽出」(从图像中提取文本),图像选变量「ショートカットの入力」。')
+ +st(3,'添加「URLの内容を取得」,URL 粘贴下面的<b>截图记账 URL</b>;展开后方法选 <b>POST</b>;「ヘッダ」加 <b>apikey</b>(值同上);「本文を要求」选 <b>JSON</b>,加 2 个「テキスト」字段:<b>tok</b> = 上面的 tok,<b>txt</b> = 上一步的变量「画像から抽出されたテキスト」。')
+ +st(4,'添加「辞書の値を取得」,键填 <b>msg</b>;再添加「通知を表示」,内容选变量「辞書の値」。')
+ +st(5,'用法:PayPay 交易履历里打开那笔付款,<b>点「詳細を開く」展开</b>后截图 → 点左下角的截图预览 → 分享 →「PayPay记账」。会弹出「已记账:店名 金额」。展开后截的图带取引番号,月底导入 CSV 时能精确对上。')
+ +`</div><div class='sgrp'>`+cpr('截图记账 URL',SUPA_URL+'/rest/v1/rpc/ss_push')+`</div>`
+ +`<p class='sub' style='margin:10px 4px'>已自动记账:Apple Pay ${n} 笔,邮件 ${nm} 笔,截图 ${D.filter(x=>x.via==='ss'||(x.ref&&x.ref.startsWith('ss:'))).length} 笔。没截图的,月底导入 PayPay CSV 时也会补上。</p>`
  +`<button class='go alt danger' id='apgen' data-re='1'>重新生成密钥(旧的会失效)</button>`}
 document.addEventListener('click',async e=>{const t=e.target.closest('button');if(!t)return;
  if(t.dataset.cp!==undefined){try{await navigator.clipboard.writeText(t.dataset.cp);toast('已复制')}catch(err){toast('复制失败,请长按选择')}return}
