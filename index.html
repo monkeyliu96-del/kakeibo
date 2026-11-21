@@ -455,7 +455,7 @@ function listBody(){
   const dt=new Date(d+'T00:00:00'),wd='日一二三四五六'[dt.getDay()],ei=sum(g[d].filter(x=>x.inc)),eo=sum(g[d].filter(x=>!x.inc&&(own(x)||(Q.c&&!own({cat:Q.c}))||Q.pt)));
   h+=`<div class="day"><span>${+d.slice(5,7)}月${+d.slice(8)}日 周${wd}</span><span>${eo?yen(eo):''}${eo&&ei?' · ':''}${ei?'收入 +'+yen(ei):''}</span></div><div class="box">`;
   g[d].forEach(x=>{
-   const inf=x.inc?`<i class="dot" style="background:var(--in)"></i><div class="rm"><div>${esc(x.note||'收入')}</div><span>${x.px?'代购回款(不算收入)':'收入'}</span></div><div class="amt" style="color:var(--in)">+${yen(x.amt)}</div>`:`<i class="dot" style="background:var(${mcol(x.method)})"></i><div class="rm"><div>${esc(x.note||x.cat)}</div><span>${esc(x.cat)} · ${mname(x.method)}${isFix(x)?' · 固定':''}${x.amt<0?' · 还款':''}${x.pt?' · 原价 '+yen(x.amt+x.pt)+'(积分抵 '+yen(x.pt)+')':x.ptu?' · 含积分':''}${reconTag(x)}${own(x)?'':' · 不计入支出'}</span></div><div class="amt"${x.amt<0?' style="color:var(--in)"':own(x)?'':' style="color:var(--mu);font-weight:500"'}>${x.amt<0?'−'+yen(-x.amt):yen(x.amt)}</div>`;
+   const inf=x.inc?`<i class="dot" style="background:var(--in)"></i><div class="rm"><div>${esc(x.note||'收入')}</div><span>${x.px?'代购回款(不算收入)':'收入'}</span></div><div class="amt" style="color:var(--in)">+${yen(x.amt)}</div>`:`<i class="dot" style="background:var(${mcol(x.method)})"></i><div class="rm"><div>${esc(x.note||x.cat)}</div><span>${esc(x.cat)} · ${mname(x.method)}${isFix(x)?' · 固定':''}${x.amt<0?' · 还款':''}${x.pt?' · 原价 '+yen(x.amt+x.pt)+'(积分抵 '+yen(x.pt)+')':x.ptu?' · 含积分':''}${reconTag(x)}${x.bm?' · 算'+(+x.bm.slice(5))+'月账单':''}${own(x)?'':' · 不计入支出'}</span></div><div class="amt"${x.amt<0?' style="color:var(--in)"':own(x)?'':' style="color:var(--mu);font-weight:500"'}>${x.amt<0?'−'+yen(-x.amt):yen(x.amt)}</div>`;
    const btn=x.inc?`<button class="del" data-iedit="${x.id}">编辑</button><button class="del${ip===x.id?' on':''}" data-idel="${x.id}">${ip===x.id?'确认删除':'删除'}</button>`:`<button class="del" data-edit="${x.id}">编辑</button><button class="del${pending===x.id?' on':''}" data-del="${x.id}">${pending===x.id?'确认删除':'删除'}</button>`;
    h+=SEL.on?`<label class="row" style="cursor:pointer"><input type="checkbox" data-sel="${x.key}"${SEL.ids.includes(x.key)?' checked':''} style="width:22px;height:22px;flex:none;accent-color:var(--ac)" aria-label="选择">${inf}</label>`:`<div class="row">${inf}${btn}</div>`});
   h+='</div>';
@@ -779,7 +779,7 @@ const CARD_DAY=27,isCredit=m=>m!=='paypay'&&m!=='cash';
 /* 每张卡:扣的是按记账算出的上个月刷卡合计(和导入的明细一致,方便核对);
    截过账单页(PayPay ウォレット、乐天卡 App)的话,旁边列出实际账单做对照,不一致就标红 */
 /* 账单和记账对不上时:列出最可能出问题的几笔 */
-function difSuspects(m,mth,df){const xs=D.filter(x=>x.date.startsWith(m)&&x.method===mth&&!x.difok),out=[],seen=new Set(),add=(x,why)=>{const o=out.find(z=>z.x.id===x.id);if(o){if(!o.why.includes(why))o.why+=' · '+why;return}seen.add(x.id);out.push({x,why})};
+function difSuspects(m,mth,df){const xs=D.filter(x=>bmOf(x)===m&&x.method===mth&&!x.difok),out=[],seen=new Set(),add=(x,why)=>{const o=out.find(z=>z.x.id===x.id);if(o){if(!o.why.includes(why))o.why+=' · '+why;return}seen.add(x.id);out.push({x,why})};
  const ad=Math.abs(df);
  xs.filter(x=>x.amt===ad).forEach(x=>add(x,'金额正好等于差额'));
  if(df>0){const g={};xs.forEach(x=>{const k=x.date+'|'+x.amt;(g[k]=g[k]||[]).push(x)});Object.values(g).filter(a=>a.length>1).forEach(a=>a.forEach(x=>add(x,'同一天同金额,可能重复')))}
@@ -788,11 +788,13 @@ function difSuspects(m,mth,df){const xs=D.filter(x=>x.date.startsWith(m)&&x.meth
 function difBlock(u){const k='dif'+u.mth,op=OPEN[k],sus=op?difSuspects(u.m,u.mth,u.df):[];
  return `<button class='row arow' data-difx='${k}'><div class='rm'><div>减 ${esc(u.lbl)}</div><span style='color:var(--pp)'>${esc(u.sub)}</span></div><div class='amt' style='color:var(--pp)'>−${yen(u.v)}</div><span class='chev' style='transform:rotate(${op?90:0}deg)'>›</span></button>`
  +(op?`<div style='padding:0 0 10px'><p class='sub' style='margin:4px 0 6px'>记账 ${yen(u.v)} − 账单 ${yen(u.bill)} = ${u.df>0?'多记了':'少记了'} ${yen(Math.abs(u.df))}。${u.df>0?'先看有没有重复或已取消的。':'可能有漏记的,导入这张卡的明细就能补上。'}</p>`
-  +(sus.length?sus.map(({x,why})=>`<div class='row' style='gap:8px'><button class='arow' data-edit='${x.id}' style='flex:1;min-width:0;display:flex;align-items:center;gap:8px;border:0;padding:0'><div class='rm'><div>${esc(x.note||x.cat)}</div><span>${+x.date.slice(5,7)}/${+x.date.slice(8)} · ${esc(why)}</span></div><div class='amt'>${yen(x.amt)}</div></button><button class='lk' data-difok='${x.id}' style='flex:none;font-size:13px'>没问题</button></div>`).join(''):`<p class='sub' style='margin:0'>没找到明显可疑的记录。</p>`)
+  +(sus.length?sus.map(({x,why})=>`<div class='row' style='gap:8px'><button class='arow' data-edit='${x.id}' style='flex:1;min-width:0;display:flex;align-items:center;gap:8px;border:0;padding:0'><div class='rm'><div>${esc(x.note||x.cat)}</div><span>${+x.date.slice(5,7)}/${+x.date.slice(8)} · ${esc(why)}</span></div><div class='amt'>${yen(x.amt)}</div></button><div style='display:flex;flex-direction:column;align-items:flex-end;flex:none'><button class='lk' data-difnx='${x.id}' style='font-size:13px'>算下月账单</button><button class='lk' data-difok='${x.id}' style='font-size:13px;color:var(--mu)'>没问题</button></div></div>`).join(''):`<p class='sub' style='margin:0'>没找到明显可疑的记录。</p>`)
   +`<button class='lk' data-upc='${u.m}' data-upm='${u.mth}' style='margin-top:6px'>查看 ${+u.m.slice(5)}月全部 ${esc(u.nm)} 记录 ›</button></div>`:'')}
 const CARDS=[['card','ppc','PayPay卡'],['rakuten','rkc','乐天卡']];
+/* 账单所属月份:利用日在上个月、但晚入账进了下个月账单的,记 bm */
+const bmOf=x=>x.bm||x.date.slice(0,7);
 const unpaidCard=d=>{const items=[];if(!d||+d.slice(8)>=CARD_DAY)return {items,v:0};const B=A.bills||{},pm=prevM(d.slice(0,7));
- CARDS.forEach(([mth,key,nm])=>{const v=sum(D.filter(x=>x.date.startsWith(pm)&&x.method===mth)),b=B[key],bill=b&&b.pay&&b.pay.slice(0,7)===d.slice(0,7)?b:null;
+ CARDS.forEach(([mth,key,nm])=>{const v=sum(D.filter(x=>bmOf(x)===pm&&x.method===mth)),b=B[key],bill=b&&b.pay&&b.pay.slice(0,7)===d.slice(0,7)?b:null;
   if(!v&&!bill)return;const df=bill?v-bill.val:0;
   items.push({nm,v,m:pm,mth,df,bill:bill?bill.val:null,lbl:nm+' '+(+pm.slice(5))+'月消费',sub:bill?('账单 '+yen(bill.val)+(df?' · 差 '+(df>0?'+':'−')+yen(Math.abs(df)):' · 一致')):'本月'+CARD_DAY+'日扣款',bad:!!(bill&&df)})});
  const v=sum(D.filter(x=>x.date.startsWith(pm)&&isCredit(x.method)&&!CARDS.some(c=>c[0]===x.method)));if(v)items.push({nm:'其他卡',v,m:pm,lbl:'其他信用卡 '+(+pm.slice(5))+'月消费',sub:'本月'+CARD_DAY+'日扣款'});
@@ -891,6 +893,7 @@ document.addEventListener('click',e=>{
  if(t.dataset.rfetch){fetchRates(true);return}
  if(t.dataset.rtx){OPEN.rt=!OPEN.rt;render();return}
  if(t.dataset.upc){Q=t.dataset.upm?{t:'',c:'',m:t.dataset.upm,k:'out',f:''}:{t:'',c:'',m:'',k:'out',f:'',cr:1};ym=t.dataset.upc;LV='list';location.hash='#list';return}
+ if(t.dataset.difnx){const x=D.find(z=>z.id===+t.dataset.difnx);if(x){const[y,mo]=bmOf(x).split('-').map(Number),d=new Date(y,mo,1);x.bm=d.getFullYear()+'-'+pad(d.getMonth()+1);save();toast('这笔改算到 '+(+x.bm.slice(5))+' 月的账单')}render();return}
  if(t.dataset.difok){const x=D.find(z=>z.id===+t.dataset.difok);if(x){x.difok=1;save();toast('已标记,不再列出这笔')}render();return}
  if(t.dataset.difx){OPEN[t.dataset.difx]=!OPEN[t.dataset.difx];render();return}
  if(t.dataset.cssoff){delete A.cashSS;delete A.cashPP;saveA();try{autoSnap()}catch(e){}toast('已改回按收支推算');render();return}
@@ -1060,18 +1063,18 @@ async function importRakuten(files){
    for(let p=1;p<=doc.numPages;p++){const tc=await (await doc.getPage(p)).getTextContent();pages.push(tc.items.map(i=>({s:i.str,x:i.transform[4],y:i.transform[5]})))}
    r=rkParse(pages)}catch(e){r={rows:[]}}
   if(!r.rows.length){nf++;continue}
-  const seen={};
+  const seen={},mc={};r.rows.forEach(x=>{const k=x.date.slice(0,7);mc[k]=(mc[k]||0)+1});const sm=Object.keys(mc).sort((p,q)=>mc[q]-mc[p])[0];
   r.rows.forEach(x=>{ums.add(x.date.slice(0,7));
    const k=x.date+':'+x.amt+':'+x.note;seen[k]=(seen[k]||0)+1;const ref='rk:'+(r.card||'')+':'+k+':'+seen[k];
    if(/PAYPAY|ペイペイ/i.test(x.note)){ign['PayPay 充值']=(ign['PayPay 充值']||0)+1;return}
-   if(D.some(z=>z.ref===ref)){dup++;return}
+   {const z=D.find(z=>z.ref===ref);if(z){if(sm&&z.date.slice(0,7)<sm&&!z.bm)z.bm=sm;dup++;return}}
    if(x.neg){if(!A.inc.some(z=>z.ref===ref)&&!RV.dis.includes(ref))items.push({ref,date:x.date,amt:x.amt,dir:'in',kind:'退款',note:x.note,method:vm('rakuten')});return}
    const cat=guess(x.note)||'其他',method=vm('rakuten');
    const mm=matchManual(x.date,x.amt,method,claimed);
    if(mm&&mm.auto){claimed.add(mm.auto.id);linkManual(mm.auto,ref,x.note);rec++;return}
    const cand=mm&&mm.ask;
    if(cand){if(!RV.dis.includes(ref)){claimed.add(cand.id);items.push({ref,date:x.date,amt:x.amt,dir:'out',kind:'疑似重复',note:x.note,dupOf:cand.id,method,cat});sus++}return}
-   const id=nid();D.push({id,amt:x.amt,method,cat,note:x.note,date:x.date,ref,...(fixOf(x.note)?{fix:true}:{})});add++;if(cat==='其他')unc.push(id)});
+   const id=nid();D.push({id,amt:x.amt,method,cat,note:x.note,date:x.date,ref,...(sm&&x.date.slice(0,7)<sm?{bm:sm}:{}),...(fixOf(x.note)?{fix:true}:{})});add++;if(cat==='其他')unc.push(id)});
  }
  if(nf===files.length){toast('没有识别到明细,请确认是乐天卡 e-NAVI 的请款明细 PDF');return}
  RV.items=[...RV.items.filter(x=>!items.some(y=>y.ref===x.ref)),...items];
@@ -1098,7 +1101,7 @@ function catFix2(){if(UI.cf2)return;let k=0;const has=c=>CATS.includes(c);
   else if(/^カラオケ館/.test(n)&&x.cat==='交通')v='娱乐';
   else if(/^麺尊RAGE/.test(n)&&x.cat==='旅游')v='餐饮';
   if(v){x.cat=v;k++}});UI.cf2=1;saveC();if(k)save()}
-function reguessOnce(){try{if(!UI.cf7){UI.cf7=1;let k=0;D.forEach(x=>{const n=(x.note||'').normalize('NFKC');if(x.fix||x.rid)return;if(/フイツトイ-ジ-|フィットイージー|ソウルメイト|楽天モバイル通信料|ネットフリックス|NETFLIX|ICLOUD|アマゾンプライムカイヒ/i.test(n)||(/APPLE COM BILL/i.test(n)&&x.amt<=3000)){x.fix=true;k++}});if(k)save();saveC()}}catch(e){}try{if(!UI.cf6){UI.cf6=1;if(!A.sal){A.sal={amt:370000,last:'2026-10'};['2026-05','2026-06','2026-07','2026-08','2026-09','2026-10'].forEach(m=>{const[y,mo]=m.split('-').map(Number);if(!A.inc.some(x=>x.rid==='sal'&&x.date.startsWith(m)))A.inc.push({id:nid(),amt:370000,note:'工资',date:m+'-'+pad(new Date(y,mo,0).getDate()),rid:'sal'})});saveA()}saveC()}}catch(e){}try{if(!UI.cf5){UI.cf5=1;const r=R.find(r=>r.name==='房租'&&r.cat==='居住');if(r)['2026-05','2026-06','2026-07','2026-08','2026-09','2026-10'].forEach(m=>{const d=m+'-'+pad(Math.min(r.day,28));if(!D.some(x=>x.rid===r.id&&x.date.startsWith(m)))D.push({id:nid(),amt:r.amt,method:r.method,cat:r.cat,note:r.name,date:d,rid:r.id})});save();saveC()}}catch(e){}try{if(!UI.cf4){UI.cf4=1;if(!A.inc.some(x=>x.ref==='yc:lucas:20261024')){A.inc.push({id:nid(),amt:240000,note:'LucasW(ゆうちょ)',date:'2026-10-24',ref:'yc:lucas:20261024',px:1});saveA()}saveC()}}catch(e){}try{if(!UI.cf3){UI.cf3=1;let k=0;D.forEach(x=>{if(/AMAZON/i.test(x.note||'')&&((x.date==='2026-10-15'&&x.amt===159964)||(x.date==='2026-10-19'&&x.amt===79982))&&x.cat!==PX_CAT){x.cat=PX_CAT;k++}});saveC();if(k)save()}}catch(e){}try{catFix1()}catch(e){}if(!UI.dk1){UI.dk1=1;UI.dupok=[...new Set([...(UI.dupok||[]),'APPLE COM BILL|1350|2026-10'])];saveC()}try{catFix2()}catch(e){}if(UI.rg4)return;let k=0;D.forEach(x=>{if(x.ref&&x.cat==='其他'){const c=guess(x.note);if(c&&c!=='其他'){x.cat=c;k++}}});UI.rg4=1;saveC();if(k){save();setTimeout(()=>toast('已自动给 '+k+' 笔「其他」重新分类'),800)}}
+function reguessOnce(){try{if(!UI.cf8){UI.cf8=1;const z=D.find(x=>x.method==='rakuten'&&x.date==='2026-10-04'&&x.amt===21790&&/トリップ/.test(x.note||''));if(z&&!z.bm){z.bm='2026-11';delete z.difok;save()}saveC()}}catch(e){}try{if(!UI.cf7){UI.cf7=1;let k=0;D.forEach(x=>{const n=(x.note||'').normalize('NFKC');if(x.fix||x.rid)return;if(/フイツトイ-ジ-|フィットイージー|ソウルメイト|楽天モバイル通信料|ネットフリックス|NETFLIX|ICLOUD|アマゾンプライムカイヒ/i.test(n)||(/APPLE COM BILL/i.test(n)&&x.amt<=3000)){x.fix=true;k++}});if(k)save();saveC()}}catch(e){}try{if(!UI.cf6){UI.cf6=1;if(!A.sal){A.sal={amt:370000,last:'2026-10'};['2026-05','2026-06','2026-07','2026-08','2026-09','2026-10'].forEach(m=>{const[y,mo]=m.split('-').map(Number);if(!A.inc.some(x=>x.rid==='sal'&&x.date.startsWith(m)))A.inc.push({id:nid(),amt:370000,note:'工资',date:m+'-'+pad(new Date(y,mo,0).getDate()),rid:'sal'})});saveA()}saveC()}}catch(e){}try{if(!UI.cf5){UI.cf5=1;const r=R.find(r=>r.name==='房租'&&r.cat==='居住');if(r)['2026-05','2026-06','2026-07','2026-08','2026-09','2026-10'].forEach(m=>{const d=m+'-'+pad(Math.min(r.day,28));if(!D.some(x=>x.rid===r.id&&x.date.startsWith(m)))D.push({id:nid(),amt:r.amt,method:r.method,cat:r.cat,note:r.name,date:d,rid:r.id})});save();saveC()}}catch(e){}try{if(!UI.cf4){UI.cf4=1;if(!A.inc.some(x=>x.ref==='yc:lucas:20261024')){A.inc.push({id:nid(),amt:240000,note:'LucasW(ゆうちょ)',date:'2026-10-24',ref:'yc:lucas:20261024',px:1});saveA()}saveC()}}catch(e){}try{if(!UI.cf3){UI.cf3=1;let k=0;D.forEach(x=>{if(/AMAZON/i.test(x.note||'')&&((x.date==='2026-10-15'&&x.amt===159964)||(x.date==='2026-10-19'&&x.amt===79982))&&x.cat!==PX_CAT){x.cat=PX_CAT;k++}});saveC();if(k)save()}}catch(e){}try{catFix1()}catch(e){}if(!UI.dk1){UI.dk1=1;UI.dupok=[...new Set([...(UI.dupok||[]),'APPLE COM BILL|1350|2026-10'])];saveC()}try{catFix2()}catch(e){}if(UI.rg4)return;let k=0;D.forEach(x=>{if(x.ref&&x.cat==='其他'){const c=guess(x.note);if(c&&c!=='其他'){x.cat=c;k++}}});UI.rg4=1;saveC();if(k){save();setTimeout(()=>toast('已自动给 '+k+' 笔「其他」重新分类'),800)}}
 const UCS=new Set();
 document.addEventListener('change',e=>{const t=e.target;if(!t.dataset)return;
  if(t.dataset.ucs){const id=+t.dataset.ucs;if(t.checked)UCS.add(id);else UCS.delete(id);render();return}
