@@ -849,6 +849,7 @@ async function saveFile(name,data,mime){
 const RK='kakeibo.rv.v1';
 let RV={items:[],ign:{},unc:[],dis:[]};
 try{RV=Object.assign(RV,JSON.parse(localStorage.getItem(RK)||'{}'))}catch(e){}
+const TRF=/送った|受け取った|送金|受け取り|受取|送る|わりかん|割り勘/;try{RV.items=RV.items.filter(x=>!TRF.test(x.kind||''))}catch(e){}
 const saveRV=()=>{try{localStorage.setItem(RK,JSON.stringify(RV))}catch(e){}};
 const prevM=m=>{const[y,mo]=m.split('-').map(Number);const d=new Date(y,mo-2,1);return d.getFullYear()+'-'+pad(d.getMonth()+1)};
 function applyRec(){
@@ -904,7 +905,9 @@ function importPay(t){
   const m=(r[di]||'').match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);if(!m)return;
   const date=m[1]+'-'+pad(+m[2])+'-'+pad(+m[3]),note=((mi>=0&&r[mi]?r[mi]:kind)).normalize('NFKC').replace(/\*+$/,'').trim();
   const amt=out>0?out:inn>0?inn:0,ref='pp:'+(ni>=0&&r[ni]?r[ni]:date+amt+note);
-  if(/支払い/.test(kind)&&out>0){
+  /* 给别人转账 / 收款不算收支 */
+   if(TRF.test(kind)){ign['转账/收款(不算收支)']=(ign['转账/收款(不算收支)']||0)+1;return}
+   if(/支払い/.test(kind)&&out>0){
    if(D.some(x=>x.ref===ref)){dup++;return}
    const pm=ti>=0?r[ti]||'':'',cat=guess(note)||'其他',method=vm(/クレジット|カード/.test(pm)?'card':'paypay'),ra=Math.round(out);
    const mm=matchManual(date,ra,method,claimed);
