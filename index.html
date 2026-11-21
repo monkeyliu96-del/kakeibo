@@ -436,7 +436,7 @@ function listSplit(){const h=listBody(),i=h.indexOf('<!--S-->');return [h.slice(
 function updList(){const r=listSplit();$('lsum').innerHTML=r[0];$('lst').innerHTML=r[1]}
 function listBody(){
  const L=listItems(),a=L.filter(x=>!x.inc);
- const ia=L.filter(x=>x.inc),fl=Q.t||Q.c||Q.m||Q.k||Q.d||Q.f||Q.r||Q.cr||Q.pt,all=sum(monthData().filter(own)),tot=sum(Q.c===PX_CAT||Q.pt?a:a.filter(own));
+ const ia=L.filter(x=>x.inc),fl=Q.t||Q.c||Q.m||Q.k||Q.d||Q.f||Q.r||Q.cr||Q.pt,all=sum(monthData().filter(own)),tot=sum((Q.c&&!own({cat:Q.c}))||Q.pt?a:a.filter(own));
  SEL.ids=SEL.ids.filter(k=>L.some(x=>x.key===k));
  const msb=L.length&&!SEL.on?`<button class="lk" data-s="on" style="float:right;font-size:13px;padding:0">多选</button>`:'';
  let h='<div class="lsum">'+(Q.k==='in'?`<p class="big" style="color:var(--in)"><small>+¥</small>${Math.round(sum(ia)).toLocaleString('ja-JP')}</p><p class="sub">${msb}${Q.t?'筛选结果':'本月收入'},共 ${ia.length} 笔</p>`:`<p class="big"><small>¥</small>${Math.round(tot).toLocaleString('ja-JP')}</p><p class="sub">${msb}${fl?'筛选结果':'本月支出'},共 ${a.length} 笔${Q.pt?(()=>{const c0=prevM(today().slice(0,7))+'-01',n=D.filter(x=>x.ptu&&x.date<c0).length;return n?`<br><button class="lk" data-ptold="1" style="font-size:13px;padding:0;margin-top:4px">${+c0.slice(5,7)}月之前的 ${n} 笔不处理了(按原价算)</button>`:''})():''}${!fl&&inM(ym)?' · 收入 '+yen(inM(ym))+' · 结余 '+sgn(inM(ym)-all):''}</p>`);
@@ -573,7 +573,7 @@ function statsRaw(){
  const ex=[];
  if(pt&&chg.length){const [c,p0,c0]=chg[0];ex.push(['cmp','和上月比',esc(c)+' '+sgn(c0-p0)+' 变化最大',cmpIn])}
  ex.push(['day','每日支出','最多 '+(di+1)+'日 '+yen(dm),dayIn]);
- {const po=D.filter(x=>x.date.startsWith(ym)&&!own(x)),pi=A.inc.filter(x=>x.date.startsWith(ym)&&x.px);
+ {const po=D.filter(x=>x.date.startsWith(ym)&&x.cat===PX_CAT),pi=A.inc.filter(x=>x.date.startsWith(ym)&&x.px);
   if(po.length||pi.length){const o=sum(po),i=sum(pi),net=i-o;
    ex.unshift(['px','代购收益',`<span style="color:var(${net>=0?'--in':'--pp'})">${sgn(net)}</span>`,`<p class="sub" style="margin:4px 0">回款 ${yen(i)} − 垫付 ${yen(o)}。代购不算进你的消费和收入。</p>`+[...po.map(x=>({d:x.date,n:x.note||'代购',v:-x.amt})),...pi.map(x=>({d:x.date,n:(x.note||'回款')+' 回款',v:x.amt}))].sort((p,q)=>p.d.localeCompare(q.d)).map(r=>`<div class="bar"><span class="n" style="width:auto;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${+r.d.slice(5,7)}/${+r.d.slice(8)} ${esc(r.n)}</span><span class="v" style="width:auto;color:var(${r.v>=0?'--in':'--pp'})">${sgn(r.v)}</span></div>`).join('')])}}
  h+=moreCard(a,tot,ex);
