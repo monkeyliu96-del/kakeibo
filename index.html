@@ -1411,7 +1411,13 @@ document.addEventListener('click',e=>{const t=e.target.closest('button[data-asl]
  if(to==='new')A.assets.push({id:Date.now(),name:p.name,val:p.val,src:p.key,upd:today()});
  else if(to!=='x'){const x=A.assets.find(z=>z.id===+to);if(x){x.src=p.key;x.val=p.val;x.upd=today();nm=x.name}}
  RV.asn=RV.asn.filter(z=>z!==p);saveRV();saveA();try{autoSnap()}catch(err){}toast(to==='x'?'已忽略':'已更新「'+nm+'」'+yen(p.val));render()});
+const rnum=x=>String(x||'').replace(/^[a-z]+:/,'').replace(/\s/g,'').replace(/^0+/,'');
+const ptFix=(z,amt)=>{z.pt=(z.pt||0)+z.amt-amt;z.amt=amt;delete z.ptu};
+const ptTwin=(amt,date,note)=>{const k=mkey((note||'').normalize('NFKC'));return D.find(z=>z.ptu&&z.ref&&z.ref.startsWith('pp:')&&z.date===date&&z.amt>amt&&(!k||mkey(z.note)===k||mkey(z.note).includes(k)||k.includes(mkey(z.note))))};
+/* 之前没读到取引番号的积分截图被另记成了一笔 → 合并回原来那笔 */
+function ptMerge(){let k=0;D.filter(e=>e.ref&&e.ref.startsWith('ss:')).forEach(e=>{const z=ptTwin(e.amt,e.date,e.note)||D.find(z=>z.pt&&z.ref&&z.ref.startsWith('pp:')&&z.date===e.date&&z.amt===e.amt&&z!==e&&mkey(z.note)===mkey(e.note));if(!z)return;if(z.ptu)ptFix(z,e.amt);D.splice(D.indexOf(e),1);k++});if(k)save();return k}
 async function pullInbox(){
+ try{const k=ptMerge();if(k)setTimeout(()=>{toast('积分截图已合并到原记录 '+k+' 笔');render()},0)}catch(e){}
  const rmN=dedupAuto();if(rmN)setTimeout(()=>{toast('合并了 '+rmN+' 笔重复记录');render()},0);
  const {data,error}=await SB.from('kakeibo_inbox').select('id,amt,merchant,card,at,src,ext').order('id');
  if(error||!data||!data.length)return {ids:[],n:0};
@@ -1420,7 +1426,9 @@ async function pullInbox(){
  let inN=0;
  data.forEach(r=>{if(r.src==='as'){asIn(r,asu);return}
   /* 截图读到「用了积分」后的实付金额比已有的那笔少 → 改成实付(CSV 里是含积分的总额) */
-  if(r.src==='pp'&&r.ext){const z=D.find(x=>x.ref==='pp:'+r.ext);if(z){if(r.amt>0&&r.amt<z.amt){z.pt=(z.pt||0)+z.amt-r.amt;z.amt=r.amt;delete z.ptu;n++}return}}
+  if(r.src==='pp'&&r.ext){const z=D.find(x=>x.ref&&rnum(x.ref)===rnum(r.ext));if(z){if(r.amt>0&&r.amt<z.amt){ptFix(z,r.amt);n++}return}}
+  /* 没读到取引番号:同一天、同店名、含积分的那笔 → 当作同一笔 */
+  if(r.src==='pp'&&!r.ext){const z=ptTwin(r.amt,ymd(new Date(r.at)),r.merchant);if(z){ptFix(z,r.amt);n++;return}}
   /* 朋友转给我的钱(截图)→ 收入;取引番号和 CSV 一致,月底导入不会重复 */
   if(r.src==='pi'){const ref=r.ext?'pp:'+r.ext:'pi:'+r.id,note=(r.merchant||'收款').normalize('NFKC').trim(),date=ymd(new Date(r.at));if(A.inc.some(x=>x.ref===ref))return;
    const pt=pplOf(note);

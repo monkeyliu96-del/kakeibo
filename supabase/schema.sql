@@ -185,6 +185,8 @@ begin
   if a is null then a := regexp_match(post, '支払い合計\D{0,6}([0-9][0-9,]*)'); end if;
   if a is null then return json_build_object('ok', false, 'error', '没找到金额'); end if;
   r := regexp_match(post, '取引番号\D{0,12}([0-9 ]{15,40})');
+  /* OCR 把标签和数值分开排时,取单独一行的 18~24 位数字 */
+  if r is null then r := regexp_match(s, '(?:^|\n)\s*([0-9]{18,24})\s*(?:\n|$)'); end if;
   /* 店名:时间那一行前面的最后一两行,去掉状态栏(时间、5G、电量等) */
   foreach l in array regexp_split_to_array(pre, '\s*\n\s*') loop
     l := btrim(l);
