@@ -965,7 +965,7 @@ function importPay(t){
  if(hi<0){toast('没有找到「取引日」列,请确认是 PayPay 导出的 CSV');return}
  const H=rows[hi],col=n=>H.findIndex(x=>x.includes(n)),di=col('取引日'),oi=col('出金金額'),ii=col('入金金額'),ci=col('取引内容'),mi=col('取引先'),ti=col('取引方法'),ni=col('取引番号');
  if(oi<0){toast('没有找到「出金金額」列');return}
- let add=0,dup=0,sus=0,rec=0,trf=0,inA=0;const claimed=new Set(),items=[],ign={},unc=[],yn=v=>num((v||'').replace(/[,円]/g,''));
+ let add=0,dup=0,sus=0,rec=0,trf=0,inA=0,ptN=0;const claimed=new Set(),items=[],ign={},unc=[],yn=v=>num((v||'').replace(/[,円]/g,''));
  rows.slice(hi+1).forEach(r=>{
   const kind=ci>=0?(r[ci]||'').trim():'',out=yn(r[oi]),inn=ii>=0?yn(r[ii]):NaN;
   const m=(r[di]||'').match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);if(!m)return;
@@ -980,7 +980,7 @@ function importPay(t){
     else{const ex=incDup(Math.round(inn),date,note||'收款');if(ex){if(!(ex.ref||'').startsWith('pp:'))ex.ref=ref;dup++}else{A.inc.push({id:nid(),amt:Math.round(inn),note:note||'收款',date,ref,...(pt==='px'?{px:1}:{})});inA++;trf++}}
     return}
    if(/支払い/.test(kind)&&out>0){
-   if(D.some(x=>x.ref===ref)){dup++;return}
+   {const z=D.find(x=>x.ref===ref);if(z){if(!z.pt&&ti>=0&&/ポイント/.test(r[ti]||'')){z.ptu=1;ptN++}dup++;return}}
    const pm=ti>=0?r[ti]||'':'',cat=guess(note)||'其他',method=vm(/クレジット|カード/.test(pm)?'card':'paypay'),ra=Math.round(out),ptu=/ポイント/.test(pm)?{ptu:1}:{};
    const mm=matchManual(date,ra,method,claimed);
    if(mm&&mm.auto){claimed.add(mm.auto.id);linkManual(mm.auto,ref,note);rec++;return}
@@ -993,7 +993,7 @@ function importPay(t){
  RV.ign=ign;
  RV.unc=[...RV.unc.filter(id=>D.some(x=>x.id===id&&x.cat==='其他')),...unc];
  saveRV();save();if(inA)saveA();
- const dg=dupCharges().length;toast(`导入 ${add} 笔${inA?',收入 '+inA+' 笔':''}${trf?'(含转账/收款 '+trf+' 笔)':''},重复 ${dup} 笔${rec?',自动对账 '+rec+' 笔':''}${sus?',疑似重复 '+sus+' 笔待确认':''}${dg?',发现 '+dg+' 组疑似重复扣款,首页顶部可查看':''}。需确认的项目见下方`);render();
+ const dg=dupCharges().length;toast(`${ptN?'标出 '+ptN+' 笔用了积分的,':''}导入 ${add} 笔${inA?',收入 '+inA+' 笔':''}${trf?'(含转账/收款 '+trf+' 笔)':''},重复 ${dup} 笔${rec?',自动对账 '+rec+' 笔':''}${sus?',疑似重复 '+sus+' 笔待确认':''}${dg?',发现 '+dg+' 组疑似重复扣款,首页顶部可查看':''}。需确认的项目见下方`);render();
 }
 /* ===== 乐天卡 PDF 明细导入 ===== */
 const PDFJS='https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/';
