@@ -806,12 +806,13 @@ applyRec();
 const parseCSV=t=>{const rows=[];let r=[],c='',q=false;for(let i=0;i<t.length;i++){const ch=t[i];if(q){if(ch==='"'){if(t[i+1]==='"'){c+='"';i++}else q=false}else c+=ch}else if(ch==='"')q=true;else if(ch===','){r.push(c);c=''}else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&t[i+1]==='\n')i++;r.push(c);c='';if(r.some(x=>x!==''))rows.push(r);r=[]}else c+=ch}r.push(c);if(r.some(x=>x!==''))rows.push(r);return rows};
 /* 导入时和手动记录对账:同日+同金额+同支付方式 → 自动合并;同日同金额(方式不同)或相差一天 → 让你确认 */
 const dd=(a,b)=>Math.abs((new Date(a)-new Date(b))/864e5);
-function matchManual(date,amt,method,claimed){const pool=D.filter(z=>(!z.ref||z.ref.startsWith('ap:'))&&!z.rid&&z.amt===amt&&!claimed.has(z.id));
+function matchManual(date,amt,method,claimed){const pool=D.filter(z=>(!z.ref||AUTOR.test(z.ref))&&!z.rid&&z.amt===amt&&!claimed.has(z.id));
  const ex=pool.find(z=>z.date===date&&z.method===method);if(ex)return {auto:ex};
  const nr=pool.find(z=>z.date===date)||pool.find(z=>z.method===method&&dd(z.date,date)<=1);return nr?{ask:nr}:null}
 function linkManual(z,ref,note){z.ref=ref;if(!z.note)z.note=note}
 const IMPM=['paypay','card','rakuten'];
-function reconTag(x){if(x.ref&&x.ref.startsWith('ap:'))return '<span class="tg">Apple Pay</span>';if(x.ref||x.rid||!IMPM.includes(x.method))return '';
+const AUTOR=/^(ap|ml):/;
+function reconTag(x){if(x.ref&&AUTOR.test(x.ref))return '<span class="tg">'+(x.ref.startsWith('ml:')?'邮件':'Apple Pay')+'</span>';if(x.ref||x.rid||!IMPM.includes(x.method))return '';
  const last=D.reduce((m,z)=>z.ref&&z.method===x.method&&z.date>m?z.date:m,'');
  return last&&x.date<=last?'<span class="tg bad">未对上</span>':'<span class="tg">待对账</span>'}
 /* ===== 疑似重复扣款:只看乐天卡和订阅服务 —— 同一商户、同一金额在同一个月被扣了多次 ===== */
@@ -1094,7 +1095,7 @@ const SI={ui:['#8e6cf0','<path d="M12 3a9 9 0 100 18c1 0 1.5-.8 1.5-1.6 0-.9-.6-
  csv:['#2f9e8f','<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>'],
  clr:['#d8444f','<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>'],
  wipe:['#a8323b','<path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/>']};
-const SETL={dup:'疑似重复扣款',acct:'账号',ui:'自定义界面',bud:'预算',fix:'固定支出',ap:'Apple Pay 自动记账',pp:'导入 PayPay 记录',rk:'导入乐天卡明细',bk:'备份',rs:'恢复备份',csv:'导出表格(CSV)',clr:'清空消费记录',wipe:'清空全部数据'};
+const SETL={dup:'疑似重复扣款',acct:'账号',ui:'自定义界面',bud:'预算',fix:'固定支出',ap:'自动记账',pp:'导入 PayPay 记录',rk:'导入乐天卡明细',bk:'备份',rs:'恢复备份',csv:'导出表格(CSV)',clr:'清空消费记录',wipe:'清空全部数据'};
 function srow(k,sub,val){const ic=SI[k];return `<button class='srow' data-sub='${k}'><span class='si' style='background:${ic[0]}'><svg viewBox='0 0 24 24'>${ic[1]}</svg></span><span class='sl'${k==='clr'||k==='wipe'?" style='color:var(--pp)'":''}>${SETL[k]}${sub?`<small>${sub}</small>`:''}</span>${val||''}<span class='chev'>›</span></button>`}
 var LEM='';
 const IC={mail:'<path d="M3 6.5A1.5 1.5 0 014.5 5h15A1.5 1.5 0 0121 6.5v11a1.5 1.5 0 01-1.5 1.5h-15A1.5 1.5 0 013 17.5z"/><path d="M3.5 6l8.5 7 8.5-7"/>',lock:'<rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 018 0v3"/>',eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',cloud:'<path d="M7 18a5 5 0 01-.5-10A6 6 0 0118 9a4.5 4.5 0 01-1 9z"/>',key:'<circle cx="8" cy="15" r="4"/><path d="M10.8 12.2L20 3M16 7l3 3"/>',out:'<path d="M15 4h3a2 2 0 012 2v12a2 2 0 01-2 2h-3M10 17l5-5-5-5M15 12H3"/>',sync:'<path d="M21 12a9 9 0 01-15.5 6.3L3 16M3 12A9 9 0 0118.5 5.7L21 8"/><path d="M21 3v5h-5M3 21v-5h5"/>'};
@@ -1128,7 +1129,7 @@ function meView(){
  let h=`<button class='prow' data-sub='acct'><span class='avl'>${avHTML()}</span><span style='flex:1;min-width:0'><b style='font-size:18px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>${esc(UI.nick||(em?em.split('@')[0]:'我的记账本'))}</b><span class='sub' style='margin:0;font-size:13px'>${em?esc(em)+'<br>':''}${st}</span></span><span class='chev' style='color:var(--mu);font-size:20px'>›</span></button>`;
  h+=`<p class='sgt'>设置</p><div class='sgrp'>`+srow('ui','主题 '+TH[UI.theme]+' · 强调色 '+ACC[UI.accent][0])+srow('bud',B.total>0?'每月 '+yen(B.total):'未设置')+srow('fix',R.length?R.length+' 项 · 每月 '+yen(R.reduce((q,r)=>q+r.amt,0)):'房租、话费、订阅')+`</div>`;
  {const n=dupCharges().length;if(n)h+=`<p class='sgt'>需要留意</p><div class='sgrp'><button class='srow' data-sub='dup'><span class='si' style='background:var(--pp)'><svg viewBox='0 0 24 24'><path d='M12 9v4M12 17h.01'/><path d='M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z'/></svg></span><span class='sl'>疑似重复扣款</span><span class='bdg'>${n}</span><span class='chev'>›</span></button></div>`}
- h+=`<p class='sgt'>导入</p><div class='sgrp'>`+srow('ap',SESS?'刷 iPhone 自动记一笔':'需要先登录')+srow('pp','',rv?`<span class='bdg'>${rv}</span>`:'')+srow('rk','',rv?`<span class='bdg'>${rv}</span>`:'')+`</div>`;
+ h+=`<p class='sgt'>导入</p><div class='sgrp'>`+srow('ap',SESS?'Apple Pay / PayPay 卡邮件':'需要先登录')+srow('pp','',rv?`<span class='bdg'>${rv}</span>`:'')+srow('rk','',rv?`<span class='bdg'>${rv}</span>`:'')+`</div>`;
  h+=`<p class='sgt'>备份与导出</p><div class='sgrp'>`+srow('bk',bk?'上次备份 '+bk:'还没有备份过')+srow('rs','从备份文件恢复')+srow('csv','用 Excel、Numbers 打开')+`</div>`;
  h+=`<p class='sgt'>清空数据</p><div class='sgrp'>`+srow('clr')+srow('wipe')+`</div>`;
  return h}
@@ -1167,34 +1168,43 @@ function apMethod(c){const s=mkey(c);
  const h=s&&pmSrc().find(m=>{const n=mkey(m[1]);return m[0]!=='cash'&&m[0]!=='paypay'&&n&&(s.includes(n)||n.includes(s))});
  return h?h[0]:vm('card')}
 async function pullInbox(){
- const {data,error}=await SB.from('kakeibo_inbox').select('id,amt,merchant,card,at').order('id');
+ const {data,error}=await SB.from('kakeibo_inbox').select('id,amt,merchant,card,at,src,ext').order('id');
  if(error||!data||!data.length)return {ids:[],n:0};
  let n=0;const claimed=new Set();
- data.forEach(r=>{const ref='ap:'+r.id;if(D.some(x=>x.ref===ref))return;
+ data.forEach(r=>{const ref=r.src==='ml'&&r.ext?'ml:'+r.ext:'ap:'+r.id;if(D.some(x=>x.ref===ref))return;
   const date=ymd(new Date(r.at)),method=apMethod(r.card),note=(r.merchant||'').normalize('NFKC').trim();
   const ex=D.find(z=>!z.ref&&!z.rid&&z.amt===r.amt&&z.date===date&&z.method===method&&!claimed.has(z.id));
   if(ex){claimed.add(ex.id);linkManual(ex,ref,note);return}
+  /* 同一笔被 Apple Pay 和邮件各报了一次(比如钱包里也勾了 PayPay 卡)→ 只记一次 */
+  if(D.some(z=>z.ref&&AUTOR.test(z.ref)&&z.ref.slice(0,3)!==ref.slice(0,3)&&z.amt===r.amt&&z.date===date&&z.method===method))return;
   const cat=guess(note)||'其他';D.push({id:nid(),amt:r.amt,method,cat,note,date,ref,...(fixOf(note)?{fix:true}:{})});n++});
  save();if(n)setTimeout(()=>{if(!(document.activeElement&&document.activeElement.matches('#app input,#app textarea')))render()},0);
  return {ids:data.map(r=>r.id),n}}
-const cpr=(k,v,show)=>`<div class='fr'><span>${k}</span><code style='flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;font-size:13px;color:var(--mu)'>${esc(show||v)}</code><button class='lk' data-cp='${esc(v)}' style='flex:none;font-size:14px'>复制</button></div>`;
+const qa=v=>String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const cpr=(k,v,show)=>`<div class='fr'><span>${k}</span><code style='flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;font-size:13px;color:var(--mu)'>${esc(show||v)}</code><button class='lk' data-cp="${qa(v)}" style='flex:none;font-size:14px'>复制</button></div>`;
 function apPage(){
  if(!SESS)return `<div class='box' style='text-align:center;padding:24px 16px'><p style='font-size:17px;font-weight:700;margin:0 0 6px'>需要先登录</p><p class='sub'>Apple Pay 刷卡记录会先存到你的云端账号,再同步到记账本。</p><button class='go' data-sub='acct'>去登录</button></div>`;
  if(APT===undefined){SB.from('kakeibo_tokens').select('token').maybeSingle().then(({data})=>{APT=data?data.token:null;render()},()=>{});return `<div class='box'><p class='sub' style='margin:0;text-align:center'>正在读取…</p></div>`}
- const intro=`<div class='box'><h2>刷 iPhone 自动记一笔</h2><p class='sub' style='margin:4px 0 0'>用 iPhone「快捷指令」的「交易」自动化:每次用钱包里的卡付款,金额和商户会自动发到这里,打开记账本时入账。之后导入乐天卡 / PayPay 明细时会自动对上,不会重复记账。</p></div>`;
+ const intro=`<div class='box'><h2>自动记账</h2><p class='sub' style='margin:4px 0 0'><b>乐天卡</b>:用 iPhone「快捷指令」的「交易」自动化,刷 Apple Pay 时自动记。<br><b>PayPay 卡</b>(Apple Pay 和 PayPay App 都算):收到「利用速報」邮件时自动记。<br>打开记账本时入账;月底导入 PayPay / 乐天明细时会自动对上,不会重复。</p></div>`;
  if(!APT)return intro+`<button class='go' id='apgen'>生成我的专属密钥</button>`;
- const n=D.filter(x=>x.ref&&x.ref.startsWith('ap:')).length;
+ const n=D.filter(x=>x.ref&&x.ref.startsWith('ap:')).length,nm=D.filter(x=>x.ref&&x.ref.startsWith('ml:')).length,GAS="// 记账本:PayPay卡「利用速報」邮件 → 自动记账。每 5 分钟运行一次。\nconst TOK='__TOK__';\nconst API='__URL__/rest/v1/rpc/ap_push',KEY='__KEY__';\nfunction setup(){ScriptApp.getProjectTriggers().forEach(t=>ScriptApp.deleteTrigger(t));ScriptApp.newTrigger('run').timeBased().everyMinutes(5).create();run()}\nfunction parse(m){\n  let s=m.getPlainBody()||'';\n  if(!/円/.test(s))s=m.getBody().replace(/<br\\s*\\/?>|<\\/(p|div|td|tr|th|h\\d|li)>/gi,'\\n').replace(/<[^>]+>/g,'').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&');\n  const L=s.split(/\\r?\\n/).map(x=>x.replace(/\\s+/g,' ').trim()).filter(Boolean);\n  const DR=/(\\d{4})年\\s*(\\d{1,2})月\\s*(\\d{1,2})日\\s*(\\d{1,2}):(\\d{2})/;\n  const di=L.findIndex(x=>DR.test(x));if(di<0)return null;\n  const d=L[di].match(DR),p=n=>('0'+n).slice(-2);\n  let amt=null;\n  for(let i=di;i<Math.min(L.length,di+4);i++){const a=L[i].replace(DR,'').match(/([\\d,]+)\\s*円/);if(a){amt=a[1].replace(/,/g,'');break}}\n  if(!amt)return null;\n  let shop=L[di].replace(DR,'').replace(/([\\d,]+)\\s*円.*/,'').trim();\n  if(!shop&&di>0)shop=L[di-1];\n  if(/利用速報|PayPayカード/.test(shop))shop='';\n  return {amt,shop,at:d[1]+'-'+p(d[2])+'-'+p(d[3])+'T'+p(d[4])+':'+d[5]+':00+09:00'};\n}\nfunction run(){\n  const P=PropertiesService.getScriptProperties(),done=JSON.parse(P.getProperty('done')||'[]');\n  GmailApp.search('subject:(PayPayカード 利用速報) newer_than:3d',0,50).forEach(t=>t.getMessages().forEach(m=>{\n    const id=m.getId();if(done.includes(id)||!/利用速報/.test(m.getSubject()))return;\n    const r=parse(m);if(!r){done.push(id);return}\n    const res=UrlFetchApp.fetch(API,{method:'post',contentType:'application/json',headers:{apikey:KEY},muteHttpExceptions:true,\n      payload:JSON.stringify({tok:TOK,amount:r.amt,merchant:r.shop,card:'PayPayカード',at:r.at,src:'ml',ext:id})});\n    let ok=false;try{ok=res.getResponseCode()<300&&JSON.parse(res.getContentText()).ok}catch(e){}\n    if(ok)done.push(id);else console.log('失败',id,res.getContentText());\n  }));\n  P.setProperty('done',JSON.stringify(done.slice(-500)));\n}\n".replace('__TOK__',APT).replace('__URL__',SUPA_URL).replace('__KEY__',SUPA_KEY);
  const st=(i,t)=>`<div style='display:flex;gap:10px;padding:8px 0;border-top:1px solid var(--ln)'><b style='flex:none;width:22px;height:22px;border-radius:50%;background:var(--ac);color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center'>${i}</b><span style='font-size:14.5px'>${t}</span></div>`;
  return intro
  +`<p class='sgt'>要填的内容(点「复制」)</p><div class='sgrp'>`+cpr('URL',SUPA_URL+'/rest/v1/rpc/ap_push')+cpr('apikey',SUPA_KEY)+cpr('tok',APT,APT.slice(0,6)+'••••••')+`</div>`
- +`<p class='sgt'>设置步骤(只需一次)</p><div class='box' style='padding:6px 16px'>`
+ +`<p class='sgt'>乐天卡 · Apple Pay(只需设置一次)</p><div class='box' style='padding:6px 16px'>`
  +st(1,'打开「快捷指令」→ 底部「自动化」→ 右上「+」→ 选「交易」(Transaction)。')
- +st(2,'勾选要自动记账的卡(PayPay 卡、乐天卡等),选「立即运行」。下一步 →「新建空白自动化」。')
+ +st(2,'只勾选<b>乐天卡</b>(PayPay 卡交给下面的邮件,不要勾),选「立即运行」。下一步 →「新建空白自动化」。')
  +st(3,'添加操作「获取 URL 内容」(Get Contents of URL),URL 粘贴上面的 <b>URL</b>。')
  +st(4,'展开操作:方法选 <b>POST</b>;「头部」加一项,键填 <b>apikey</b>,值粘贴上面的 apikey。')
  +st(5,'「请求体」选 <b>JSON</b>,加 4 个文本字段:<br><b>tok</b> = 粘贴上面的 tok<br><b>amount</b> = 变量「快捷指令输入」→ 点它选「金额」<br><b>merchant</b> = 「快捷指令输入」→「商户」<br><b>card</b> = 「快捷指令输入」→「卡」')
  +st(6,'完成。下次刷 Apple Pay 后打开记账本,这笔就自动出现了(带「Apple Pay」标签)。')
- +`</div><p class='sub' style='margin:10px 4px'>已自动记账 ${n} 笔。PayPay App 扫码付款不会触发,仍然每月导入一次 PayPay 记录。</p>`
+ +`</div><p class='sgt'>PayPay 卡 · Gmail 邮件(只需设置一次)</p><div class='box' style='padding:6px 16px'>`
+ +st(1,'用电脑或 Safari 打开 <b>script.google.com</b>,用收「利用速報」邮件的那个 Google 账号登录,点「新しいプロジェクト」。')
+ +st(2,'删掉里面原有的代码,粘贴下面复制的脚本(已经填好你的密钥)。按 ⌘S / Ctrl+S 保存。')
+ +st(3,'上方函数选 <b>setup</b>,点「実行」。第一次会要求授权:选你的账号 →「詳細」→「(安全ではないページ)に移動」→ 允许。这是你自己写的脚本,只有你能用。')
+ +st(4,'完成。之后每 5 分钟检查一次新邮件,最近 3 天内的「利用速報」会自动记账(带「邮件」标签)。')
+ +`<button class='go alt' data-cp="${qa(GAS)}" style='margin:8px 0 6px'>复制脚本</button></div>`
+ +`<p class='sub' style='margin:10px 4px'>已自动记账:Apple Pay ${n} 笔,邮件 ${nm} 笔。用 PayPay 余额付款不会有邮件,月底导入 PayPay CSV 时补上。</p>`
  +`<button class='go alt danger' id='apgen' data-re='1'>重新生成密钥(旧的会失效)</button>`}
 document.addEventListener('click',async e=>{const t=e.target.closest('button');if(!t)return;
  if(t.dataset.cp!==undefined){try{await navigator.clipboard.writeText(t.dataset.cp);toast('已复制')}catch(err){toast('复制失败,请长按选择')}return}
