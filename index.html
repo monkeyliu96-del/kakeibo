@@ -375,6 +375,22 @@ let UNDO=null,TMR=0;
 function toast(t,undo){const e=$('toast');clearTimeout(TMR);e.textContent=t;UNDO=undo||null;e.classList.toggle('act',!!undo);if(undo){const b=document.createElement('button');b.id='undo';b.textContent='撤销';e.appendChild(b)}e.classList.add('on');TMR=setTimeout(()=>{e.classList.remove('on','act');UNDO=null},undo?5000:1800)}
 function shift(n){Q.d='';const[y,m]=ym.split('-').map(Number);const d=new Date(y,m-1+n,1);ym=d.getFullYear()+'-'+pad(d.getMonth()+1);render()}
 const monthData=()=>D.filter(x=>x.date.startsWith(ym));
+/* ===== 转账对象:代购(px)不算自己的收支;AA(aa)的回款冲抵消费 =====
+   代购:帮朋友买的东西分类记「代购」,不算消费;朋友打来的钱记为「代购回款」,不算收入;每月单独显示代购收益 = 回款 − 垫付。
+   AA:朋友还我的钱记成负数支出(默认餐饮),直接冲抵消费;我转给朋友的记成支出。 */
+const PX_CAT='代购',own=x=>x.cat!==PX_CAT,ownI=x=>!x.px;
+const pkey=n=>String(n||'').normalize('NFKC').replace(/\s+/g,'').toLowerCase();
+const pplOf=n=>{const P=(typeof UI!=='undefined'&&UI.ppl)||{},k=pkey(n);if(!k)return '';for(const nm in P){const q=pkey(nm);if(q&&(k===q||k.startsWith(q)))return P[nm]}return ''};
+/* 按转账对象整理已有记录(设置变了之后调用) */
+function applyPpl(){let ch=0;
+ A.inc=A.inc.filter(x=>{const t=pplOf(x.note);
+  if(t==='aa'&&x.ref&&/^(pp|pi):/.test(x.ref)){if(!D.some(z=>z.ref===x.ref))D.push({id:nid(),amt:-x.amt,method:vm('paypay'),cat:'餐饮',note:x.note,date:x.date,ref:x.ref,aa:1});ch++;return false}
+  if(t==='px'&&!x.px){x.px=1;ch++}
+  if(t!=='px'&&x.px){delete x.px;ch++}
+  return true});
+ D.forEach(x=>{if(x.amt>0&&x.cat==='其他'&&x.ref&&/^pp:/.test(x.ref)&&pplOf(x.note)==='aa'){x.cat='餐饮';ch++}});
+ D=D.filter(x=>{if(x.aa&&x.amt<0&&pplOf(x.note)!=='aa'){A.inc.push({id:nid(),amt:-x.amt,note:x.note,date:x.date,ref:x.ref,...(pplOf(x.note)==='px'?{px:1}:{})});ch++;return false}return true});
+ if(ch){save();saveA()}return ch}
 function head(){return ''}
 const yq=o=>{if(SY&&hv()==='#stats'){const y=+ym.slice(0,4);o.r=[(y-1)+'-12-31',y+'-12-31'];o.rl=y+'年全年'}return o};
 const inR=x=>x.date>Q.r[0]&&x.date<=Q.r[1];
@@ -395,7 +411,7 @@ function listSplit(){const h=listBody(),i=h.indexOf('<!--S-->');return [h.slice(
 function updList(){const r=listSplit();$('lsum').innerHTML=r[0];$('lst').innerHTML=r[1]}
 function listBody(){
  const L=listItems(),a=L.filter(x=>!x.inc);
- const ia=L.filter(x=>x.inc),fl=Q.t||Q.c||Q.m||Q.k||Q.d||Q.f||Q.r||Q.cr,all=sum(monthData()),tot=sum(a);
+ const ia=L.filter(x=>x.inc),fl=Q.t||Q.c||Q.m||Q.k||Q.d||Q.f||Q.r||Q.cr,all=sum(monthData().filter(own)),tot=sum(Q.c===PX_CAT?a:a.filter(own));
  SEL.ids=SEL.ids.filter(k=>L.some(x=>x.key===k));
  const msb=L.length&&!SEL.on?`<button class="lk" data-s="on" style="float:right;font-size:13px;padding:0">多选</button>`:'';
  let h='<div class="lsum">'+(Q.k==='in'?`<p class="big" style="color:var(--in)"><small>+¥</small>${Math.round(sum(ia)).toLocaleString('ja-JP')}</p><p class="sub">${msb}${Q.t?'筛选结果':'本月收入'},共 ${ia.length} 笔</p>`:`<p class="big"><small>¥</small>${Math.round(tot).toLocaleString('ja-JP')}</p><p class="sub">${msb}${fl?'筛选结果':'本月支出'},共 ${a.length} 笔${!fl&&inM(ym)?' · 收入 '+yen(inM(ym))+' · 结余 '+sgn(inM(ym)-all):''}</p>`);
@@ -414,7 +430,7 @@ function listBody(){
   const dt=new Date(d+'T00:00:00'),wd='日一二三四五六'[dt.getDay()],ei=sum(g[d].filter(x=>x.inc)),eo=sum(g[d].filter(x=>!x.inc));
   h+=`<div class="day"><span>${+d.slice(5,7)}月${+d.slice(8)}日 周${wd}</span><span>${eo?yen(eo):''}${eo&&ei?' · ':''}${ei?'收入 +'+yen(ei):''}</span></div><div class="box">`;
   g[d].forEach(x=>{
-   const inf=x.inc?`<i class="dot" style="background:var(--in)"></i><div class="rm"><div>${esc(x.note||'收入')}</div><span>收入</span></div><div class="amt" style="color:var(--in)">+${yen(x.amt)}</div>`:`<i class="dot" style="background:var(${mcol(x.method)})"></i><div class="rm"><div>${esc(x.note||x.cat)}</div><span>${esc(x.cat)} · ${mname(x.method)}${isFix(x)?' · 固定':''}${reconTag(x)}</span></div><div class="amt">${yen(x.amt)}</div>`;
+   const inf=x.inc?`<i class="dot" style="background:var(--in)"></i><div class="rm"><div>${esc(x.note||'收入')}</div><span>${x.px?'代购回款(不算收入)':'收入'}</span></div><div class="amt" style="color:var(--in)">+${yen(x.amt)}</div>`:`<i class="dot" style="background:var(${mcol(x.method)})"></i><div class="rm"><div>${esc(x.note||x.cat)}</div><span>${esc(x.cat)} · ${mname(x.method)}${isFix(x)?' · 固定':''}${x.amt<0?' · 还款':''}${reconTag(x)}</span></div><div class="amt"${x.amt<0?' style="color:var(--in)"':''}>${x.amt<0?'−'+yen(-x.amt):yen(x.amt)}</div>`;
    const btn=x.inc?`<button class="del" data-iedit="${x.id}">编辑</button><button class="del${ip===x.id?' on':''}" data-idel="${x.id}">${ip===x.id?'确认删除':'删除'}</button>`:`<button class="del" data-edit="${x.id}">编辑</button><button class="del${pending===x.id?' on':''}" data-del="${x.id}">${pending===x.id?'确认删除':'删除'}</button>`;
    h+=SEL.on?`<label class="row" style="cursor:pointer"><input type="checkbox" data-sel="${x.key}"${SEL.ids.includes(x.key)?' checked':''} style="width:22px;height:22px;flex:none;accent-color:var(--ac)" aria-label="选择">${inf}</label>`:`<div class="row">${inf}${btn}</div>`});
   h+='</div>';
@@ -447,15 +463,24 @@ function recentNotes(inn){
  for(const x of src){const n=(x.note||'').trim();if(!n||seen.has(n))continue;seen.add(n);out.push(inn?{note:n,amt:x.amt}:{note:n,cat:x.cat,method:x.method});if(out.length>=5)break}
  RC=out;return out;
 }
+function pplPage(){const P=UI.ppl||{},T={px:'代购',aa:'AA 吃饭'};
+ return `<div class='box'><p class='sub' style='margin:0'><b>代购</b>:帮他买的东西分类选「代购」,不算你的消费;他转给你的钱记为「代购回款」,不算收入。统计页显示每月代购收益(回款 − 垫付)。<br><b>AA 吃饭</b>:他还你的钱直接冲抵你的餐饮消费;你转给他的记成餐饮支出。<br>名字填 PayPay 上显示的名字。</p></div>`
+ +`<div class='box' style='padding:2px 16px'>${Object.keys(P).map(n=>`<div class='row'><div class='rm'><div>${esc(n)}</div><span>${T[P[n]]||''}</span></div><button class='lk' data-pplt='${esc(n)}' style='font-size:14px'>改为${P[n]==='px'?'AA 吃饭':'代购'}</button><button class='lk' data-ppld='${esc(n)}' style='font-size:14px;color:var(--pp)'>删除</button></div>`).join('')||`<p class='sub' style='margin:12px 0'>还没有设置。</p>`}</div>`
+ +`<div class='box'><input id='ppln' class='f' placeholder='PayPay 上的名字,比如 LucasW' autocomplete='off'><div class='btns' style='margin-top:8px'><button class='go alt' data-ppla='px'>加为代购</button><button class='go alt' data-ppla='aa'>加为 AA 吃饭</button></div></div>`}
+document.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)return;
+ const done=msg=>{if(Object.values(UI.ppl||{}).includes('px')&&!CATS.includes(PX_CAT)){CC.push(PX_CAT);applyCats()}saveC();const k=applyPpl();toast(msg+(k?',整理了 '+k+' 笔以前的记录':''));render()};
+ if(t.dataset.ppla){const n=($('ppln').value||'').trim();if(!n){toast('请填写名字');return}UI.ppl=Object.assign({},UI.ppl,{[n]:t.dataset.ppla});done('已添加 '+n);return}
+ if(t.dataset.pplt){const n=t.dataset.pplt;UI.ppl=Object.assign({},UI.ppl,{[n]:UI.ppl[n]==='px'?'aa':'px'});done('已修改 '+n);return}
+ if(t.dataset.ppld){const n=t.dataset.ppld,o=Object.assign({},UI.ppl);delete o[n];UI.ppl=o;done('已删除 '+n);return}});
 function todayBud(){if(!(B.total>0))return '';
  const td=today(),m=td.slice(0,7),[y,mo,d]=td.split('-').map(Number),dl=new Date(y,mo,0).getDate()-d+1;
- const spent=sum(D.filter(x=>x.date.startsWith(m))),tdS=sum(D.filter(x=>x.date===td)),rest=B.total-spent,left=(B.total-spent+tdS)/dl-tdS;
+ const spent=sum(D.filter(x=>x.date.startsWith(m)&&own(x))),tdS=sum(D.filter(x=>x.date===td&&own(x))),rest=B.total-spent,left=(B.total-spent+tdS)/dl-tdS;
  if(rest<0)return `<div class="tbud">本月已超出预算 <b class="over">${yen(-rest)}</b></div>`;
  return `<div class="tbud">本月预算还剩 ${yen(rest)} · ${left>=0?`今天还能花 <b>${yen(left)}</b>`:`今天已超 <b class="over">${yen(-left)}</b>`}</div>`}
 const CCOL=['--pp','--c5','--cd','--cr','--c6','--cs','--c8','--c7'];
 function addView(){
  const e=E?D.find(x=>x.id===E):null,ei=EI?A.inc.find(x=>x.id===EI):null,cur=e||ei,inn=F.type==='in',pf=cur?null:PF;
- const av=cur?cur.amt:(pf&&pf.amt)||'',nv=cur?(cur.note||''):(pf&&pf.note)||'',dv=cur?cur.date:today(),rc=recentNotes(inn);
+ const av=cur?Math.abs(cur.amt):(pf&&pf.amt)||'',nv=cur?(cur.note||''):(pf&&pf.note)||'',dv=cur?cur.date:today(),rc=recentNotes(inn);
 if(!MT.some(m=>m[0]===F.method))F.method=MT[0][0];
  const hint=(!cur&&hintOn()&&!D.length&&!A.inc.length)?`<div class="box" style="margin:12px 0 24px"><h2>欢迎使用记账本</h2><p class="sub" style="margin:6px 0">点右上角头像登录账号后,记录会自动同步到云端,换手机也能找回。不登录的话,记录只保存在这台手机上。</p><p class="sub" style="margin:6px 0 10px">用 Safari 打开后,点「分享 → 添加到主屏幕」,就能像 App 一样使用。</p><button class="go" data-hint="1" style="margin:0;padding:11px">知道了</button></div>`:'';
  const bg=bkGet(),bkb=(!cur&&!hint&&bkDue()&&!(typeof SESS!=='undefined'&&SESS))?`<div class="box" style="margin:12px 0 24px"><h2>该备份了</h2><p class="sub" style="margin:6px 0 10px">${bg.last?'上次备份是 '+bg.last+'(已过 '+dayDiff(bg.last,today())+' 天)。':'你还没有备份过数据。'}没登录账号时,数据只保存在这台手机上,建议备份一份,或者点右上角头像登录,自动同步到云端。</p><div style="display:flex;gap:8px"><button class="go" data-bkn="1" style="margin:0;padding:10px;flex:1">立即备份</button><button class="go alt" data-bkl="1" style="margin:0;padding:10px;flex:1">稍后提醒</button></div></div>`:'';
@@ -476,7 +501,9 @@ function top5(a){
 /* 不常看的放一张卡里,一行一个摘要,点开才显示 */
 function moreCard(a,tot,ex){
  const t5=top5(a),fx=sum(a.filter(isFix)),vr=tot-fx,bm={};a.forEach(x=>bm[x.method]=(bm[x.method]||0)+x.amt);
- const ms=MT.filter(k=>bm[k[0]]).sort((p,q)=>bm[q[0]]-bm[p[0]]),pc=v=>tot?Math.round(v/tot*100)+'%':'0%';
+ /* 有朋友还款(负数)时,占比按正的支出算 */
+ const tp=a.reduce((q,x)=>q+(x.amt>0?x.amt:0),0)||1;Object.keys(bm).forEach(k=>{if(bm[k]<=0)delete bm[k]});
+ const ms=MT.filter(k=>bm[k[0]]).sort((p,q)=>bm[q[0]]-bm[p[0]]),pc=v=>Math.round(v/tp*100)+'%';tot=tp;
  const dot=c=>`<i class="dot" style="display:inline-block;background:var(${c})"></i>`;
  const xs=(k,lb,sm,inner)=>`<button class="row arow" data-sx="${k}" style="padding:10px 0;min-height:0"><div class="rm"><div>${lb}</div></div><div style="color:var(--mu);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%">${sm}</div><span class="chev" style="transform:rotate(${OPEN['s'+k]?90:0}deg)">›</span></button>${OPEN['s'+k]?`<div style="padding:0 0 12px">${inner}</div>`:''}`;
  return `<div class="box" data-g="o" style="padding:2px 16px">`+(ex||[]).map(e=>xs(...e)).join('')
@@ -487,17 +514,17 @@ function moreCard(a,tot,ex){
 function statsView(){return statsRaw()}
 function statsRaw(){
  if(SY)return yearRaw();
- const a=monthData(),tot=sum(a),inc=A.inc.filter(x=>x.date.startsWith(ym)),it=sum(inc);
+ const a=monthData().filter(own),tot=sum(a),inc=A.inc.filter(x=>x.date.startsWith(ym)&&ownI(x)),it=sum(inc);
  let h=head();
  if(!a.length&&!inc.length)return h+`<div class="empty">这个月还没有数据可统计。</div>`;
  const [y,m]=ym.split('-').map(Number),nd=new Date(y,m,0).getDate(),isCur=today().startsWith(ym);
  const bc={};a.forEach(x=>bc[x.cat]=(bc[x.cat]||0)+x.amt);
- const pm=prevM(ym),pa=D.filter(x=>x.date.startsWith(pm)),pt=sum(pa),pc={};pa.forEach(x=>pc[x.cat]=(pc[x.cat]||0)+x.amt);
+ const pm=prevM(ym),pa=D.filter(x=>x.date.startsWith(pm)&&own(x)),pt=sum(pa),pc={};pa.forEach(x=>pc[x.cat]=(pc[x.cat]||0)+x.amt);
  const lk='border:0;background:none;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:left';
  const brow=(nm,u,l)=>`<div style="margin:8px 0 0"><div style="display:flex;justify-content:space-between;font-size:13px"><span>${esc(nm)}</span><span style="color:var(${u>l?'--pp':'--mu'})">${yen(u)} / ${yen(l)}${u>l?' · 超出 '+yen(u-l):''}</span></div><div class="pg" style="height:5px"><i style="width:${Math.min(100,u/l*100)}%;background:var(${u>l?'--pp':'--ac'})"></i></div></div>`;
  /* 近 6 个月(小图,放在总览卡里) */
  const ms=[];{let mm=ym;for(let i=0;i<6;i++){ms.unshift(mm);mm=prevM(mm)}}
- const tr=ms.map(mm=>({mm,o:sum(D.filter(x=>x.date.startsWith(mm)))})),om=Math.max(1,...tr.map(x=>x.o)),pv=tr.slice(0,-1).filter(x=>x.o),avg=pv.length?pv.reduce((s,x)=>s+x.o,0)/pv.length:0;
+ const tr=ms.map(mm=>({mm,o:sum(D.filter(x=>x.date.startsWith(mm)&&own(x)))})),om=Math.max(1,...tr.map(x=>x.o)),pv=tr.slice(0,-1).filter(x=>x.o),avg=pv.length?pv.reduce((s,x)=>s+x.o,0)/pv.length:0;
  const mini=tr.filter(x=>x.o).length>1?`<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--ln)"><p class="sub" id="tro" style="margin:0;font-size:13px">近 6 个月${avg?' · 平均 '+yen(avg)+' / 月':''}</p><div style="display:flex;gap:8px;align-items:flex-end;height:54px;margin-top:6px">${tr.map((x,k)=>`<button data-trl="${+x.mm.slice(5)}月支出 ${yen(x.o)}${avg&&k===tr.length-1?(x.o>=avg?' · 比平均多 ':' · 比平均少 ')+yen(Math.abs(x.o-avg)):''}" aria-label="${+x.mm.slice(5)}月支出 ${yen(x.o)}" style="flex:1;height:100%;display:flex;align-items:flex-end;border:0;background:none;padding:0;cursor:pointer"><i style="display:block;width:100%;height:${x.o?Math.max(4,x.o/om*100):2}%;background:var(--pp);opacity:${k===tr.length-1?1:.3};border-radius:3px 3px 0 0"></i></button>`).join('')}</div><div style="display:flex;gap:8px;margin-top:2px">${tr.map(x=>`<span style="flex:1;text-align:center;font-size:11px;color:var(--mu)">${+x.mm.slice(5)}月</span>`).join('')}</div></div>`:'';
  const dpt=tot-pt;
  h+=`<div class="box"><div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px"><button data-sc="" style="${lk}"><span style="display:block;font-size:13px;color:var(--mu)">${isCur?'本月':m+'月'}支出</span><span style="display:block;font-size:32px;font-weight:700;letter-spacing:-.02em;line-height:1.15"><small style="font-size:16px;color:var(--mu);margin-right:3px">¥</small>${Math.round(tot).toLocaleString('ja-JP')}</span></button><div style="text-align:right;font-size:13px;color:var(--mu);line-height:1.55">${pt?`比上月 <b style="color:var(${dpt>0?'--pp':'--in'})">${dpt>0?'+':'−'}${yen(Math.abs(dpt))}</b><br>`:''}<button data-si="收入" style="${lk};color:var(--mu)">收入 ${yen(it)}</button><br>结余 <b style="color:var(${it>=tot?'--in':'--pp'})">${sgn(it-tot)}</b></div></div>${mini}</div>`;
@@ -514,13 +541,16 @@ function statsRaw(){
  const ex=[];
  if(pt&&chg.length){const [c,p0,c0]=chg[0];ex.push(['cmp','和上月比',esc(c)+' '+sgn(c0-p0)+' 变化最大',cmpIn])}
  ex.push(['day','每日支出','最多 '+(di+1)+'日 '+yen(dm),dayIn]);
+ {const po=D.filter(x=>x.date.startsWith(ym)&&!own(x)),pi=A.inc.filter(x=>x.date.startsWith(ym)&&x.px);
+  if(po.length||pi.length){const o=sum(po),i=sum(pi),net=i-o;
+   ex.unshift(['px','代购收益',`<span style="color:var(${net>=0?'--in':'--pp'})">${sgn(net)}</span>`,`<p class="sub" style="margin:4px 0">回款 ${yen(i)} − 垫付 ${yen(o)}。代购不算进你的消费和收入。</p>`+[...po.map(x=>({d:x.date,n:x.note||'代购',v:-x.amt})),...pi.map(x=>({d:x.date,n:(x.note||'回款')+' 回款',v:x.amt}))].sort((p,q)=>p.d.localeCompare(q.d)).map(r=>`<div class="bar"><span class="n" style="width:auto;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${+r.d.slice(5,7)}/${+r.d.slice(8)} ${esc(r.n)}</span><span class="v" style="width:auto;color:var(${r.v>=0?'--in':'--pp'})">${sgn(r.v)}</span></div>`).join('')])}}
  h+=moreCard(a,tot,ex);
  return h;
 }
 function yearRaw(){
- const y=ym.slice(0,4),py=String(+y-1),a=D.filter(x=>x.date.startsWith(y)),inc=A.inc.filter(x=>x.date.startsWith(y)),tot=sum(a),it=sum(inc);
+ const y=ym.slice(0,4),py=String(+y-1),a=D.filter(x=>x.date.startsWith(y)&&own(x)),inc=A.inc.filter(x=>x.date.startsWith(y)&&ownI(x)),tot=sum(a),it=sum(inc);
  if(!a.length&&!inc.length)return `<div class="empty">${y}年还没有数据可统计。</div>`;
- const now=today(),nm=now.startsWith(y)?+now.slice(5,7):12,pa=D.filter(x=>x.date.startsWith(py)),pt=sum(pa),pit=sum(A.inc.filter(x=>x.date.startsWith(py)));
+ const now=today(),nm=now.startsWith(y)?+now.slice(5,7):12,pa=D.filter(x=>x.date.startsWith(py)&&own(x)),pt=sum(pa),pit=sum(A.inc.filter(x=>x.date.startsWith(py)&&ownI(x)));
  const mxio=Math.max(it,tot,1),pyLine=(lb,c,p)=>p?'<br>去年'+lb+' '+yen(p)+',今年'+(c>=p?'多':'少')+' '+yen(Math.abs(c-p)):'';
  let h=`<div class="box" data-g="o"><h2>${y}年收支</h2><button class="bar" data-si="收入"><span class="n">收入</span><span class="t"><i style="width:${it/mxio*100}%"></i></span><span class="v" style="width:auto">+${yen(it)}</span><span class="bch">›</span></button><button class="bar" data-sc=""><span class="n">支出</span><span class="t"><i style="width:${tot/mxio*100}%;background:var(--pp)"></i></span><span class="v" style="width:auto">${yen(tot)}</span><span class="bch">›</span></button><p class="sub" style="margin:8px 0 0">结余 <b style="color:var(${it>=tot?'--in':'--pp'})">${sgn(it-tot)}</b><br>月均支出 ${yen(tot/nm)}${pyLine('支出',tot,pt)}</p></div>`;
  const tr=Array.from({length:12},(_,i)=>{const mm=y+'-'+pad(i+1);return {mm,o:sum(a.filter(x=>x.date.startsWith(mm))),i:sum(inc.filter(x=>x.date.startsWith(mm)))}}),tm=Math.max(1,...tr.map(x=>Math.max(x.o,x.i)));
@@ -621,13 +651,15 @@ if(t.dataset.st){ST=t.dataset.st;return render()}
  if(t.dataset.mt){F.method=t.dataset.mt;document.querySelectorAll('[data-mt]').forEach(b=>b.setAttribute('aria-pressed',b===t))}
  if(t.dataset.ct){F.cat=t.dataset.ct;F.manual=true;document.querySelectorAll('[data-ct]').forEach(b=>b.setAttribute('aria-pressed',b===t))}
  if(t.id==='save'){
-  const amt=parseInt($('amt').value.replace(/[^0-9]/g,''),10);
+  let amt=parseInt($('amt').value.replace(/[^0-9]/g,''),10);
   if(!amt){toast('请先输入金额');$('amt').focus();return}
   const date=$('dt').value||today();
   if(F.type==='in'||EI){const r={amt,note:$('note').value.trim(),date};if(EI)Object.assign(A.inc.find(x=>x.id===EI),r);else A.inc.push({id:nid(),...r});
    const was=EI;EI=null;PF=null;F.type='out';saveA();ym=date.slice(0,7);toast((was?'已修改收入 ':'已记录收入 ')+yen(amt));if(NEW&&!was){NEW=false;render()}else{NEW=false;location.hash='#list';render()}return}
   if(!E){const key=date+'|'+amt;if(D.some(x=>x.date===date&&x.amt===amt)&&DK!==key){DK=key;toast('同一天已有相同金额的记录,再点一次才会保存');$('save').textContent='仍然保存';return}}
   DK='';PF=null;
+  /* 编辑朋友还款(负数)时保持负数 */
+  {const o=E&&D.find(x=>x.id===E);if(o&&o.amt<0)amt=-amt}
   const rec={amt,method:F.method,cat:F.cat,note:$('note').value.trim(),date};if($('fx'))rec.fix=$('fx').checked;if(E){Object.assign(D.find(x=>x.id===E),rec)}else D.push({id:Date.now(),...rec});const was=E;E=null;
   save();ym=date.slice(0,7);toast((was?'已修改 ':'已记录 ')+yen(amt));if(NEW&&!was){NEW=false;render()}else{NEW=false;location.hash='#list';render()}
  }
@@ -704,7 +736,7 @@ migA();
 if(!A.start){A.start=today()}
 saveA();
 const sum=a=>a.reduce((s,x)=>s+x.amt,0);
-const inM=m=>sum(A.inc.filter(x=>x.date.startsWith(m)));
+const inM=m=>sum(A.inc.filter(x=>x.date.startsWith(m)&&ownI(x)));
 const flow=()=>({i:sum(A.inc.filter(x=>x.date>=A.start)),o:sum(D.filter(x=>x.date>=A.start))});
 const stockJ=()=>A.assets.reduce((s,x)=>s+x.val,0);
 /* 现金:有ゆうちょ截图时直接用截图余额,否则按「起算余额 + 收入 − 支出」推算 */
@@ -937,8 +969,10 @@ function importPay(t){
   /* 给别人转账记为支出,收到别人的钱记为收入(直接入账,不用再确认) */
    if(TRF.test(kind)&&(out>0||inn>0)){
     if(D.some(x=>x.ref===ref)||A.inc.some(x=>x.ref===ref)){dup++;return}
-    if(out>0){const ra=Math.round(out),id=nid();D.push({id,amt:ra,method:vm('paypay'),cat:guess(note)||'其他',note:note||'转账',date,ref});add++;trf++;if(!guess(note))unc.push(id)}
-    else{const ex=incDup(Math.round(inn),date,note||'收款');if(ex){if(!(ex.ref||'').startsWith('pp:'))ex.ref=ref;dup++}else{A.inc.push({id:nid(),amt:Math.round(inn),note:note||'收款',date,ref});inA++;trf++}}
+    const pt=pplOf(note);
+    if(out>0){const ra=Math.round(out),id=nid(),cat=pt==='aa'?'餐饮':pt==='px'?PX_CAT:(guess(note)||'其他');D.push({id,amt:ra,method:vm('paypay'),cat,note:note||'转账',date,ref});add++;trf++;if(cat==='其他')unc.push(id)}
+    else if(pt==='aa'){const ra=Math.round(inn);if(D.some(z=>z.amt===-ra&&z.date===date&&pkey(z.note)===pkey(note)))dup++;else{D.push({id:nid(),amt:-ra,method:vm('paypay'),cat:'餐饮',note:note||'还款',date,ref,aa:1});add++;trf++}}
+    else{const ex=incDup(Math.round(inn),date,note||'收款');if(ex){if(!(ex.ref||'').startsWith('pp:'))ex.ref=ref;dup++}else{A.inc.push({id:nid(),amt:Math.round(inn),note:note||'收款',date,ref,...(pt==='px'?{px:1}:{})});inA++;trf++}}
     return}
    if(/支払い/.test(kind)&&out>0){
    if(D.some(x=>x.ref===ref)){dup++;return}
@@ -1210,7 +1244,7 @@ function syncLabel(){const t=SYNC.at?new Date(SYNC.at).toTimeString().slice(0,5)
 function paintSync(){const e=$('synst');if(e)e.innerHTML=syncLabel()}
 const authErr=m=>/Invalid login/i.test(m)?'邮箱或密码不正确':/not confirmed/i.test(m)?'邮箱还没有确认,请先点邮件里的确认链接':/already registered|already exists/i.test(m)?'这个邮箱已经注册过,请直接登录':/at least|Password should/i.test(m)?'密码至少 6 位':/valid email|invalid format/i.test(m)?'邮箱格式不正确':/rate limit|too many/i.test(m)?'操作太频繁,请稍后再试':/fetch|network/i.test(m)?'网络连接失败,请检查网络':m;
 var MESUB='';
-const SI={ui:['#8e6cf0','<path d="M12 3a9 9 0 100 18c1 0 1.5-.8 1.5-1.6 0-.9-.6-1.2-.6-2 0-.9.7-1.4 1.6-1.4H17a4 4 0 004-4c0-5-4-9-9-9z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10.5" cy="7.5" r="1"/><circle cx="15" cy="7.5" r="1"/>'],
+const SI={ppl:['#d0873f','<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 010 7M18 14.8c2 .7 3.2 2.5 3.6 5.2"/>'],ui:['#8e6cf0','<path d="M12 3a9 9 0 100 18c1 0 1.5-.8 1.5-1.6 0-.9-.6-1.2-.6-2 0-.9.7-1.4 1.6-1.4H17a4 4 0 004-4c0-5-4-9-9-9z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10.5" cy="7.5" r="1"/><circle cx="15" cy="7.5" r="1"/>'],
  bud:['#e8a33d','<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>'],
  fix:['#3a9b6a','<path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 013-3h15M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 01-3 3H3"/>'],
  pp:['#e2463f','<path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 21h16"/>'],
@@ -1221,7 +1255,7 @@ const SI={ui:['#8e6cf0','<path d="M12 3a9 9 0 100 18c1 0 1.5-.8 1.5-1.6 0-.9-.6-
  csv:['#2f9e8f','<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>'],
  clr:['#d8444f','<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>'],
  wipe:['#a8323b','<path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/>']};
-const SETL={dup:'疑似重复扣款',acct:'账号',ui:'自定义界面',bud:'预算',fix:'固定支出',ap:'自动记账',pp:'导入 PayPay 记录',rk:'导入乐天卡明细',bk:'备份',rs:'恢复备份',csv:'导出表格(CSV)',clr:'清空消费记录',wipe:'清空全部数据'};
+const SETL={ppl:'转账对象',dup:'疑似重复扣款',acct:'账号',ui:'自定义界面',bud:'预算',fix:'固定支出',ap:'自动记账',pp:'导入 PayPay 记录',rk:'导入乐天卡明细',bk:'备份',rs:'恢复备份',csv:'导出表格(CSV)',clr:'清空消费记录',wipe:'清空全部数据'};
 function srow(k,sub,val){const ic=SI[k];return `<button class='srow' data-sub='${k}'><span class='si' style='background:${ic[0]}'><svg viewBox='0 0 24 24'>${ic[1]}</svg></span><span class='sl'${k==='clr'||k==='wipe'?" style='color:var(--pp)'":''}>${SETL[k]}${sub?`<small>${sub}</small>`:''}</span>${val||''}<span class='chev'>›</span></button>`}
 var LEM='';
 const IC={mail:'<path d="M3 6.5A1.5 1.5 0 014.5 5h15A1.5 1.5 0 0121 6.5v11a1.5 1.5 0 01-1.5 1.5h-15A1.5 1.5 0 013 17.5z"/><path d="M3.5 6l8.5 7 8.5-7"/>',lock:'<rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 018 0v3"/>',eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',cloud:'<path d="M7 18a5 5 0 01-.5-10A6 6 0 0118 9a4.5 4.5 0 01-1 9z"/>',key:'<circle cx="8" cy="15" r="4"/><path d="M10.8 12.2L20 3M16 7l3 3"/>',out:'<path d="M15 4h3a2 2 0 012 2v12a2 2 0 01-2 2h-3M10 17l5-5-5-5M15 12H3"/>',sync:'<path d="M21 12a9 9 0 01-15.5 6.3L3 16M3 12A9 9 0 0118.5 5.7L21 8"/><path d="M21 3v5h-5M3 21v-5h5"/>'};
@@ -1250,6 +1284,7 @@ function meView(){
  const em=SESS?SESS.user.email:'';
  if(MESUB==='acct')return `<div class='acc'><label class='avl acav' for='avf' aria-label='更换头像'>${avHTML()}</label><input id='avf' type='file' accept='image/*' style='display:none'><input id='nick' class='nick' maxlength='16' placeholder='设置昵称' value='${esc(UI.nick||'')}' autocomplete='off'><p class='sub' style='margin:2px 0 0'>${em?esc(em):'点头像更换照片'}</p></div>`+acctBox();
  if(MESUB==='dup'){const gs=dupCharges();return gs.length?dupCard(gs):`<div class='box' style='text-align:center;padding:28px 16px'><p style='font-size:17px;font-weight:700;margin:0 0 6px'>没有疑似重复扣款</p><p class='sub' style='margin:0'>只检查乐天卡和订阅服务(Apple、Netflix、Amazon 等)。</p></div>`}
+ if(MESUB==='ppl')return pplPage();
  if(MESUB==='bud')return budPage();
  if(MESUB==='fix')return fixPage();
  if(MESUB==='ap')return apPage();
@@ -1259,7 +1294,7 @@ function meView(){
  const TH={auto:'跟随系统',light:'浅色',dark:'深色'},bk=bkGet().last,rv=RV.items.length+RV.unc.filter(id=>D.some(x=>x.id===id&&x.cat==='其他')).length;
  const st=SESS?(SYNC.st==='err'?'同步失败':SYNC.st==='ing'?'同步中…':'云同步已开启'):'未登录 · 点这里登录或注册';
  let h=`<button class='prow' data-sub='acct'><span class='avl'>${avHTML()}</span><span style='flex:1;min-width:0'><b style='font-size:18px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>${esc(UI.nick||(em?em.split('@')[0]:'我的记账本'))}</b><span class='sub' style='margin:0;font-size:13px'>${em?esc(em)+'<br>':''}${st}</span></span><span class='chev' style='color:var(--mu);font-size:20px'>›</span></button>`;
- h+=`<p class='sgt'>设置</p><div class='sgrp'>`+srow('ui','主题 '+TH[UI.theme]+' · 强调色 '+ACC[UI.accent][0])+srow('bud',B.total>0?'每月 '+yen(B.total):'未设置')+srow('fix',R.length?R.length+' 项 · 每月 '+yen(R.reduce((q,r)=>q+r.amt,0)):'房租、话费、订阅')+`</div>`;
+ h+=`<p class='sgt'>设置</p><div class='sgrp'>`+srow('ui','主题 '+TH[UI.theme]+' · 强调色 '+ACC[UI.accent][0])+srow('bud',B.total>0?'每月 '+yen(B.total):'未设置')+srow('fix',R.length?R.length+' 项 · 每月 '+yen(R.reduce((q,r)=>q+r.amt,0)):'房租、话费、订阅')+srow('ppl',Object.keys(UI.ppl||{}).length?Object.keys(UI.ppl).length+' 人':'代购、AA 吃饭')+`</div>`;
  {const n=dupCharges().length;if(n)h+=`<p class='sgt'>需要留意</p><div class='sgrp'><button class='srow' data-sub='dup'><span class='si' style='background:var(--pp)'><svg viewBox='0 0 24 24'><path d='M12 9v4M12 17h.01'/><path d='M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z'/></svg></span><span class='sl'>疑似重复扣款</span><span class='bdg'>${n}</span><span class='chev'>›</span></button></div>`}
  h+=`<p class='sgt'>导入</p><div class='sgrp'>`+srow('ap',SESS?'Apple Pay / PayPay 卡邮件':'需要先登录')+srow('pp','',rv?`<span class='bdg'>${rv}</span>`:'')+srow('rk','',rv?`<span class='bdg'>${rv}</span>`:'')+`</div>`;
  h+=`<p class='sgt'>备份与导出</p><div class='sgrp'>`+srow('bk',bk?'上次备份 '+bk:'还没有备份过')+srow('rs','从备份文件恢复')+srow('csv','用 Excel、Numbers 打开')+`</div>`;
@@ -1343,8 +1378,10 @@ async function pullInbox(){
  data.forEach(r=>{if(r.src==='as'){asIn(r,asu);return}
   /* 朋友转给我的钱(截图)→ 收入;取引番号和 CSV 一致,月底导入不会重复 */
   if(r.src==='pi'){const ref=r.ext?'pp:'+r.ext:'pi:'+r.id,note=(r.merchant||'收款').normalize('NFKC').trim(),date=ymd(new Date(r.at));if(A.inc.some(x=>x.ref===ref))return;
+   const pt=pplOf(note);
+   if(pt==='aa'){if(!D.some(z=>z.ref===ref||(z.amt===-r.amt&&z.date===date&&pkey(z.note)===pkey(note))))D.push({id:nid(),amt:-r.amt,method:vm('paypay'),cat:'餐饮',note,date,ref,aa:1});n++;return}
    const ex=incDup(r.amt,date,note);if(ex){if(r.ext&&!(ex.ref||'').startsWith('pp:'))ex.ref=ref;return}
-   A.inc.push({id:nid(),amt:r.amt,note,date,ref});inN++;return}const ref=r.src==='ml'&&r.ext?'ml:'+r.ext:r.src==='pp'?(r.ext?'pp:'+r.ext:'ss:'+r.id):'ap:'+r.id;if(D.some(x=>x.ref===ref))return;
+   A.inc.push({id:nid(),amt:r.amt,note,date,ref,...(pt==='px'?{px:1}:{})});inN++;return}const ref=r.src==='ml'&&r.ext?'ml:'+r.ext:r.src==='pp'?(r.ext?'pp:'+r.ext:'ss:'+r.id):'ap:'+r.id;if(D.some(x=>x.ref===ref))return;
   const date=ymd(new Date(r.at)),method=apMethod(r.card),note=(r.merchant||'').normalize('NFKC').trim();
   const sm=stmtOf(r.amt,date,method,claimed);if(sm){claimed.add(sm.id);return}
   const ex=D.find(z=>!z.ref&&!z.rid&&z.amt===r.amt&&z.date===date&&z.method===method&&!claimed.has(z.id));
@@ -1353,7 +1390,7 @@ async function pullInbox(){
   const au=D.find(z=>z.ref&&AUTOR.test(z.ref)&&z.ref.slice(0,3)!==ref.slice(0,3)&&z.amt===r.amt&&z.date===date&&z.method===method&&!claimed.has(z.id));
   /* PayPay 截图带取引番号,和 CSV 的记录一致 → 把邮件 / Apple Pay 自动记的那笔换成这个编号,月底导入时直接对上 */
   if(au){if(ref.startsWith('pp:')){claimed.add(au.id);au.ref=ref;au.via='ss';if(note)au.note=note}return}
-  const cat=guess(note)||'其他',id=nid();D.push({id,amt:r.amt,method,cat,note,date,ref,...(r.src==='pp'&&ref.startsWith('pp:')?{via:'ss'}:{}),...(fixOf(note)?{fix:true}:{})});n++;
+  const pt=pplOf(note),cat=pt==='aa'?'餐饮':pt==='px'?PX_CAT:(guess(note)||'其他'),id=nid();D.push({id,amt:r.amt,method,cat,note,date,ref,...(r.src==='pp'&&ref.startsWith('pp:')?{via:'ss'}:{}),...(fixOf(note)?{fix:true}:{})});n++;
   /* 第一次出现的店认不出分类 → 首页让你选一次,之后同名的店自动沿用 */
   if(cat==='其他'&&note){RV.ac=[...(RV.ac||[]),id];saveRV()}});
  if(inN){saveA();setTimeout(()=>{toast('记了 '+inN+' 笔收入');render()},200)}
