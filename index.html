@@ -1055,13 +1055,22 @@ function acCard(){const un=(RV.ac||[]).map(id=>D.find(x=>x.id===id)).filter(x=>x
  +un.map(x=>`<div class='row'><div class='rm'><div>${esc(x.note)}</div><span>${x.date.slice(5)} · ${yen(x.amt)}</span></div><select class='f' style='width:96px;padding:8px' data-uc='${x.id}' aria-label='分类'>${CATS.map(c=>`<option${c==='其他'?' selected':''}>${c}</option>`).join('')}</select></div>`).join('')+`</div>`}
 /* 一次性:导入时因为认不出而记成「其他」的,用改进后的规则重新分类 */
 function reguessOnce(){if(UI.rg2)return;let k=0;D.forEach(x=>{if(x.ref&&x.cat==='其他'){const c=guess(x.note);if(c&&c!=='其他'){x.cat=c;k++}}});UI.rg2=1;saveC();if(k){save();setTimeout(()=>toast('已自动给 '+k+' 笔「其他」重新分类'),800)}}
+const UCS=new Set();
+document.addEventListener('change',e=>{const t=e.target;if(!t.dataset)return;
+ if(t.dataset.ucs){const id=+t.dataset.ucs;if(t.checked)UCS.add(id);else UCS.delete(id);render();return}
+ if(t.dataset.ucall){const un=RV.unc.map(id=>D.find(x=>x.id===id)).filter(x=>x&&x.cat==='其他');if(t.checked)un.forEach(x=>UCS.add(x.id));else UCS.clear();render();return}
+ if(t.dataset.ucb&&t.value){const v=t.value,ids=[...UCS];if(!ids.length){toast('先勾选要改的记录');t.value='';return}
+  const names=new Set(ids.map(id=>(D.find(x=>x.id===id)||{}).note).filter(Boolean).map(mkey));let k=0;
+  D.forEach(z=>{if(ids.includes(z.id)||(z.cat==='其他'&&names.has(mkey(z.note)))){z.cat=v;k++}});save();
+  const keep=i=>{const z=D.find(y=>y.id===i);return z&&z.cat==='其他'};RV.unc=RV.unc.filter(keep);RV.ac=(RV.ac||[]).filter(keep);saveRV();UCS.clear();toast('已改为「'+v+'」· '+k+' 笔');render();return}});
 function rvPanel(){
  const un=RV.unc.map(id=>D.find(x=>x.id===id)).filter(x=>x&&x.cat==='其他'),ig=Object.entries(RV.ign);
  if(!RV.items.length&&!un.length&&!ig.length)return '';
  let h=`<div class='box'><h2>导入后需要确认</h2>`;
  if(ig.length)h+=`<p class='sub' style='margin:0 0 8px'>已自动忽略(不算消费):${ig.map(([k,v])=>esc(k)+' '+v+' 条').join('、')}</p>`;
  if(RV.items.length)h+=`<p class='sub' style='margin:8px 0 0'>以下记录没有导入,请逐条决定。转到自己的账户或投资的,选「忽略」即可。</p>`+RV.items.map((x,i)=>`<div class='row'><div class='rm'><div>${esc(x.note)}</div><span>${x.date.slice(5)} · ${esc(x.kind)} · ${x.dupOf!==undefined?'与手动记录「'+esc((D.find(z=>z.id===x.dupOf)||{}).note||'无备注')+'」同日同金额 '+yen(x.amt):(x.dir==='in'?'收到':'送出')+' '+yen(x.amt)}</span></div><div style='display:flex;flex-direction:column'>${x.dupOf!==undefined?`<button class='del' data-rv='${i}' data-act='same'>是同一笔</button><button class='del' data-rv='${i}' data-act='new'>不是,导入</button>`:`<button class='del' data-rv='${i}' data-act='${x.dir}'>${x.dir==='in'?'记为收入':'记为支出'}</button>`}${x.dupOf!==undefined?'':`<button class='del' data-rv='${i}' data-act='ig'>忽略</button>`}</div></div>`).join('');
- if(un.length)h+=`<div style='display:flex;justify-content:space-between;align-items:center;margin:12px 0 0'><p class='sub' style='margin:0'>分类不确定,请选择(同名商户会一起改):</p><button class='lk' data-uck='1' style='font-size:13px;flex:none'>都保持「其他」</button></div>`+un.map(x=>`<div class='row'><div class='rm'><div>${esc(x.note)}</div><span>${x.date.slice(5)} · ${yen(x.amt)}</span></div><select class='f' style='width:96px;padding:8px' data-uc='${x.id}' aria-label='分类'>${CATS.map(c=>`<option${c==='其他'?' selected':''}>${c}</option>`).join('')}</select></div>`).join('');
+ if(un.length)h+=`<div style='display:flex;justify-content:space-between;align-items:center;margin:12px 0 0'><p class='sub' style='margin:0'>分类不确定,请选择(同名商户会一起改):</p><button class='lk' data-uck='1' style='font-size:13px;flex:none'>都保持「其他」</button></div>`+(un.length>1?`<div style='display:flex;gap:8px;align-items:center;margin:8px 0 2px'><label style='display:flex;align-items:center;gap:6px;font-size:14px;flex:none'><input type='checkbox' data-ucall='1' ${un.every(x=>UCS.has(x.id))?'checked':''} style='width:20px;height:20px;accent-color:var(--ac)'>全选</label><select class='f' data-ucb='1' style='flex:1;min-width:0;padding:8px;margin:0' aria-label='把选中的改为'><option value=''>把选中的${UCS.size?' '+[...UCS].filter(id=>un.some(x=>x.id===id)).length+' 条':''}改为…</option>${CATS.map(c=>`<option value='${esc(c)}'>${esc(c)}</option>`).join('')}</select></div>`:'')
+  +un.map(x=>`<div class='row'>${un.length>1?`<input type='checkbox' data-ucs='${x.id}' ${UCS.has(x.id)?'checked':''} style='width:20px;height:20px;flex:none;accent-color:var(--ac)' aria-label='选择'>`:''}<div class='rm'><div>${esc(x.note)}</div><span>${x.date.slice(5)} · ${yen(x.amt)}</span></div><select class='f' style='width:96px;padding:8px' data-uc='${x.id}' aria-label='分类'>${CATS.map(c=>`<option value='${esc(c)}'${c==='其他'?' selected':''}>${esc(c)}</option>`).join('')}</select></div>`).join('');
  return h+`</div>`;
 }
 function moreView(){if(MP==='s')MP='i';return tabBar('mp',MP,[['i','导入'],['x','导出'],['d','清空']])+moreRaw()}
