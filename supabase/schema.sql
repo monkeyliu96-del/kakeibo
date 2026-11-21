@@ -216,7 +216,8 @@ begin
     if not (tr->>'ok')::boolean then return json_build_object('ok', false, 'msg', '没记上:' || (tr->>'error')); end if;
     amt := (tr->>'amt')::int; e := tr->>'ext'; sr := case when tr->>'dir' = 'in' then 'pi' else 'pp' end;
     if amt is null or amt <= 0 or amt > 10000000 then return json_build_object('ok', false, 'msg', '没记上:金额不对'); end if;
-    if e is not null and exists (select 1 from public.kakeibo_inbox where user_id = uid and src = sr and ext = e) then
+    if (e is not null and exists (select 1 from public.kakeibo_inbox where user_id = uid and src = sr and ext = e))
+       or (e is null and exists (select 1 from public.kakeibo_inbox where user_id = uid and src = sr and kakeibo_inbox.amt = (tr->>'amt')::int and kakeibo_inbox.at = (tr->>'at')::timestamptz)) then
       return json_build_object('ok', true, 'msg', '这笔已经记过了');
     end if;
     insert into public.kakeibo_inbox(user_id, amt, merchant, card, at, src, ext)

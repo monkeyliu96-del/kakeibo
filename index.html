@@ -915,7 +915,7 @@ function importPay(t){
    if(TRF.test(kind)&&(out>0||inn>0)){
     if(D.some(x=>x.ref===ref)||A.inc.some(x=>x.ref===ref)){dup++;return}
     if(out>0){const ra=Math.round(out),id=nid();D.push({id,amt:ra,method:vm('paypay'),cat:guess(note)||'其他',note:note||'转账',date,ref});add++;trf++;if(!guess(note))unc.push(id)}
-    else{A.inc.push({id:nid(),amt:Math.round(inn),note:note||'收款',date,ref});inA++;trf++}
+    else{const ex=incDup(Math.round(inn),date,note||'收款');if(ex){if(!(ex.ref||'').startsWith('pp:'))ex.ref=ref;dup++}else{A.inc.push({id:nid(),amt:Math.round(inn),note:note||'收款',date,ref});inA++;trf++}}
     return}
    if(/支払い/.test(kind)&&out>0){
    if(D.some(x=>x.ref===ref)){dup++;return}
@@ -1290,6 +1290,13 @@ function dedupAuto(){const claimed=new Set(),rm=new Set();
  D.filter(x=>x.ref&&AUTOR.test(x.ref)).forEach(x=>{const z=stmtOf(x.amt,x.date,x.method,claimed);if(z){claimed.add(z.id);rm.add(x.id)}});
  if(rm.size){D=D.filter(x=>!rm.has(x.id));save()}return rm.size}
 /* 资产截图:已关联的直接更新市值;第一次出现的来源先放进待确认,让你选更新哪一项 */
+/* 收入查重:同一天、同金额、同一个人(备注)就算同一笔(截图没读到取引番号时也能认出来) */
+const nkey=n=>String(n||'').normalize('NFKC').replace(/\s+/g,'').toLowerCase();
+function incDup(amt,date,note){const k=nkey(note);return A.inc.find(x=>x.amt===amt&&x.date===date&&nkey(x.note)===k)}
+/* 一次性:清掉之前截图重复记进来的收入 */
+(function(){try{const seen=new Map(),rm=new Set();A.inc.forEach(x=>{if(!x.ref||!/^(pp|pi):/.test(x.ref))return;const k=x.date+'|'+x.amt+'|'+nkey(x.note);const o=seen.get(k);
+ if(o){const keep=(o.ref||'').startsWith('pp:')?o:x,drop=keep===o?x:o;rm.add(drop.id);seen.set(k,keep)}else seen.set(k,x)});
+ if(rm.size){A.inc=A.inc.filter(x=>!rm.has(x.id));saveA();setTimeout(()=>toast('合并了 '+rm.size+' 笔重复的收入'),1500)}}catch(e){}})();
 function asIn(r,asu){if(r.ext==='jpb'){A.cashSS={val:r.amt,upd:ymd(new Date(r.at))};asu.push('现金(ゆうちょ)');return}
  if(r.ext==='ppb'){A.cashPP={val:r.amt,upd:ymd(new Date(r.at))};asu.push('现金(PayPay残高)');return}
  const x=A.assets.find(z=>z.src===r.ext);
@@ -1311,7 +1318,9 @@ async function pullInbox(){
  let inN=0;
  data.forEach(r=>{if(r.src==='as'){asIn(r,asu);return}
   /* 朋友转给我的钱(截图)→ 收入;取引番号和 CSV 一致,月底导入不会重复 */
-  if(r.src==='pi'){const ref=r.ext?'pp:'+r.ext:'pi:'+r.id;if(!A.inc.some(x=>x.ref===ref)){A.inc.push({id:nid(),amt:r.amt,note:(r.merchant||'收款').normalize('NFKC').trim(),date:ymd(new Date(r.at)),ref});inN++}return}const ref=r.src==='ml'&&r.ext?'ml:'+r.ext:r.src==='pp'?(r.ext?'pp:'+r.ext:'ss:'+r.id):'ap:'+r.id;if(D.some(x=>x.ref===ref))return;
+  if(r.src==='pi'){const ref=r.ext?'pp:'+r.ext:'pi:'+r.id,note=(r.merchant||'收款').normalize('NFKC').trim(),date=ymd(new Date(r.at));if(A.inc.some(x=>x.ref===ref))return;
+   const ex=incDup(r.amt,date,note);if(ex){if(r.ext&&!(ex.ref||'').startsWith('pp:'))ex.ref=ref;return}
+   A.inc.push({id:nid(),amt:r.amt,note,date,ref});inN++;return}const ref=r.src==='ml'&&r.ext?'ml:'+r.ext:r.src==='pp'?(r.ext?'pp:'+r.ext:'ss:'+r.id):'ap:'+r.id;if(D.some(x=>x.ref===ref))return;
   const date=ymd(new Date(r.at)),method=apMethod(r.card),note=(r.merchant||'').normalize('NFKC').trim();
   const sm=stmtOf(r.amt,date,method,claimed);if(sm){claimed.add(sm.id);return}
   const ex=D.find(z=>!z.ref&&!z.rid&&z.amt===r.amt&&z.date===date&&z.method===method&&!claimed.has(z.id));
