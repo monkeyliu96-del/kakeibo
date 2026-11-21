@@ -411,7 +411,8 @@ function listBody(){
  }
  return h;
 }
-let LV='list';
+let LV='list',SRCH=false;
+document.addEventListener('click',e=>{const t=e.target.closest('button[data-srx]');if(!t)return;const on=SRCH||Q.t||Q.c||Q.m;if(on){SRCH=false;Q.t='';Q.c='';Q.m='';render()}else{SRCH=true;render();const i=$('qs');if(i)i.focus()}});
 function calHtml(){
  const d0=Q.d;Q.d='';const base=Q.k==='in'?[]:filt();Q.d=d0;
  const q=Q.t.trim().toLowerCase(),inc=(Q.c||Q.m||Q.k==='out'||Q.f)?[]:A.inc.filter(x=>x.date.startsWith(ym)&&(!q||(x.note||'').toLowerCase().includes(q)||'收入'.includes(q)));
@@ -427,7 +428,8 @@ function calHtml(){
 function listView(){
  const o=(a,v)=>a.map(x=>`<option value="${x[0]}"${x[0]===v?' selected':''}>${x[1]}</option>`).join('');
  const LB=listSplit();const srcs=[...new Set(A.inc.map(x=>(x.note||'').trim()).filter(Boolean))];
- return head()+`<div class="lhead">${Q.k==='in'?`<div class="srch"><label class="sq"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="qs" type="search" enterkeyhint="search" placeholder="搜索" value="${esc(Q.t)}" autocomplete="off"></label><span class="ss${srcs.includes(Q.t)?' on':''}"><select id="qsrc" aria-label="收入来源"><option value="">全部来源</option>${srcs.map(n=>`<option value="${esc(n)}"${Q.t===n?' selected':''}>${esc(n)}</option>`).join('')}</select></span></div>`:`<div class="srch"><label class="sq"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="qs" type="search" enterkeyhint="search" placeholder="搜索" value="${esc(Q.t)}" autocomplete="off"></label><span class="ss${Q.c?' on':''}"><select id="qc" aria-label="分类"><option value="">分类</option>${o(CATS.map(c=>[c,c]),Q.c)}</select></span><span class="ss${Q.m?' on':''}"><select id="qm" aria-label="支付方式"><option value="">支付</option>${o(MT.map(m=>[m[0],m[1]]),Q.m)}</select></span></div>`}<div class="chips" style="margin:8px 0 4px">${[['','全部'],['out','支出'],['in','收入']].map(c=>`<button class="chip" data-qk="${c[0]}" aria-pressed="${(Q.k||'')===c[0]}" style="padding:6px 14px;font-size:14px">${c[1]}</button>`).join('')}<button class="chip" data-lv="${LV==='cal'?'list':'cal'}" aria-pressed="${LV==='cal'}" style="padding:6px 14px;font-size:14px;margin-left:auto">日历</button>${Q.f?`<button class="chip" data-qf="1" aria-pressed="true" style="padding:6px 14px;font-size:14px">${Q.f==='fix'?'固定':'变动'} ×</button>`:''}${Q.d&&LV!=='cal'?`<button class="chip" data-qd="1" aria-pressed="true" style="padding:6px 14px;font-size:14px">${+Q.d.slice(5,7)}月${+Q.d.slice(8)}日 ×</button>`:''}${Q.r?`<button class="chip" data-qr="1" aria-pressed="true" style="padding:6px 14px;font-size:14px">${Q.rl||(+Q.r[0].slice(5,7)+'/'+ +Q.r[0].slice(8)+' 之后')} ×</button>`:''}${(Q.t||Q.c||Q.m||Q.k)?`<button class="chip" data-qclear="1" style="padding:6px 14px;font-size:14px">清除筛选</button>`:''}</div><div id="lsum">${LB[0]}</div></div><!--H-->${LV==='cal'?calHtml():''}<div id="lst">${LB[1]}</div>`;
+ const shS=SRCH||Q.t||Q.c||Q.m;
+ return head()+`<div class="lhead">${!shS?'':Q.k==='in'?`<div class="srch"><label class="sq"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="qs" type="search" enterkeyhint="search" placeholder="搜索" value="${esc(Q.t)}" autocomplete="off"></label><span class="ss${srcs.includes(Q.t)?' on':''}"><select id="qsrc" aria-label="收入来源"><option value="">全部来源</option>${srcs.map(n=>`<option value="${esc(n)}"${Q.t===n?' selected':''}>${esc(n)}</option>`).join('')}</select></span></div>`:`<div class="srch"><label class="sq"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="qs" type="search" enterkeyhint="search" placeholder="搜索" value="${esc(Q.t)}" autocomplete="off"></label><span class="ss${Q.c?' on':''}"><select id="qc" aria-label="分类"><option value="">分类</option>${o(CATS.map(c=>[c,c]),Q.c)}</select></span><span class="ss${Q.m?' on':''}"><select id="qm" aria-label="支付方式"><option value="">支付</option>${o(MT.map(m=>[m[0],m[1]]),Q.m)}</select></span></div>`}<div class="chips" style="margin:8px 0 4px">${[['','全部'],['out','支出'],['in','收入']].map(c=>`<button class="chip" data-qk="${c[0]}" aria-pressed="${(Q.k||'')===c[0]}" style="padding:6px 14px;font-size:14px">${c[1]}</button>`).join('')}<button class="chip" data-srx="1" aria-pressed="${!!shS}" aria-label="搜索" style="padding:6px 11px;margin-left:auto;display:flex;align-items:center"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button><button class="chip" data-lv="${LV==='cal'?'list':'cal'}" aria-pressed="${LV==='cal'}" style="padding:6px 14px;font-size:14px">日历</button>${Q.f?`<button class="chip" data-qf="1" aria-pressed="true" style="padding:6px 14px;font-size:14px">${Q.f==='fix'?'固定':'变动'} ×</button>`:''}${Q.d&&LV!=='cal'?`<button class="chip" data-qd="1" aria-pressed="true" style="padding:6px 14px;font-size:14px">${+Q.d.slice(5,7)}月${+Q.d.slice(8)}日 ×</button>`:''}${Q.r?`<button class="chip" data-qr="1" aria-pressed="true" style="padding:6px 14px;font-size:14px">${Q.rl||(+Q.r[0].slice(5,7)+'/'+ +Q.r[0].slice(8)+' 之后')} ×</button>`:''}${(Q.t||Q.c||Q.m||Q.k)?`<button class="chip" data-qclear="1" style="padding:6px 14px;font-size:14px">清除筛选</button>`:''}</div><div id="lsum">${LB[0]}</div></div><!--H-->${LV==='cal'?calHtml():''}<div id="lst">${LB[1]}</div>`;
 }
 function recentNotes(inn){
  const src=(inn?A.inc:D).slice().sort((p,q)=>q.date.localeCompare(p.date)||q.id-p.id),seen=new Set(),out=[];
@@ -461,54 +463,47 @@ function top5(a){
  return {top,html:`<div class="chips" style="margin:0 0 4px;gap:4px">${[['single','单笔'],['shop','按商户']].map(c=>`<button class="chip" data-t5="${c[0]}" aria-pressed="${T5===c[0]}" style="padding:3px 10px;font-size:13px">${c[1]}</button>`).join('')}</div>`+top.map((x,i)=>`<button class="bar" data-sn="${esc(x.key)}"><span class="n" style="width:20px;color:var(--mu)">${i+1}</span><span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(x.nm)} <small style="color:var(--mu)">${x.sub}</small></span><span class="v" style="width:auto;white-space:nowrap">${yen(x.amt)}</span></button>`).join('')};
 }
 /* 不常看的放一张卡里,一行一个摘要,点开才显示 */
-function moreCard(a,tot){
+function moreCard(a,tot,ex){
  const t5=top5(a),fx=sum(a.filter(isFix)),vr=tot-fx,bm={};a.forEach(x=>bm[x.method]=(bm[x.method]||0)+x.amt);
  const ms=MT.filter(k=>bm[k[0]]).sort((p,q)=>bm[q[0]]-bm[p[0]]),pc=v=>tot?Math.round(v/tot*100)+'%':'0%';
  const dot=c=>`<i class="dot" style="display:inline-block;background:var(${c})"></i>`;
- const xs=(k,lb,sm,inner)=>`<button class="row arow" data-sx="${k}"><div class="rm"><div>${lb}</div></div><div style="color:var(--mu);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%">${sm}</div><span class="chev" style="transform:rotate(${OPEN['s'+k]?90:0}deg)">›</span></button>${OPEN['s'+k]?`<div style="padding:0 0 12px">${inner}</div>`:''}`;
- return `<div class="box" data-g="o" style="padding:2px 16px">`
+ const xs=(k,lb,sm,inner)=>`<button class="row arow" data-sx="${k}" style="padding:10px 0;min-height:0"><div class="rm"><div>${lb}</div></div><div style="color:var(--mu);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%">${sm}</div><span class="chev" style="transform:rotate(${OPEN['s'+k]?90:0}deg)">›</span></button>${OPEN['s'+k]?`<div style="padding:0 0 12px">${inner}</div>`:''}`;
+ return `<div class="box" data-g="o" style="padding:2px 16px">`+(ex||[]).map(e=>xs(...e)).join('')
   +(t5.top.length?xs('rk','消费排行',esc(t5.top[0].nm)+' '+yen(t5.top[0].amt),t5.html):'')
   +(fx?xs('fx','固定支出',yen(fx)+' · '+pc(fx),`<div class="stack"><i style="width:${fx/tot*100}%;background:var(--cd)"></i><i style="width:${vr/tot*100}%;background:var(--cs)"></i></div><div class="leg"><button class="lg" data-sf="fix">${dot('--cd')} 固定 ${yen(fx)} · ${pc(fx)}</button><button class="lg" data-sf="var">${dot('--cs')} 变动 ${yen(vr)} · ${pc(vr)}</button></div>`):'')
   +(ms.length?xs('pm','支付方式',ms[0][1]+' 最多 · '+pc(bm[ms[0][0]]),`<div class="stack">${ms.map(k=>`<i style="width:${bm[k[0]]/tot*100}%;background:var(${k[2]})"></i>`).join('')}</div><div class="leg">${ms.map(k=>`<button class="lg" data-sm="${k[0]}">${dot(k[2])} ${k[1]} ${yen(bm[k[0]])}</button>`).join('')}</div>`):'')
   +`</div>`}
-function statsView(){const r=statsRaw();if(!r.includes('data-g='))return r;return tabBar('st',(ST==='p'||ST==='c'?ST='o':ST==='v'?ST='t':ST),[['o','概览'],['t','趋势']])+r}
+function statsView(){return statsRaw()}
 function statsRaw(){
  if(SY)return yearRaw();
  const a=monthData(),tot=sum(a),inc=A.inc.filter(x=>x.date.startsWith(ym)),it=sum(inc);
  let h=head();
  if(!a.length&&!inc.length)return h+`<div class="empty">这个月还没有数据可统计。</div>`;
- const [y,m]=ym.split('-').map(Number),nd=new Date(y,m,0).getDate();
- const now=today(),isCur=now.startsWith(ym),elapsed=isCur?+now.slice(8):nd;
+ const [y,m]=ym.split('-').map(Number),nd=new Date(y,m,0).getDate(),isCur=today().startsWith(ym);
  const bc={};a.forEach(x=>bc[x.cat]=(bc[x.cat]||0)+x.amt);
- const mxio=Math.max(it,tot,1),pi=sum(A.inc.filter(x=>x.date.startsWith(prevM(ym))));
- const src={};inc.forEach(x=>{const k=x.note||'收入';src[k]=(src[k]||0)+x.amt});
- const pt0=sum(D.filter(x=>x.date.startsWith(prevM(ym)))),dpt=tot-pt0,bc3=Object.entries(bc).sort((p,q)=>q[1]-p[1]),mx3=bc3.length?bc3[0][1]:1;
- const brow=(nm,u,l)=>`<div style="margin:10px 0 0"><div style="display:flex;justify-content:space-between;font-size:14px"><span>${esc(nm)}</span><span style="color:var(${u>l?'--pp':'--mu'})">${yen(u)} / ${yen(l)}${u>l?' · 超出 '+yen(u-l):''}</span></div><div class="pg"><i style="width:${Math.min(100,u/l*100)}%;background:var(${u>l?'--pp':'--ac'})"></i></div></div>`;
- h+=`<div class="box" data-g="o"><button data-sc="" style="display:block;width:100%;text-align:left;border:0;background:none;padding:0;color:inherit;font:inherit;cursor:pointer"><span class="sub" style="margin:0">${isCur?'本月':(+ym.slice(5))+'月'}支出</span><span class="big" style="display:block;margin:2px 0 0"><small>¥</small>${Math.round(tot).toLocaleString('ja-JP')}</span></button><p class="sub" style="margin:6px 0 0">${pt0?'比上月'+(dpt>=0?'多':'少')+'花 '+yen(Math.abs(dpt))+'<br>':''}<button class="lk" data-si="收入" style="font-size:inherit;padding:0">收入 +${yen(it)}</button> · 结余 <b style="color:var(${it>=tot?'--in':'--pp'})">${sgn(it-tot)}</b></p>${B.total>0?brow('预算',tot,B.total):''}${Object.keys(B.cats).map(c=>brow(c+'预算',bc[c]||0,B.cats[c])).join('')}</div>`;
-
-
-
-
-
-
- const ms=[];{let mm=ym;for(let i=0;i<6;i++){ms.unshift(mm);mm=prevM(mm)}}
- const tr=ms.map(mm=>({mm,o:sum(D.filter(x=>x.date.startsWith(mm))),i:sum(A.inc.filter(x=>x.date.startsWith(mm)))})),tm=Math.max(1,...tr.map(x=>Math.max(x.o,x.i)));
- {const pv=tr.slice(0,-1).filter(x=>x.o),avg=pv.length?sum(pv.map(x=>({amt:x.o})))/pv.length:0,lst=tr[tr.length-1],om=Math.max(1,...tr.map(x=>x.o)),df=lst.o-avg;
-  if(tr.some(x=>x.o))h+=`<div class="box" data-g="t"><h2>近 6 个月支出</h2><p class="sub" id="tro" style="margin:2px 0 0;min-height:40px">${avg?`前几个月平均 <b style="color:var(--tx)">${yen(avg)}</b> / 月<br>${+lst.mm.slice(5)}月 ${yen(lst.o)},${df>=0?'多':'少'} ${yen(Math.abs(df))}${isCur?'(还没过完)':''}`:`${+lst.mm.slice(5)}月 ${yen(lst.o)}`}</p><div style="display:flex;gap:10px;align-items:flex-end;height:110px;margin-top:10px">${tr.map((x,k)=>`<button data-trl="${+x.mm.slice(5)}月支出 ${yen(x.o)}" aria-label="${+x.mm.slice(5)}月支出 ${yen(x.o)}" style="flex:1;height:100%;display:flex;align-items:flex-end;border:0;background:none;padding:0;cursor:pointer"><i style="display:block;width:100%;height:${x.o?Math.max(3,x.o/om*100):1}%;background:var(--pp);opacity:${k===tr.length-1?1:.35};border-radius:4px 4px 0 0"></i></button>`).join('')}</div><div style="display:flex;gap:10px;margin-top:4px">${tr.map(x=>`<span style="flex:1;text-align:center;font-size:12px;color:var(--mu)">${+x.mm.slice(5)}月</span>`).join('')}</div></div>`}
- const exb='';
- if(!a.length)return h+`<div class="empty">这个月还没有支出记录。</div>`+exb;
- const cs=Object.entries(bc).sort((p,q)=>q[1]-p[1]),mx=cs[0][1];
- h+=`<div class="box" data-g="o"><h2>分类</h2>`+cs.map(([c,v])=>`<button class="bar" data-sc="${esc(c)}"><span class="n">${esc(c)}</span><span class="t"><i style="width:${v/mx*100}%${B.cats[c]&&v>B.cats[c]?';background:var(--pp)':''}"></i></span><span class="v" style="width:auto;min-width:8.6em;text-align:right;white-space:nowrap">${yen(v)} <span style="color:var(--mu);font-size:13px">${Math.round(v/tot*100)}%</span></span></button>`).join('')+`</div>`;
-
  const pm=prevM(ym),pa=D.filter(x=>x.date.startsWith(pm)),pt=sum(pa),pc={};pa.forEach(x=>pc[x.cat]=(pc[x.cat]||0)+x.amt);
+ const lk='border:0;background:none;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:left';
+ const brow=(nm,u,l)=>`<div style="margin:8px 0 0"><div style="display:flex;justify-content:space-between;font-size:13px"><span>${esc(nm)}</span><span style="color:var(${u>l?'--pp':'--mu'})">${yen(u)} / ${yen(l)}${u>l?' · 超出 '+yen(u-l):''}</span></div><div class="pg" style="height:5px"><i style="width:${Math.min(100,u/l*100)}%;background:var(${u>l?'--pp':'--ac'})"></i></div></div>`;
+ /* 近 6 个月(小图,放在总览卡里) */
+ const ms=[];{let mm=ym;for(let i=0;i<6;i++){ms.unshift(mm);mm=prevM(mm)}}
+ const tr=ms.map(mm=>({mm,o:sum(D.filter(x=>x.date.startsWith(mm)))})),om=Math.max(1,...tr.map(x=>x.o)),pv=tr.slice(0,-1).filter(x=>x.o),avg=pv.length?pv.reduce((s,x)=>s+x.o,0)/pv.length:0;
+ const mini=tr.filter(x=>x.o).length>1?`<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--ln)"><p class="sub" id="tro" style="margin:0;font-size:13px">近 6 个月${avg?' · 平均 '+yen(avg)+' / 月':''}</p><div style="display:flex;gap:8px;align-items:flex-end;height:54px;margin-top:6px">${tr.map((x,k)=>`<button data-trl="${+x.mm.slice(5)}月支出 ${yen(x.o)}${avg&&k===tr.length-1?(x.o>=avg?' · 比平均多 ':' · 比平均少 ')+yen(Math.abs(x.o-avg)):''}" aria-label="${+x.mm.slice(5)}月支出 ${yen(x.o)}" style="flex:1;height:100%;display:flex;align-items:flex-end;border:0;background:none;padding:0;cursor:pointer"><i style="display:block;width:100%;height:${x.o?Math.max(4,x.o/om*100):2}%;background:var(--pp);opacity:${k===tr.length-1?1:.3};border-radius:3px 3px 0 0"></i></button>`).join('')}</div><div style="display:flex;gap:8px;margin-top:2px">${tr.map(x=>`<span style="flex:1;text-align:center;font-size:11px;color:var(--mu)">${+x.mm.slice(5)}月</span>`).join('')}</div></div>`:'';
+ const dpt=tot-pt;
+ h+=`<div class="box"><div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px"><button data-sc="" style="${lk}"><span style="display:block;font-size:13px;color:var(--mu)">${isCur?'本月':m+'月'}支出</span><span style="display:block;font-size:32px;font-weight:700;letter-spacing:-.02em;line-height:1.15"><small style="font-size:16px;color:var(--mu);margin-right:3px">¥</small>${Math.round(tot).toLocaleString('ja-JP')}</span></button><div style="text-align:right;font-size:13px;color:var(--mu);line-height:1.55">${pt?`比上月 <b style="color:var(${dpt>0?'--pp':'--in'})">${dpt>0?'+':'−'}${yen(Math.abs(dpt))}</b><br>`:''}<button data-si="收入" style="${lk};color:var(--mu)">收入 ${yen(it)}</button><br>结余 <b style="color:var(${it>=tot?'--in':'--pp'})">${sgn(it-tot)}</b></div></div>${B.total>0?brow('预算',tot,B.total):''}${Object.keys(B.cats).map(c=>brow(c+'预算',bc[c]||0,B.cats[c])).join('')}${mini}</div>`;
+ if(!a.length)return h+`<div class="empty">这个月还没有支出记录。</div>`;
+ const cs=Object.entries(bc).sort((p,q)=>q[1]-p[1]),mx=cs[0][1];
+ h+=`<div class="box" style="padding:12px 16px"><h2 style="margin:0 0 2px">分类</h2>`+cs.map(([c,v])=>`<button class="bar" data-sc="${esc(c)}" style="margin:2px 0"><span class="n">${esc(c)}</span><span class="t"><i style="width:${v/mx*100}%${B.cats[c]&&v>B.cats[c]?';background:var(--pp)':''}"></i></span><span class="v" style="width:auto;min-width:8.6em;text-align:right;white-space:nowrap">${yen(v)} <span style="color:var(--mu);font-size:13px">${Math.round(v/tot*100)}%</span></span></button>`).join('')+`</div>`;
+ /* 和上月比、每日支出也收进「更多」 */
  const chg=CATS.filter(c=>bc[c]||pc[c]).map(c=>[c,pc[c]||0,bc[c]||0]).sort((p,q)=>Math.abs(q[2]-q[1])-Math.abs(p[2]-p[1]));
- h+=`<div class="box" data-g="t"><h2>和上月比</h2>`+(pt?`<p class="sub" style="margin:2px 0 6px">本月${tot>=pt?'多':'少'}花 <b style="color:var(${tot>pt?'--pp':'--in'})">${yen(Math.abs(tot-pt))}</b>,变化最大的是:</p>`+(OPEN.cmp?chg:chg.slice(0,3)).map(([c,p0,c0])=>{const d=c0-p0;return `<button class="bar" data-sc="${esc(c)}"><span class="n">${esc(c)}</span><span style="flex:1;color:var(--mu);font-size:13px">${yen(p0)} → ${yen(c0)}</span><span class="v" style="width:auto;white-space:nowrap;color:var(${d>0?'--pp':'--in'})">${sgn(d)}</span></button>`}).join('')+(chg.length>3?`<button class="lk" data-cmpx="1" style="margin-top:6px">${OPEN.cmp?'收起':'全部 '+chg.length+' 个分类 ›'}</button>`:''):`<p class="sub" style="margin:0">上月没有记录,无法对比。</p>`)+`</div>`;
-
- h+=moreCard(a,tot);
+ const cmpIn=chg.map(([c,p0,c0])=>{const d=c0-p0;return `<button class="bar" data-sc="${esc(c)}"><span class="n">${esc(c)}</span><span style="flex:1;color:var(--mu);font-size:13px">${yen(p0)} → ${yen(c0)}</span><span class="v" style="width:auto;white-space:nowrap;color:var(${d>0?'--pp':'--in'})">${sgn(d)}</span></button>`}).join('');
  const bd=Array(nd).fill(0);a.forEach(x=>bd[+x.date.slice(8)-1]+=x.amt);
- const dm=Math.max(...bd);
- h+=`<div class="box" data-g="t"><h2>每日支出</h2><div id="dro" class="dro"> </div><div class="days">${bd.map((v,i)=>v?`<button class="dc" data-sd="${ym}-${pad(i+1)}" data-lb="${i+1}日 ${yen(v)}" aria-label="${i+1}日 ${yen(v)}"><i style="height:${Math.max(4,v/dm*100)}%"></i></button>`:`<i class="z" style="height:3%" aria-label="${i+1}日 ${yen(v)}"></i>`).join('')}</div><div class="leg" style="justify-content:space-between;margin-top:6px"><span>1日</span><span>${nd}日</span></div></div>`;
- return h+exb;
+ const dm=Math.max(...bd),di=bd.indexOf(dm);
+ const dayIn=`<div id="dro" class="dro"> </div><div class="days">${bd.map((v,i)=>v?`<button class="dc" data-sd="${ym}-${pad(i+1)}" data-lb="${i+1}日 ${yen(v)}" aria-label="${i+1}日 ${yen(v)}"><i style="height:${Math.max(4,v/dm*100)}%"></i></button>`:`<i class="z" style="height:3%" aria-label="${i+1}日 ${yen(v)}"></i>`).join('')}</div><div class="leg" style="justify-content:space-between;margin-top:6px"><span>1日</span><span>${nd}日</span></div>`;
+ const ex=[];
+ if(pt&&chg.length){const [c,p0,c0]=chg[0];ex.push(['cmp','和上月比',esc(c)+' '+sgn(c0-p0)+' 变化最大',cmpIn])}
+ ex.push(['day','每日支出','最多 '+(di+1)+'日 '+yen(dm),dayIn]);
+ h+=moreCard(a,tot,ex);
+ return h;
 }
 function yearRaw(){
  const y=ym.slice(0,4),py=String(+y-1),a=D.filter(x=>x.date.startsWith(y)),inc=A.inc.filter(x=>x.date.startsWith(y)),tot=sum(a),it=sum(inc);
