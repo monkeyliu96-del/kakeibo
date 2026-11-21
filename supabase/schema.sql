@@ -196,6 +196,12 @@ begin
   elsif cardinality(keep) >= 1 then mer := keep[cardinality(keep)];
   else mer := ''; end if;
   card := case when post ~ 'クレジット|カード' then 'PayPayカード' when post ~ '残高' then 'PayPay残高' else 'PayPayカード' end;
+  /* 用了 PayPay 积分的部分不算实际花的钱:实付 = 支払い合計 − 积分 */
+  declare pt int := coalesce(public.ss_num((regexp_match(s, '([0-9][0-9,]*)\s*ポイントを支払いに使いました'))[1]),
+                              public.ss_num((regexp_match(s, 'PayPayポイント\s*([0-9][0-9,]*)\s*pt'))[1]), 0)::int;
+  begin
+    if pt > 0 and pt < replace(a[1], ',', '')::int then a[1] := (replace(a[1], ',', '')::int - pt)::text; end if;
+  end;
   return json_build_object('ok', true, 'amt', replace(a[1], ',', '')::int, 'merchant', left(mer, 120), 'card', card,
     'at', t, 'ext', nullif(replace(coalesce(r[1], ''), ' ', ''), ''));
 end $function$;
