@@ -103,6 +103,18 @@ as $function$
 declare s text; seg text; it jsonb := '[]'::jsonb; v numeric; p int;
 begin
   s := left(normalize(coalesce(txt, ''), nfkc), 6000);
+  /* 乐天卡 App「合計お支払い金額の内訳」:账单金额 + 扣款日(放在 pay) */
+  if s ~ '合計お支払い金額' then
+    p := regexp_instr(s, 'お支払い日\s*[0-9]{4}\s*/\s*[0-9]{1,2}\s*/\s*[0-9]{1,2}', 1, 1, 1);
+    v := null;
+    if p > 0 then v := public.ss_num((regexp_match(substr(s, p), '[¥￥]\s*([0-9][0-9,]*)'))[1]); end if;
+    if v is null then v := public.ss_num((regexp_match(s, '合計お支払い金額[\s\S]{0,80}?[¥￥]\s*([0-9][0-9,]*)'))[1]); end if;
+    if v >= 0 then
+      it := it || jsonb_build_object('key','rkc','name','乐天卡账单','val',round(v),
+        'pay', (select to_char(make_date(x[1]::int, x[2]::int, x[3]::int), 'YYYY-MM-DD') from regexp_match(s, 'お支払い日\s*([0-9]{4})\s*/\s*([0-9]{1,2})\s*/\s*([0-9]{1,2})') as x));
+    end if;
+    return it::json;
+  end if;
   /* ゆうちょ:現在高 → 现金 */
   if s ~ '現在高' then
     seg := substring(s from '現在高([\s\S]{0,80})');
@@ -125,6 +137,15 @@ begin
       if p > 0 then v := public.ss_num((regexp_match(substr(s, p, 60), '([0-9][0-9,]*)\s*円'))[1]); end if;
     end if;
     if v >= 0 then it := it || jsonb_build_object('key','ppb','name','PayPay残高','val',round(v)); end if;
+    /* PayPay 卡本月账单 + 扣款日 */
+    p := regexp_instr(s, '請求金額', 1, 1, 1);
+    if p > 0 then
+      v := public.ss_num((regexp_match(substr(s, p), '([0-9][0-9,]*)\s*円'))[1]);
+      if v >= 0 then
+        it := it || jsonb_build_object('key','ppc','name','PayPay卡账单','val',round(v),
+          'pay', (select to_char(make_date(x[1]::int, x[2]::int, x[3]::int), 'YYYY-MM-DD') from regexp_match(s, '支払い日\D{0,4}([0-9]{4})\s*年\s*([0-9]{1,2})\s*月\s*([0-9]{1,2})\s*日') as x));
+      end if;
+    end if;
     return it::json;
   end if;
   /* 证券 App「総合サマリー」 */
@@ -229,9 +250,9 @@ begin
     a := public.ss_assets(txt);
     if json_array_length(a) > 0 then
       for x in select * from json_array_elements(a) loop
-        if (x->>'val')::numeric > 0 and (x->>'val')::numeric < 100000000000 then
+        if ((x->>'val')::numeric > 0 or x->>'key' in ('ppc','rkc')) and (x->>'val')::numeric < 100000000000 then
           insert into public.kakeibo_inbox(user_id, amt, merchant, card, at, src, ext)
-            values (uid, least((x->>'val')::numeric, 2000000000)::int, x->>'name', '', now(), 'as', x->>'key');
+            values (uid, least((x->>'val')::numeric, 2000000000)::int, x->>'name', coalesce(x->>'pay', ''), now(), 'as', x->>'key');
           names := names || case when names = '' then '' else '、' end || (x->>'name') || ' ¥' || to_char((x->>'val')::numeric, 'FM999,999,999,999');
         end if;
       end loop;
