@@ -216,7 +216,9 @@ const KW={
  '医疗':/病院|クリニック|薬局|歯科/};
 const isFix=x=>!!(x&&(x.rid||x.fix));
 const fixOf=s=>{s=(s||'').normalize('NFKC').trim();if(!s)return false;const h=D.slice().sort((p,q)=>q.id-p.id).find(x=>x.note===s);return !!(h&&h.fix)};
-const guess=s=>{s=(s||'').normalize('NFKC').trim();if(!s)return null;const h=D.slice().sort((p,q)=>q.id-p.id).find(x=>x.note&&x.cat!=='其他'&&(x.note===s||(s.length>=2&&(x.note.includes(s)||s.includes(x.note)))));if(h)return h.cat;const s2=s.replace(/[・･\s\-－]/g,'');for(const c in KW)if((KW[c].test(s)||KW[c].test(s2))&&CATS.includes(c))return c;return null};
+/* 买加密货币、往证券账户入金 = 投资,不算消费 */
+const INV_CAT='投资',INVRE=/バイナンス|BINANCE|ビットフライヤー|BITFLYER|コインチェック|COINCHECK|GMOコイン|ビットバンク|BITBANK|SBI ?VC|楽天証券|SBI証券|PAYPAY証券|マネックス証券|松井証券|MOOMOO/i;
+const guess=s=>{s=(s||'').normalize('NFKC').trim();if(!s)return null;if(INVRE.test(s))return INV_CAT;const h=D.slice().sort((p,q)=>q.id-p.id).find(x=>x.note&&x.cat!=='其他'&&(x.note===s||(s.length>=2&&(x.note.includes(s)||s.includes(x.note)))));if(h)return h.cat;const s2=s.replace(/[・･\s\-－]/g,'');for(const c in KW)if((KW[c].test(s)||KW[c].test(s2))&&CATS.includes(c))return c;return null};
 const DEF_PM=[['paypay','PayPay','--pp'],['card','PayPay卡','--cd'],['rakuten','乐天卡','--cr'],['cash','现金','--cs']];
 const PMCOL=['--pp','--cd','--cr','--cs','--c5','--c6','--c7','--c8'];
 let PM=null;
@@ -378,7 +380,7 @@ const monthData=()=>D.filter(x=>x.date.startsWith(ym));
 /* ===== 转账对象:代购(px)不算自己的收支;AA(aa)的回款冲抵消费 =====
    代购:帮朋友买的东西分类记「代购」,不算消费;朋友打来的钱记为「代购回款」,不算收入;每月单独显示代购收益 = 回款 − 垫付。
    AA:朋友还我的钱记成负数支出(默认餐饮),直接冲抵消费;我转给朋友的记成支出。 */
-const PX_CAT='代购',own=x=>x.cat!==PX_CAT,ownI=x=>!x.px;
+const PX_CAT='代购',own=x=>x.cat!==PX_CAT&&x.cat!==INV_CAT,ownI=x=>!x.px;
 const pkey=n=>String(n||'').normalize('NFKC').replace(/\s+/g,'').toLowerCase();
 const pplOf=n=>{const P=(typeof UI!=='undefined'&&UI.ppl)||{},k=pkey(n);if(!k)return '';for(const nm in P){const q=pkey(nm);if(q&&(k===q||k.startsWith(q)))return P[nm]}return ''};
 /* 按转账对象整理已有记录(设置变了之后调用) */
@@ -1356,6 +1358,9 @@ function dedupAuto(){const claimed=new Set(),rm=new Set();
 /* 收入查重:同一天、同金额、同一个人(备注)就算同一笔(截图没读到取引番号时也能认出来) */
 const nkey=n=>String(n||'').normalize('NFKC').replace(/\s+/g,'').toLowerCase();
 function incDup(amt,date,note){const k=nkey(note);return A.inc.find(x=>x.amt===amt&&x.date===date&&nkey(x.note)===k)}
+/* 已有的加密货币 / 证券入金记录归到「投资」(不算消费) */
+(function(){try{let k=0;D.forEach(x=>{if(x.cat!==INV_CAT&&INVRE.test(String(x.note||'').normalize('NFKC'))){x.cat=INV_CAT;k++}});
+ if(D.some(x=>x.cat===INV_CAT)&&!CATS.includes(INV_CAT)){CC.push(INV_CAT);applyCats();saveC()}if(k)save()}catch(e){}})();
 /* 一次性:清掉之前截图重复记进来的收入 */
 (function(){try{const seen=new Map(),rm=new Set();A.inc.forEach(x=>{if(!x.ref||!/^(pp|pi):/.test(x.ref))return;const k=x.date+'|'+x.amt+'|'+nkey(x.note);const o=seen.get(k);
  if(o){const keep=(o.ref||'').startsWith('pp:')?o:x,drop=keep===o?x:o;rm.add(drop.id);seen.set(k,keep)}else seen.set(k,x)});
