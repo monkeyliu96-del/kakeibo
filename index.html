@@ -171,6 +171,7 @@ select.f,.fr select{-webkit-appearance:none;appearance:none;background-image:url
 .icb{height:42px;border:0;border-radius:12px;background:var(--sf);box-shadow:inset 0 0 0 1px var(--ln);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--tx)}.icb svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .icb[aria-pressed="true"]{background:var(--ac);color:#fff;box-shadow:none}
 .crow{width:100%;background:none;border:0;border-top:1px solid var(--ln);font:inherit;color:inherit;text-align:left;cursor:pointer;padding:11px 0}.crow:first-of-type{border-top:0}.crow .chev{color:var(--mu);font-size:18px;margin-left:-4px}.crow:active{opacity:.6}
+#fab{position:fixed;right:max(18px,calc((100% - 560px)/2 + 18px));bottom:calc(92px + env(safe-area-inset-bottom,0px));width:58px;height:58px;border-radius:50%;border:0;background:var(--ac);color:#fff;box-shadow:0 8px 22px rgba(0,0,0,.22);z-index:8;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent}#fab[hidden]{display:none}#sc:after{content:"";display:block;height:76px}#fab svg{width:28px;height:28px;stroke:currentColor;fill:none;stroke-width:2.6;stroke-linecap:round}#fab:active{transform:scale(.94)}
 #sheet{position:fixed;inset:0;z-index:55;pointer-events:none}#sheet[hidden]{display:none}
 #sheet .shbg{position:absolute;inset:0;background:rgba(20,16,10,.38);opacity:0;transition:opacity .25s;pointer-events:auto}
 #sheet .shp{position:absolute;left:0;right:0;bottom:0;max-width:560px;margin:0 auto;max-height:calc(100% - env(safe-area-inset-top,0px) - 24px);display:flex;flex-direction:column;background:var(--bg);border-radius:22px 22px 0 0;box-shadow:0 -10px 30px rgba(0,0,0,.18);transform:translateY(100%);transition:transform .28s cubic-bezier(.2,.8,.2,1);pointer-events:auto}
@@ -190,12 +191,11 @@ select.f,.fr select{-webkit-appearance:none;appearance:none;background-image:url
 <header id="band"></header>
 <main id="app"></main>
 <nav>
-<a href="#add" id="n-add"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>记一笔</a>
 <a href="#list" id="n-list"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>明细</a>
 <a href="#stats" id="n-stats"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.2 15.9A10 10 0 118 2.8"/><path d="M22 12A10 10 0 0012 2v10z"/></svg>统计</a>
 <a href="#assets" id="n-assets"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 8l3 4 3-4M12 12v5M9.5 13h5M9.5 15h5"/></svg>资产</a>
 </nav>
-<div id="sheet" hidden></div><div class="toast" id="toast" role="status"></div>
+<button id="fab" aria-label="记一笔" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button><div id="sheet" hidden></div><div class="toast" id="toast" role="status"></div>
 <script>
 const FRESH=(()=>{try{return !localStorage.getItem('kakeibo.v1')&&!localStorage.getItem('kakeibo.cfg.v1')}catch(e){return true}})();
 const HK='kakeibo.hint.v1';
@@ -346,7 +346,8 @@ const pad=n=>String(n).padStart(2,'0');
 const today=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
 let ym=today().slice(0,7);
 let F={method:'paypay',cat:'餐饮',manual:false,type:'out'},PF=null,EI=null,RC=[],DK='',OPEN={},T5='single',OUI=false,ECAT=false,EPM=false;
-const hv=()=>(location.hash||'#'+((typeof UI!=='undefined'&&UI.home)||'add')).split('?')[0];
+const homeV=()=>(typeof UI!=='undefined'&&UI.home&&UI.home!=='add'&&UI.home)||'list';
+const hv=()=>(location.hash||'#'+homeV()).split('?')[0];
 let pending=null,E=null;
 const $=id=>document.getElementById(id);
 document.addEventListener('toggle',e=>{if(e.target&&e.target.id==='rsd')RSO=e.target.open},true);
@@ -455,12 +456,11 @@ if(!MT.some(m=>m[0]===F.method))F.method=MT[0][0];
 }
 function top5(a){
  let top;
- if(T5==='single')top=a.slice().sort((p,q)=>q.amt-p.amt||q.date.localeCompare(p.date)).slice(0,5).map(x=>({nm:x.note||x.cat,sub:x.date.slice(5)+' · '+x.cat+' · '+mname(x.method),amt:x.amt,key:x.note||x.cat}));
- else{const g={};a.forEach(x=>{const k=x.note||x.cat;(g[k]=g[k]||{n:0,s:0,cat:x.cat});g[k].n++;g[k].s+=x.amt});top=Object.entries(g).sort((p,q)=>q[1].s-p[1].s).slice(0,5).map(([k,v])=>({nm:k,sub:v.n+' 笔 · '+v.cat,amt:v.s,key:k}))}
- const mx=top[0]?top[0].amt:1;
- return `<div class="box" data-g="c"><h2>前五大消费</h2><div class="chips" style="margin:6px 0 2px">${[['single','单笔'],['shop','按商户合计']].map(c=>`<button class="chip" data-t5="${c[0]}" aria-pressed="${T5===c[0]}" style="padding:6px 14px;font-size:14px">${c[1]}</button>`).join('')}</div>`+top.map((x,i)=>`<button class="bar" data-sn="${esc(x.key)}" style="align-items:flex-start;margin:6px 0"><span class="n" style="width:22px;color:var(--mu)">${i+1}</span><span style="flex:1;min-width:0"><span style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(x.nm)}</span><span style="display:block;font-size:13px;color:var(--mu)">${x.sub}</span><span class="pg" style="display:block"><i style="width:${x.amt/mx*100}%;background:var(--pp)"></i></span></span><span class="v">${yen(x.amt)}</span></button>`).join('')+`</div>`;
+ if(T5==='single')top=a.slice().sort((p,q)=>q.amt-p.amt||q.date.localeCompare(p.date)).slice(0,3).map(x=>({nm:x.note||x.cat,sub:x.date.slice(5),amt:x.amt,key:x.note||x.cat}));
+ else{const g={};a.forEach(x=>{const k=x.note||x.cat;(g[k]=g[k]||{n:0,s:0,cat:x.cat});g[k].n++;g[k].s+=x.amt});top=Object.entries(g).sort((p,q)=>q[1].s-p[1].s).slice(0,3).map(([k,v])=>({nm:k,sub:v.n+' 笔',amt:v.s,key:k}))}
+ return `<div class="box" data-g="o"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h2 style="margin:0">消费排行</h2><div class="chips" style="margin:0;gap:4px;flex-wrap:nowrap">${[['single','单笔'],['shop','按商户']].map(c=>`<button class="chip" data-t5="${c[0]}" aria-pressed="${T5===c[0]}" style="padding:3px 10px;font-size:13px">${c[1]}</button>`).join('')}</div></div>`+top.map((x,i)=>`<button class="bar" data-sn="${esc(x.key)}"><span class="n" style="width:20px;color:var(--mu)">${i+1}</span><span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(x.nm)} <small style="color:var(--mu)">${x.sub}</small></span><span class="v" style="width:auto;white-space:nowrap">${yen(x.amt)}</span></button>`).join('')+`</div>`;
 }
-function statsView(){const r=statsRaw();if(!r.includes('data-g='))return r;return tabBar('st',(ST==='p'?ST='c':ST==='v'?ST='t':ST),[['o','概览'],['c','分类'],['t','趋势']])+r}
+function statsView(){const r=statsRaw();if(!r.includes('data-g='))return r;return tabBar('st',(ST==='p'||ST==='c'?ST='o':ST==='v'?ST='t':ST),[['o','概览'],['t','趋势']])+r}
 function statsRaw(){
  if(SY)return yearRaw();
  const a=monthData(),tot=sum(a),inc=A.inc.filter(x=>x.date.startsWith(ym)),it=sum(inc);
@@ -473,8 +473,8 @@ function statsRaw(){
  const src={};inc.forEach(x=>{const k=x.note||'收入';src[k]=(src[k]||0)+x.amt});
  const pt0=sum(D.filter(x=>x.date.startsWith(prevM(ym)))),dpt=tot-pt0,bc3=Object.entries(bc).sort((p,q)=>q[1]-p[1]),mx3=bc3.length?bc3[0][1]:1;
  const brow=(nm,u,l)=>`<div style="margin:10px 0 0"><div style="display:flex;justify-content:space-between;font-size:14px"><span>${esc(nm)}</span><span style="color:var(${u>l?'--pp':'--mu'})">${yen(u)} / ${yen(l)}${u>l?' · 超出 '+yen(u-l):''}</span></div><div class="pg"><i style="width:${Math.min(100,u/l*100)}%;background:var(${u>l?'--pp':'--ac'})"></i></div></div>`;
- h+=`<div class="box" data-g="o"><button data-sc="" style="display:block;width:100%;text-align:left;border:0;background:none;padding:0;color:inherit;font:inherit;cursor:pointer"><span class="sub" style="margin:0">${isCur?'本月':(+ym.slice(5))+'月'}支出</span><span class="big" style="display:block;margin:2px 0 0"><small>¥</small>${Math.round(tot).toLocaleString('ja-JP')}</span></button><p class="sub" style="margin:6px 0 0">${pt0?'比上月'+(dpt>=0?'多':'少')+'花 '+yen(Math.abs(dpt))+'<br>':''}<button class="lk" data-si="收入" style="font-size:inherit;padding:0">收入 +${yen(it)}</button> · 结余 <b style="color:var(${it>=tot?'--in':'--pp'})">${sgn(it-tot)}</b></p>${B.total>0?brow('预算',tot,B.total):''}`
- +(bc3.length?`<h2 style="margin:16px 0 2px">花得最多</h2>`+bc3.slice(0,3).map(([c,v])=>`<button class="bar" data-sc="${esc(c)}"><span class="n">${esc(c)}</span><span class="t"><i style="width:${v/mx3*100}%"></i></span><span class="v">${yen(v)}</span></button>`).join('')+(bc3.length>3?`<button class="lk" data-st="c" style="margin-top:6px">全部 ${bc3.length} 个分类 ›</button>`:''):'')+`</div>`;
+ h+=`<div class="box" data-g="o"><button data-sc="" style="display:block;width:100%;text-align:left;border:0;background:none;padding:0;color:inherit;font:inherit;cursor:pointer"><span class="sub" style="margin:0">${isCur?'本月':(+ym.slice(5))+'月'}支出</span><span class="big" style="display:block;margin:2px 0 0"><small>¥</small>${Math.round(tot).toLocaleString('ja-JP')}</span></button><p class="sub" style="margin:6px 0 0">${pt0?'比上月'+(dpt>=0?'多':'少')+'花 '+yen(Math.abs(dpt))+'<br>':''}<button class="lk" data-si="收入" style="font-size:inherit;padding:0">收入 +${yen(it)}</button> · 结余 <b style="color:var(${it>=tot?'--in':'--pp'})">${sgn(it-tot)}</b></p>${B.total>0?brow('预算',tot,B.total):''}`+`</div>`;
+
  const bk=Object.keys(B.cats);
  if(bk.length){
   const row=brow;
@@ -482,16 +482,18 @@ function statsRaw(){
  }
  const ms=[];{let mm=ym;for(let i=0;i<6;i++){ms.unshift(mm);mm=prevM(mm)}}
  const tr=ms.map(mm=>({mm,o:sum(D.filter(x=>x.date.startsWith(mm))),i:sum(A.inc.filter(x=>x.date.startsWith(mm)))})),tm=Math.max(1,...tr.map(x=>Math.max(x.o,x.i)));
- if(tr.some(x=>x.o||x.i))h+=`<div class="box" data-g="t"><h2>近 6 个月</h2><p class="sub" id="tro" style="margin:2px 0 0">${(x=>(+x.mm.slice(5))+'月 · 收 '+yen(x.i)+' · 支 '+yen(x.o)+' · '+sgn(x.i-x.o))(tr[tr.length-1])}</p><div style="display:flex;gap:6px;align-items:flex-end;height:96px;margin-top:8px">${tr.map(x=>`<button data-trl="${+x.mm.slice(5)}月 · 收 ${yen(x.i)} · 支 ${yen(x.o)} · ${sgn(x.i-x.o)}" aria-label="${+x.mm.slice(5)}月 收入 ${yen(x.i)} 支出 ${yen(x.o)}" style="flex:1;display:flex;gap:2px;align-items:flex-end;height:100%;border:0;background:none;padding:0;cursor:pointer"><i style="flex:1;height:${x.i?Math.max(3,x.i/tm*100):1}%;background:var(--in);border-radius:2px 2px 0 0"></i><i style="flex:1;height:${x.o?Math.max(3,x.o/tm*100):1}%;background:var(--pp);border-radius:2px 2px 0 0"></i></button>`).join('')}</div><div style="display:flex;gap:6px;margin-top:4px">${tr.map(x=>`<span style="flex:1;text-align:center;font-size:12px;color:var(--mu)">${+x.mm.slice(5)}月</span>`).join('')}</div><div class="leg" style="margin:8px 0 4px"><span><i class="dot" style="display:inline-block;background:var(--in)"></i> 收入</span><span><i class="dot" style="display:inline-block;background:var(--pp)"></i> 支出</span></div></div>`;
+ {const pv=tr.slice(0,-1).filter(x=>x.o),avg=pv.length?sum(pv.map(x=>({amt:x.o})))/pv.length:0,lst=tr[tr.length-1],om=Math.max(1,...tr.map(x=>x.o)),df=lst.o-avg;
+  if(tr.some(x=>x.o))h+=`<div class="box" data-g="t"><h2>近 6 个月支出</h2><p class="sub" id="tro" style="margin:2px 0 0;min-height:40px">${avg?`前几个月平均 <b style="color:var(--tx)">${yen(avg)}</b> / 月<br>${+lst.mm.slice(5)}月 ${yen(lst.o)},${df>=0?'多':'少'} ${yen(Math.abs(df))}${isCur?'(还没过完)':''}`:`${+lst.mm.slice(5)}月 ${yen(lst.o)}`}</p><div style="display:flex;gap:10px;align-items:flex-end;height:110px;margin-top:10px">${tr.map((x,k)=>`<button data-trl="${+x.mm.slice(5)}月支出 ${yen(x.o)}" aria-label="${+x.mm.slice(5)}月支出 ${yen(x.o)}" style="flex:1;height:100%;display:flex;align-items:flex-end;border:0;background:none;padding:0;cursor:pointer"><i style="display:block;width:100%;height:${x.o?Math.max(3,x.o/om*100):1}%;background:var(--pp);opacity:${k===tr.length-1?1:.35};border-radius:4px 4px 0 0"></i></button>`).join('')}</div><div style="display:flex;gap:10px;margin-top:4px">${tr.map(x=>`<span style="flex:1;text-align:center;font-size:12px;color:var(--mu)">${+x.mm.slice(5)}月</span>`).join('')}</div></div>`}
  const exb='';
  if(!a.length)return h+`<div class="empty">这个月还没有支出记录。</div>`+exb;
  const cs=Object.entries(bc).sort((p,q)=>q[1]-p[1]),mx=cs[0][1];
- h+=`<div class="box" data-g="c"><h2>分类</h2>`+cs.map(([c,v])=>`<button class="bar" data-sc="${esc(c)}"><span class="n">${esc(c)}</span><span class="t"><i style="width:${v/mx*100}%${B.cats[c]&&v>B.cats[c]?';background:var(--pp)':''}"></i></span><span class="v">${yen(v)} <span style="color:var(--mu)">${Math.round(v/tot*100)}%</span></span></button>`).join('')+`</div>`;
+ h+=`<div class="box" data-g="o"><h2>分类</h2>`+cs.map(([c,v])=>`<button class="bar" data-sc="${esc(c)}"><span class="n">${esc(c)}</span><span class="t"><i style="width:${v/mx*100}%${B.cats[c]&&v>B.cats[c]?';background:var(--pp)':''}"></i></span><span class="v" style="width:auto;min-width:8.6em;text-align:right;white-space:nowrap">${yen(v)} <span style="color:var(--mu);font-size:13px">${Math.round(v/tot*100)}%</span></span></button>`).join('')+`</div>`;
  h+=top5(a);
  const pm=prevM(ym),pa=D.filter(x=>x.date.startsWith(pm)),pt=sum(pa),pc={};pa.forEach(x=>pc[x.cat]=(pc[x.cat]||0)+x.amt);
- h+=`<div class="box" data-g="t"><h2>与上月对比</h2>`+(pt?`<p class="sub" style="margin:0 0 6px">上月合计 ${yen(pt)},本月${tot>=pt?'多':'少'}花 ${yen(Math.abs(tot-pt))}</p>`+CATS.filter(c=>bc[c]||pc[c]).map(c=>{const d=(bc[c]||0)-(pc[c]||0);return `<button class="bar" data-sc="${esc(c)}"><span class="n">${c}</span><span style="flex:1;color:var(--mu);font-size:13px">${yen(pc[c]||0)} → ${yen(bc[c]||0)}</span><span class="v" style="color:var(${d>0?'--pp':'--in'})">${sgn(d)}</span></button>`}).join(''):`<p class="sub" style="margin:0">上月没有记录,无法对比。</p>`)+`</div>`;
+ const chg=CATS.filter(c=>bc[c]||pc[c]).map(c=>[c,pc[c]||0,bc[c]||0]).sort((p,q)=>Math.abs(q[2]-q[1])-Math.abs(p[2]-p[1]));
+ h+=`<div class="box" data-g="t"><h2>和上月比</h2>`+(pt?`<p class="sub" style="margin:2px 0 6px">本月${tot>=pt?'多':'少'}花 <b style="color:var(${tot>pt?'--pp':'--in'})">${yen(Math.abs(tot-pt))}</b>,变化最大的是:</p>`+(OPEN.cmp?chg:chg.slice(0,3)).map(([c,p0,c0])=>{const d=c0-p0;return `<button class="bar" data-sc="${esc(c)}"><span class="n">${esc(c)}</span><span style="flex:1;color:var(--mu);font-size:13px">${yen(p0)} → ${yen(c0)}</span><span class="v" style="width:auto;white-space:nowrap;color:var(${d>0?'--pp':'--in'})">${sgn(d)}</span></button>`}).join('')+(chg.length>3?`<button class="lk" data-cmpx="1" style="margin-top:6px">${OPEN.cmp?'收起':'全部 '+chg.length+' 个分类 ›'}</button>`:''):`<p class="sub" style="margin:0">上月没有记录,无法对比。</p>`)+`</div>`;
  const bm={};a.forEach(x=>bm[x.method]=(bm[x.method]||0)+x.amt);
- h+=`${(()=>{const fx=sum(a.filter(isFix)),vr=tot-fx;return fx?`<div class="box" data-g="c"><h2>固定与变动</h2><div class="stack"><i style="width:${fx/tot*100}%;background:var(--cd)"></i><i style="width:${vr/tot*100}%;background:var(--cs)"></i></div><div class="leg"><button class="lg" data-sf="fix"><i class="dot" style="display:inline-block;background:var(--cd)"></i> 固定 ${yen(fx)} · ${Math.round(fx/tot*100)}%</button>${vr?`<button class="lg" data-sf="var"><i class="dot" style="display:inline-block;background:var(--cs)"></i> 变动 ${yen(vr)} · ${Math.round(vr/tot*100)}%</button>`:`<span><i class="dot" style="display:inline-block;background:var(--cs)"></i> 变动 ${yen(vr)} · 0%</span>`}</div></div>`:''})()}<div class="box" data-g="c"><h2>支付方式</h2><div class="stack">${MT.filter(k=>bm[k[0]]).map(k=>`<i style="width:${bm[k[0]]/tot*100}%;background:var(${k[2]})"></i>`).join('')}</div><div class="leg">${MT.filter(k=>bm[k[0]]).map(k=>`<button class="lg" data-sm="${k[0]}"><i class="dot" style="display:inline-block;background:var(${k[2]})"></i> ${k[1]} ${yen(bm[k[0]])}</button>`).join('')}</div></div>`;
+ h+=`${(()=>{const fx=sum(a.filter(isFix)),vr=tot-fx;return fx?`<div class="box" data-g="o"><h2>固定与变动</h2><div class="stack"><i style="width:${fx/tot*100}%;background:var(--cd)"></i><i style="width:${vr/tot*100}%;background:var(--cs)"></i></div><div class="leg"><button class="lg" data-sf="fix"><i class="dot" style="display:inline-block;background:var(--cd)"></i> 固定 ${yen(fx)} · ${Math.round(fx/tot*100)}%</button>${vr?`<button class="lg" data-sf="var"><i class="dot" style="display:inline-block;background:var(--cs)"></i> 变动 ${yen(vr)} · ${Math.round(vr/tot*100)}%</button>`:`<span><i class="dot" style="display:inline-block;background:var(--cs)"></i> 变动 ${yen(vr)} · 0%</span>`}</div></div>`:''})()}<div class="box" data-g="o"><h2>支付方式</h2><div class="stack">${MT.filter(k=>bm[k[0]]).map(k=>`<i style="width:${bm[k[0]]/tot*100}%;background:var(${k[2]})"></i>`).join('')}</div><div class="leg">${MT.filter(k=>bm[k[0]]).map(k=>`<button class="lg" data-sm="${k[0]}"><i class="dot" style="display:inline-block;background:var(${k[2]})"></i> ${k[1]} ${yen(bm[k[0]])}</button>`).join('')}</div></div>`;
  const bd=Array(nd).fill(0);a.forEach(x=>bd[+x.date.slice(8)-1]+=x.amt);
  const dm=Math.max(...bd);
  h+=`<div class="box" data-g="t"><h2>每日支出</h2><div id="dro" class="dro"> </div><div class="days">${bd.map((v,i)=>v?`<button class="dc" data-sd="${ym}-${pad(i+1)}" data-lb="${i+1}日 ${yen(v)}" aria-label="${i+1}日 ${yen(v)}"><i style="height:${Math.max(4,v/dm*100)}%"></i></button>`:`<i class="z" style="height:3%" aria-label="${i+1}日 ${yen(v)}"></i>`).join('')}</div><div class="leg" style="justify-content:space-between;margin-top:6px"><span>1日</span><span>${nd}日</span></div></div>`;
@@ -505,16 +507,16 @@ function yearRaw(){
  let h=`<div class="box" data-g="o"><h2>${y}年收支</h2><button class="bar" data-si="收入"><span class="n">收入</span><span class="t"><i style="width:${it/mxio*100}%"></i></span><span class="v" style="width:auto">+${yen(it)}</span><span class="bch">›</span></button><button class="bar" data-sc=""><span class="n">支出</span><span class="t"><i style="width:${tot/mxio*100}%;background:var(--pp)"></i></span><span class="v" style="width:auto">${yen(tot)}</span><span class="bch">›</span></button><p class="sub" style="margin:8px 0 0">结余 <b style="color:var(${it>=tot?'--in':'--pp'})">${sgn(it-tot)}</b><br>月均支出 ${yen(tot/nm)}${pyLine('支出',tot,pt)}</p></div>`;
  const tr=Array.from({length:12},(_,i)=>{const mm=y+'-'+pad(i+1);return {mm,o:sum(a.filter(x=>x.date.startsWith(mm))),i:sum(inc.filter(x=>x.date.startsWith(mm)))}}),tm=Math.max(1,...tr.map(x=>Math.max(x.o,x.i)));
  h+=`<div class="box" data-g="t"><h2>每月收支</h2><div style="display:flex;gap:3px;align-items:flex-end;height:110px;margin-top:8px">${tr.map(x=>`<button data-ym="${x.mm}" aria-label="${+x.mm.slice(5)}月 收入 ${yen(x.i)} 支出 ${yen(x.o)}" style="flex:1;display:flex;gap:1px;align-items:flex-end;height:100%;border:0;background:none;padding:0;cursor:pointer"><i style="flex:1;height:${x.i?Math.max(3,x.i/tm*100):1}%;background:var(--in);border-radius:2px 2px 0 0"></i><i style="flex:1;height:${x.o?Math.max(3,x.o/tm*100):1}%;background:var(--pp);border-radius:2px 2px 0 0"></i></button>`).join('')}</div><div style="display:flex;gap:3px;margin-top:4px">${tr.map(x=>`<span style="flex:1;text-align:center;font-size:11px;color:var(--mu)">${+x.mm.slice(5)}</span>`).join('')}</div><div class="leg" style="margin:8px 0 4px"><span><i class="dot" style="display:inline-block;background:var(--in)"></i> 收入</span><span><i class="dot" style="display:inline-block;background:var(--pp)"></i> 支出</span></div>${tr.slice().reverse().filter(x=>x.o||x.i).map(x=>`<button class="bar" data-ym="${x.mm}"><span class="n">${+x.mm.slice(5)}月</span><span style="flex:1;font-size:12px;color:var(--mu)">收 ${yen(x.i)} · 支 ${yen(x.o)}</span><span class="v" style="width:auto;color:var(${x.i>=x.o?'--in':'--pp'})">${sgn(x.i-x.o)}</span><span class="bch">›</span></button>`).join('')}</div>`;
- if(!a.length)return h+`<div class="empty" data-g="c">${y}年还没有支出记录。</div>`;
+ if(!a.length)return h+`<div class="empty" data-g="o">${y}年还没有支出记录。</div>`;
  const bc={};a.forEach(x=>bc[x.cat]=(bc[x.cat]||0)+x.amt);
  const cs=Object.entries(bc).sort((p,q)=>q[1]-p[1]),mx=cs[0][1];
- h+=`<div class="box" data-g="c"><h2>${y}年分类</h2>`+cs.map(([c,v])=>`<button class="bar" data-sc="${esc(c)}"><span class="n">${esc(c)}</span><span class="t"><i style="width:${v/mx*100}%"></i></span><span class="v">${yen(v)} <span style="color:var(--mu)">${Math.round(v/tot*100)}%</span></span></button>`).join('')+`</div>`;
+ h+=`<div class="box" data-g="o"><h2>${y}年分类</h2>`+cs.map(([c,v])=>`<button class="bar" data-sc="${esc(c)}"><span class="n">${esc(c)}</span><span class="t"><i style="width:${v/mx*100}%"></i></span><span class="v">${yen(v)} <span style="color:var(--mu)">${Math.round(v/tot*100)}%</span></span></button>`).join('')+`</div>`;
  h+=top5(a);
  if(pt){const pc={};pa.forEach(x=>pc[x.cat]=(pc[x.cat]||0)+x.amt);
   h+=`<div class="box" data-g="t"><h2>与去年对比</h2><p class="sub" style="margin:0 0 6px">去年合计 ${yen(pt)},今年${tot>=pt?'多':'少'}花 ${yen(Math.abs(tot-pt))}</p>`+CATS.filter(c=>bc[c]||pc[c]).map(c=>{const d=(bc[c]||0)-(pc[c]||0);return `<button class="bar" data-sc="${esc(c)}"><span class="n">${c}</span><span style="flex:1;color:var(--mu);font-size:13px">${yen(pc[c]||0)} → ${yen(bc[c]||0)}</span><span class="v" style="color:var(${d>0?'--pp':'--in'})">${sgn(d)}</span></button>`}).join('')+`</div>`}
  const bm={};a.forEach(x=>bm[x.method]=(bm[x.method]||0)+x.amt);const fx=sum(a.filter(isFix)),vr=tot-fx;
- if(fx)h+=`<div class="box" data-g="c"><h2>固定与变动</h2><div class="stack"><i style="width:${fx/tot*100}%;background:var(--cd)"></i><i style="width:${vr/tot*100}%;background:var(--cs)"></i></div><div class="leg"><button class="lg" data-sf="fix"><i class="dot" style="display:inline-block;background:var(--cd)"></i> 固定 ${yen(fx)} · ${Math.round(fx/tot*100)}%</button><button class="lg" data-sf="var"><i class="dot" style="display:inline-block;background:var(--cs)"></i> 变动 ${yen(vr)} · ${Math.round(vr/tot*100)}%</button></div></div>`;
- h+=`<div class="box" data-g="c"><h2>支付方式</h2><div class="stack">${MT.filter(k=>bm[k[0]]).map(k=>`<i style="width:${bm[k[0]]/tot*100}%;background:var(${k[2]})"></i>`).join('')}</div><div class="leg">${MT.filter(k=>bm[k[0]]).map(k=>`<button class="lg" data-sm="${k[0]}"><i class="dot" style="display:inline-block;background:var(${k[2]})"></i> ${k[1]} ${yen(bm[k[0]])}</button>`).join('')}</div></div>`;
+ if(fx)h+=`<div class="box" data-g="o"><h2>固定与变动</h2><div class="stack"><i style="width:${fx/tot*100}%;background:var(--cd)"></i><i style="width:${vr/tot*100}%;background:var(--cs)"></i></div><div class="leg"><button class="lg" data-sf="fix"><i class="dot" style="display:inline-block;background:var(--cd)"></i> 固定 ${yen(fx)} · ${Math.round(fx/tot*100)}%</button><button class="lg" data-sf="var"><i class="dot" style="display:inline-block;background:var(--cs)"></i> 变动 ${yen(vr)} · ${Math.round(vr/tot*100)}%</button></div></div>`;
+ h+=`<div class="box" data-g="o"><h2>支付方式</h2><div class="stack">${MT.filter(k=>bm[k[0]]).map(k=>`<i style="width:${bm[k[0]]/tot*100}%;background:var(${k[2]})"></i>`).join('')}</div><div class="leg">${MT.filter(k=>bm[k[0]]).map(k=>`<button class="lg" data-sm="${k[0]}"><i class="dot" style="display:inline-block;background:var(${k[2]})"></i> ${k[1]} ${yen(bm[k[0]])}</button>`).join('')}</div></div>`;
  return h;
 }
 function bandHTML(view){
@@ -528,21 +530,22 @@ function render(){
  const v0=hv().slice(1),v=v0==='more'?'me':v0.split('/')[0];MESUB=v==='me'?(v0.split('/')[1]||''):'';
  const view=['add','stats','assets','me'].includes(v)?v:'list';if(view!=='me')window.__back=view;if(MESUB==='ui')OPEN.ui=true;if(MESUB==='bud')OPEN.bud=true;if(MESUB==='rs')RSO=true;
  $('band').innerHTML='<div class="bi">'+bandHTML(view)+'</div>'+(view==='me'?'':`<button class="avb" data-me="1" aria-label="账号">${avHTML()}</button>`);document.documentElement.style.setProperty('--bh',$('band').offsetHeight+'px');const lv=view+'/'+MESUB,os=$('sc'),st=(os&&window.__lv===lv)?os.scrollTop:0;window.__lv=lv;
- const hm=(view===(UI.home||'add')||view==='list')&&(view==='add'||view==='list')&&!E&&!EI,dg=(view===(UI.home||'add')&&(view==='add'||view==='list')&&!E&&!EI)?dupCharges():[],ban=(hm?acCard():'')+(dg.length?`<button class="dupb" data-sub="dup"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg><span>发现 ${dg.length} 组疑似重复扣款<small>可能多扣了 ${yen(dg.reduce((q,o)=>q+o.amt*(o.xs.length-1),0))}</small></span><b>查看 ›</b></button>`:'');
+ const hm=(view===homeV()||view==='list')&&(view==='add'||view==='list')&&!E&&!EI,dg=(view===homeV()&&(view==='add'||view==='list')&&!E&&!EI)?dupCharges():[],ban=(hm?acCard():'')+(dg.length?`<button class="dupb" data-sub="dup"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg><span>发现 ${dg.length} 组疑似重复扣款<small>可能多扣了 ${yen(dg.reduce((q,o)=>q+o.amt*(o.xs.length-1),0))}</small></span><b>查看 ›</b></button>`:'');
  const html0=view==='me'?meView():view==='add'?addView():view==='stats'?statsView():view==='assets'?assetsView():view==='more'?moreView():listView(),h0i=html0.indexOf('<!--H-->'),html=!ban?html0:h0i>=0?html0.slice(0,h0i+8)+ban+html0.slice(h0i+8):ban+html0,hi=html.indexOf('<!--H-->');
  $('app').innerHTML=(hi>=0?'<div class="fhead">'+html.slice(0,hi)+'</div>':'')+'<div id="sc">'+(hi>=0?html.slice(hi+8):html)+'</div>';if(st)$('sc').scrollTop=st;['cs','ms'].forEach(id=>{const cs=$(id),b=cs&&cs.querySelector('[aria-pressed="true"]');if(b&&b.parentElement.offsetLeft)cs.scrollLeft=b.parentElement.offsetLeft});
- ['list','add','stats','assets'].forEach(k=>$('n-'+k).classList.toggle('on',k===view));
+ ['list','stats','assets'].forEach(k=>$('n-'+k).classList.toggle('on',k===view));
  if(view==='add'&&!E&&!EI){F.manual=false}
- const sh=$('sheet'),shOn=view!=='add'&&(E||EI);
+ const sh=$('sheet'),shOn=view!=='add'&&(E||EI||NEW);$('fab').hidden=!!(shOn||view==='add'||view==='me');
  if(shOn){const isNew=sh.hidden;sh.hidden=false;
   const bs=$('shb'),bst=(!isNew&&bs)?bs.scrollTop:0;
-  sh.innerHTML=`<div class="shbg" data-shx="1"></div><div class="shp" role="dialog" aria-modal="true" aria-label="编辑记录"><div class="shh"><button class="lk" data-shx="1">取消</button><b>${EI?'编辑收入':'编辑支出'}</b><span style="width:36px"></span></div><div class="shb" id="shb">${addView()}</div></div>`;
+  sh.innerHTML=`<div class="shbg" data-shx="1"></div><div class="shp" role="dialog" aria-modal="true" aria-label="${NEW&&!E&&!EI?'记一笔':'编辑记录'}"><div class="shh"><button class="lk" data-shx="1">取消</button>${NEW&&!E&&!EI?`<div class="chips" style="margin:0;gap:4px;flex-wrap:nowrap"><button class="chip" data-ty="out" aria-pressed="${F.type!=='in'}" style="padding:5px 16px;font-size:14px">支出</button><button class="chip" data-ty="in" aria-pressed="${F.type==='in'}" style="padding:5px 16px;font-size:14px">收入</button></div>`:`<b>${EI?'编辑收入':'编辑支出'}</b>`}<span style="width:36px"></span></div><div class="shb" id="shb">${addView()}</div></div>`;
   if(bst)$('shb').scrollTop=bst;
   ['cs','ms'].forEach(id=>{const cs=$(id),b=cs&&cs.querySelector('[aria-pressed="true"]');if(b&&b.parentElement.offsetLeft)cs.scrollLeft=b.parentElement.offsetLeft});
   if(isNew||SHN){SHN=false;requestAnimationFrame(()=>requestAnimationFrame(()=>sh.classList.add('on')))}else sh.classList.add('on')}
  else if(!sh.hidden){sh.hidden=true;sh.classList.remove('on');sh.innerHTML=''}
 }
-var SHN=false;
+var SHN=false,NEW=false;
+document.addEventListener('click',e=>{if(!e.target.closest('#fab'))return;NEW=true;E=null;EI=null;PF=null;F.type='out';F.manual=false;SHN=true;render();const a=$('amt');if(a)a.focus()});
 let SY=false;
 let ST='o',AT='o',MP='i',RE=null,RSO=false,AE=null,CE=false;
 function tabBar(k,cur,items){return `<style>#app [data-g]:not([data-g="${cur}"]){display:none}</style><div class="chips" style="margin:0;padding:10px max(16px,calc((100% - 488px)/2)) 8px;flex-wrap:nowrap;background:var(--bg)">${items.map(([v,l])=>`<button class="chip" data-${k}="${v}" aria-pressed="${cur===v}" style="flex:1;text-align:center;padding:8px 2px">${l}</button>`).join('')}</div><!--H-->`}
@@ -560,6 +563,7 @@ document.addEventListener('click',async e=>{
  if(t.dataset.yy){const y=+ym.slice(0,4)+ +t.dataset.yy;ym=y+ym.slice(4);return render()}
  if(t.dataset.ym){SY=false;ym=t.dataset.ym;return render()}
  if(t.dataset.trl!==undefined){const r=$('tro');if(r)r.textContent=t.dataset.trl;return}
+if(t.dataset.cmpx){OPEN.cmp=!OPEN.cmp;return render()}
 if(t.dataset.st){ST=t.dataset.st;return render()}
  if(t.dataset.at){AT=t.dataset.at;return render()}
  if(t.dataset.mp){MP=t.dataset.mp;return render()}
@@ -591,7 +595,7 @@ if(t.dataset.st){ST=t.dataset.st;return render()}
  if(t.dataset.iedit){const x=A.inc.find(z=>z.id===+t.dataset.iedit);if(x){EI=x.id;E=null;PF=null;F={...F,type:'in'};if(hv()==='#add')render();else{SHN=true;render()}}return}
  if(t.dataset.ty){PF={amt:$('amt').value,note:$('note').value};F.type=t.dataset.ty;F.manual=false;return render()}
  if(t.dataset.rc!==undefined){const r=RC[+t.dataset.rc];if(r){$('note').value=r.note;if(F.type==='in'){if(!$('amt').value&&r.amt)$('amt').value=r.amt}else{F.cat=r.cat;F.method=r.method;F.manual=true;document.querySelectorAll('[data-ct]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.ct===r.cat));document.querySelectorAll('[data-mt]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.mt===r.method))}}return}
- if(t.id==='cancel'||t.dataset.shx){E=null;EI=null;PF=null;F.type='out';if(hv()==='#add')location.hash='#list';else render();return}
+ if(t.id==='cancel'||t.dataset.shx){NEW=false;E=null;EI=null;PF=null;F.type='out';if(hv()==='#add')location.hash='#list';else render();return}
  if(t.dataset.del){const id=+t.dataset.del,it=D.find(x=>x.id===id);if(it){D=D.filter(x=>x.id!==id);pending=null;save();toast('已删除',()=>{D.push(it);save();render()})}return render()}
  if(t.id==='undo'){const f=UNDO;UNDO=null;$('toast').classList.remove('on','act');if(f)f();return}
  if(t.dataset.mt){F.method=t.dataset.mt;document.querySelectorAll('[data-mt]').forEach(b=>b.setAttribute('aria-pressed',b===t))}
@@ -601,11 +605,11 @@ if(t.dataset.st){ST=t.dataset.st;return render()}
   if(!amt){toast('请先输入金额');$('amt').focus();return}
   const date=$('dt').value||today();
   if(F.type==='in'||EI){const r={amt,note:$('note').value.trim(),date};if(EI)Object.assign(A.inc.find(x=>x.id===EI),r);else A.inc.push({id:nid(),...r});
-   const was=EI;EI=null;PF=null;F.type='out';saveA();ym=date.slice(0,7);toast((was?'已修改收入 ':'已记录收入 ')+yen(amt));location.hash='#list';render();return}
+   const was=EI;EI=null;PF=null;F.type='out';saveA();ym=date.slice(0,7);toast((was?'已修改收入 ':'已记录收入 ')+yen(amt));if(NEW&&!was){NEW=false;render()}else{NEW=false;location.hash='#list';render()}return}
   if(!E){const key=date+'|'+amt;if(D.some(x=>x.date===date&&x.amt===amt)&&DK!==key){DK=key;toast('同一天已有相同金额的记录,再点一次才会保存');$('save').textContent='仍然保存';return}}
   DK='';PF=null;
   const rec={amt,method:F.method,cat:F.cat,note:$('note').value.trim(),date};if($('fx'))rec.fix=$('fx').checked;if(E){Object.assign(D.find(x=>x.id===E),rec)}else D.push({id:Date.now(),...rec});const was=E;E=null;
-  save();ym=date.slice(0,7);toast((was?'已修改 ':'已记录 ')+yen(amt));location.hash='#list';render();
+  save();ym=date.slice(0,7);toast((was?'已修改 ':'已记录 ')+yen(amt));if(NEW&&!was){NEW=false;render()}else{NEW=false;location.hash='#list';render()}
  }
  if(t.id==='exp'||t.id==='expm'){
   const mo=t.id==='expm',f=x=>!mo||x.date.startsWith(ym);
@@ -708,10 +712,10 @@ function chgBox(p,fm,tot){if(!p)return '';
   +(p.items?'':`<p class='sub' style='margin:8px 0 0'>从下一次确认开始,会显示每项投资各自的涨跌。</p>`)+`</div>`}
 document.addEventListener('click',e=>{const t=e.target.closest('button[data-chg]');if(!t)return;const k=t.dataset.chg,from=t.dataset.from;
  if(k==='in'||k==='out'){Q={t:'',c:'',m:'',k,r:[from,today()]};LV='list';ym=today().slice(0,7);location.hash='#list';return}
- if(k==='cash'){AT='k';render();return}
- if(k==='inv'){AT='i';render();return}
- if(k.startsWith('a:')){const x=A.assets.find(z=>z.name===k.slice(2));AT='i';AE=x?x.id:null;render();const f=$('av');if(f)f.scrollIntoView({block:'center'});return}});
-function assetsView(){setTimeout(()=>fetchRates(false),0);if(AT==='s')AT='o';return tabBar('at',AT,[['o','总览'],['i','投资'],['k','现金存款']])+assetsRaw()}
+ if(k==='cash'){OPEN.cash=true;render();return}
+ if(k==='inv'){OPEN.inv=true;render();return}
+ if(k.startsWith('a:')){const x=A.assets.find(z=>z.name===k.slice(2));OPEN.inv=true;AE=x?x.id:null;render();const f=$('av');if(f)f.scrollIntoView({block:'center'});return}});
+function assetsView(){setTimeout(()=>fetchRates(false),0);return assetsRaw()}
 const fmtD=d=>d?d.slice(0,4)+'年'+ +d.slice(5,7)+'月'+ +d.slice(8)+'日':'未设';
 function assetsRaw(){
  const f=flow(),oth=A.cash+f.i-f.o,inv=stockJ(),tot=inv+oth,dc=A.disp||'JPY';
@@ -721,21 +725,21 @@ function assetsRaw(){
  const md0=d=>d.slice(5),ccy=`<div class='chips' style='margin:2px 0 14px;gap:6px'>${[['JPY','日元'],['CNY','人民币'],['USD','美元']].map(c=>`<button class='chip' data-disp='${c[0]}' aria-pressed='${dc===c[0]}' style='padding:4px 12px;font-size:13px'>${c[1]}</button>`).join('')}</div>`;
  let h=`<div data-g='o'><p class='big'>${dc==='JPY'?'<small>¥</small>'+Math.round(tot).toLocaleString('ja-JP'):fm(tot)}</p>`;
  h+=`<p class='sub' style='margin:2px 0 8px'>${prev?'较 '+md0(prev.date)+' 确认时 <b style="color:var('+(tot>=prev.total?'--in':'--pp')+')">'+(tot-prev.total<0?'−':'+')+fm(Math.abs(tot-prev.total))+'</b>':'总资产 = 投资 + 现金存款'}${dc!=='JPY'?' · 1 '+(dc==='USD'?'美元':'人民币')+' = ¥'+A.rates[dc]:''}</p>${ccy}</div>`;
- const rows=`<div class='box' data-g='o' style='padding:2px 16px'><button class='row arow' data-at='i'><div class='rm'><div>投资资产</div>${A.assets.length?`<span>${A.assets.length} 项</span>`:''}</div><div class='amt'>${fm(inv)}</div><span class='chev'>›</span></button><button class='row arow' data-at='k'><div class='rm'><div>现金 / 存款</div></div><div class='amt'>${fm(oth)}</div><span class='chev'>›</span></button></div>`;
  const rtb=`<div class='box' data-g='o' style='padding:2px 16px'><button class='row arow' data-rtx='1'><div class='rm'><div>汇率</div><span>1 美元 ¥${A.rates.USD} · 1 人民币 ¥${A.rates.CNY}</span></div><span class='chev' style='transform:rotate(${OPEN.rt?90:0}deg)'>›</span></button>${OPEN.rt?`<div style='display:flex;gap:8px'><div style='flex:1;min-width:0'><label for='rt-USD'>1 美元 = ?日元</label><input id='rt-USD' class='f' data-rt='USD' inputmode='decimal' value='${A.rates.USD}'></div><div style='flex:1;min-width:0'><label for='rt-CNY'>1 人民币 = ?日元</label><input id='rt-CNY' class='f' data-rt='CNY' inputmode='decimal' value='${A.rates.CNY}'></div></div><p class='sub' style='margin:8px 0 10px'>${A.rateD?'每天自动更新('+A.rateD+')':'打开资产页时自动获取'},手动改的当天不会被覆盖。<button class='lk' data-rfetch='1'>立即更新</button></p>`:''}</div>`;
  const aform=x=>`<div class='aform'>${x?'':`<div class='chips' style='margin-bottom:8px'>${['美股','日股','比特币','基金'].map(n=>`<button class='chip' data-qn='${n}' style='padding:6px 12px;font-size:14px'>${n}</button>`).join('')}</div>`}<div style='display:flex;gap:6px'><input id='an' class='f' style='flex:1;min-width:0;padding:10px' placeholder='名称' autocomplete='off' value='${x?esc(x.name):''}'><input id='av' class='f' style='flex:1;min-width:0;padding:10px' inputmode='decimal' placeholder='市值(日元)' value='${x?x.val:''}'></div><div style='display:flex;gap:6px;margin-top:8px;align-items:center'><button class='go' id='asave' style='margin:0;flex:1;padding:9px'>${x?'保存':'添加'}</button><button class='go alt' id='acancel' style='margin:0;flex:1;padding:9px'>取消</button>${x?`<button class='del${ap===x.id?' on':''}' data-adel='${x.id}' style='flex:none'>${ap===x.id?'确认删除':'删除'}</button>`:''}</div></div>`;
- const invb=`<div class='box' data-g='i'><h2 style='display:flex;justify-content:space-between'><span>投资资产</span><span>${fm(inv)}</span></h2><p class='sub' style='margin:0 0 4px'>填券商显示的日元市值,点一项可修改。</p><div>`
+ const invb=`<div><p class='sub' style='margin:0 0 4px'>填券商显示的日元市值,点一项可修改。</p><div>`
  +A.assets.map(x=>AE===x.id?aform(x):`<button class='row arow' data-aed='${x.id}'><div class='rm'><div>${esc(x.name)}</div></div><div class='amt'>${yen(x.val)}</div><span class='chev'>›</span></button>`).join('')
  +(A.assets.length?'':`<p class='sub' style='margin:8px 0 0'>还没有投资资产。</p>`)+`</div>`
  +(AE==='new'?aform(null):`<button class='go alt' data-anew='1' style='margin:10px 0 0;padding:9px'>+ 添加投资资产</button>`)+`</div>`;
  const snapb=`<div class='box' data-g='o'><button class='go' id='snap' style='margin:0'>${cur?'重新确认今日总资产':'确认今日总资产'}</button>${cur?`<p class='sub' style='text-align:center;margin:8px 0 0'>今天已确认:${fm(cur.total)}</p>`:''}</div>`,chb=chgBox(prev,fm,tot);
- const cashb=`<div class='box' data-g='k'><h2 style='display:flex;justify-content:space-between'><span>现金 / 存款</span><span>${yen(oth)}</span></h2>`+(CE?`<label for='ce-cash'>起算日当天开始时的余额(日元)</label><input id='ce-cash' class='f' inputmode='numeric' value='${A.cash||''}' placeholder='0'><label for='ce-sd'>起算日</label><div class='dwrap f'><span id='ce-sdl'>${fmtD(A.start)}</span><span class='chev'>›</span><input id='ce-sd' type='date' value='${A.start}' aria-label='起算日'></div><p class='sub' style='margin:6px 0 0'>一般设一次就行。改了以后,现金会从新的起算日重新计算,已确认过的总资产数值不会变。</p><div style='display:flex;gap:6px;margin-top:12px'><button class='go' id='csave' style='margin:0;flex:1;padding:9px'>保存</button><button class='go alt' id='ccancel' style='margin:0;flex:1;padding:9px'>取消</button></div>`
+ const cashb=`<div>`+(CE?`<label for='ce-cash'>起算日当天开始时的余额(日元)</label><input id='ce-cash' class='f' inputmode='numeric' value='${A.cash||''}' placeholder='0'><label for='ce-sd'>起算日</label><div class='dwrap f'><span id='ce-sdl'>${fmtD(A.start)}</span><span class='chev'>›</span><input id='ce-sd' type='date' value='${A.start}' aria-label='起算日'></div><p class='sub' style='margin:6px 0 0'>一般设一次就行。改了以后,现金会从新的起算日重新计算,已确认过的总资产数值不会变。</p><div style='display:flex;gap:6px;margin-top:12px'><button class='go' id='csave' style='margin:0;flex:1;padding:9px'>保存</button><button class='go alt' id='ccancel' style='margin:0;flex:1;padding:9px'>取消</button></div>`
   :`<div><div class='row'><div class='rm'><div>起算余额</div><span>${A.start} 起算</span></div><div class='amt'>${yen(A.cash||0)}</div></div><div class='row'><div class='rm'><div>起算日以来收入</div></div><div class='amt' style='color:var(--in)'>${sgn(f.i)}</div></div><div class='row'><div class='rm'><div>起算日以来支出</div></div><div class='amt'>${f.o?'−'+yen(f.o):yen(0)}</div></div></div><button class='go alt' id='cedit' style='margin:10px 0 0;padding:9px'>修改起算余额 / 起算日</button><p class='sub' style='margin:10px 0 0'>余额 = 起算余额 + 收入 − 支出</p>`)+`</div>`;
  let trb=''; if(sn.length){const pts=sn.slice(-30),n=pts.length,mn=Math.min(...pts.map(s=>s.total)),mx=Math.max(...pts.map(s=>s.total)),r=mx-mn||1;
   const xy=pts.map((s,i)=>[n>1?10+i/(n-1)*280:150,n>1?90-(s.total-mn)/r*80:50]),md=d=>d.slice(5),lastP=pts[n-1],d0=lastP.total-pts[0].total;
   const chg=n>1?` · 较 ${md(pts[0].date)} ${d0>=0?'+':'−'}${fm(Math.abs(d0))}${pts[0].total?' ('+(d0>=0?'+':'−')+Math.abs(d0/pts[0].total*100).toFixed(1)+'%)':''}`:'';
   trb=`<div class='box' data-g='o'><h2>总资产走势</h2><p class='sub' id='sro' style='margin:2px 0 6px'>${md(lastP.date)} ${fm(lastP.total)}${chg}</p><div style='position:relative;height:100px'><svg viewBox='0 0 300 100' preserveAspectRatio='none' style='width:100%;height:100%;display:block'><defs><linearGradient id='sg' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='var(--ac)' stop-opacity='.35'/><stop offset='1' stop-color='var(--ac)' stop-opacity='.03'/></linearGradient></defs><polygon fill='url(#sg)' points='${xy[0][0]},100 ${xy.map(p=>p.join(',')).join(' ')} ${xy[n-1][0]},100'/><polyline fill='none' stroke='var(--ac)' stroke-width='2' stroke-linejoin='round' vector-effect='non-scaling-stroke' points='${xy.map(p=>p.join(',')).join(' ')}'/></svg>`+pts.map((s,k)=>`<button class='sp${k===n-1?' on':''}' data-sp='${k}' data-lb='${md(s.date)} ${fm(s.total)}' aria-label='${md(s.date)} ${fm(s.total)}' style='left:${(xy[k][0]/3).toFixed(2)}%'><i style='top:${xy[k][1]}%'></i></button>`).join('')+`</div><div class='leg' style='justify-content:space-between;margin-top:4px'><span>${md(pts[0].date)}</span><span>${md(lastP.date)}</span></div></div>`;}
- return h+trb+rows+chb+snapb+rtb+invb+cashb;
+ const xr=(k,lb,sub,v,inner)=>`<button class='row arow' data-axp='${k}'><div class='rm'><div>${lb}</div>${sub?`<span>${sub}</span>`:''}</div><div class='amt'>${v}</div><span class='chev' style='transform:rotate(${OPEN[k]?90:0}deg)'>›</span></button>${OPEN[k]?`<div style='padding:2px 0 14px'>${inner}</div>`:''}`;
+ return h+trb+`<div class='box' style='padding:2px 16px'>`+xr('inv','投资资产',A.assets.length?A.assets.length+' 项':'',fm(inv),invb)+xr('cash','现金 / 存款','',fm(oth),cashb)+`</div>`+chb+snapb+rtb;
 }
 document.addEventListener('click',e=>{
  const t=e.target.closest('button');if(!t)return;
@@ -748,11 +752,12 @@ document.addEventListener('click',e=>{
  if(t.id==='acancel'){AE=null;ap=null;render();return}
  if(t.id==='asave'){const name=$('an').value.trim(),v=num($('av').value);if(!name||!(v>=0)){toast('请填写名称和市值');return}if(AE==='new'){A.assets.push({id:Date.now(),name,val:Math.round(v)});toast('已添加 '+name)}else{const x=A.assets.find(z=>z.id===AE);if(x){x.name=name;x.val=Math.round(v);toast('已保存')}}AE=null;saveA();render();return}
  if(t.id==='cedit'){CE=true;render();return}
- if(t.dataset.sdset){AT='k';CE=true;render();const f=$('ce-sd');if(f)f.scrollIntoView({block:'center'});return}
+ if(t.dataset.sdset){OPEN.cash=true;CE=true;render();const f=$('ce-sd');if(f)f.scrollIntoView({block:'center'});return}
  if(t.id==='ccancel'){CE=false;render();return}
  if(t.id==='csave'){const n=num($('ce-cash').value);A.cash=isFinite(n)?n:0;A.start=$('ce-sd').value||today();CE=false;saveA();toast('已保存');render();return}
  if(t.dataset.rfetch){fetchRates(true);return}
  if(t.dataset.rtx){OPEN.rt=!OPEN.rt;render();return}
+ if(t.dataset.axp){const k=t.dataset.axp;OPEN[k]=!OPEN[k];if(!OPEN.inv)AE=null;if(!OPEN.cash)CE=false;render();return}
  if(t.dataset.adel){const id=+t.dataset.adel;if(ap===id){A.assets=A.assets.filter(x=>x.id!==id);ap=null;AE=null;saveA();toast('已删除')}else ap=id;render();return}
  if(t.id==='iadd'){const amt=num($('ia').value);if(!(amt>0)){toast('请先输入收入金额');$('ia').focus();return}
   const date=$('idt').value||today();A.inc.push({id:Date.now(),amt:Math.round(amt),note:$('inn').value.trim(),date});saveA();toast('已记录收入 '+yen(amt));render();return}
@@ -941,8 +946,8 @@ function moreView(){if(MP==='s')MP='i';return tabBar('mp',MP,[['i','导入'],['x
 function moreRaw(){
  const opt=(a,v)=>a.map(x=>`<option value='${x[0]}'${x[0]===v?' selected':''}>${x[1]}</option>`).join('');
  let h='';
- const TH={auto:'跟随系统',light:'浅色',dark:'深色'},HM={add:'记一笔',list:'明细',stats:'统计',assets:'资产'};
- h+=`<div class='box' data-k='ui' data-g='s'><h2 class='sh'>自定义界面</h2><p class='sub' style='margin:0'>主题 ${TH[UI.theme]} · 强调色 ${ACC[UI.accent][0]} · 打开时进入「${HM[UI.home]}」${CC.length?' · 自定义分类 '+CC.length+' 个':''}</p>`
+ const TH={auto:'跟随系统',light:'浅色',dark:'深色'},HM={list:'明细',stats:'统计',assets:'资产'};
+ h+=`<div class='box' data-k='ui' data-g='s'><h2 class='sh'>自定义界面</h2><p class='sub' style='margin:0'>主题 ${TH[UI.theme]} · 强调色 ${ACC[UI.accent][0]} · 打开时进入「${HM[homeV()]}」${CC.length?' · 自定义分类 '+CC.length+' 个':''}</p>`
  +(OPEN.ui?`<label>主题</label><div class='chips'>${Object.entries(TH).map(([k,v])=>`<button class='chip' data-th='${k}' aria-pressed='${UI.theme===k}'>${v}</button>`).join('')}</div><label>强调色</label><div class='chips'>${Object.entries(ACC).map(([k,v])=>`<button class='chip' data-ac='${k}' aria-pressed='${UI.accent===k}' style='display:inline-flex;align-items:center;gap:6px'><i class='dot' style='background:${v[1]||"#df8540"}'></i>${v[0]}</button>`).join('')}</div><label>打开时进入的页面</label><div class='chips'>${Object.entries(HM).map(([k,v])=>`<button class='chip' data-hm='${k}' aria-pressed='${UI.home===k}'>${v}</button>`).join('')}</div><label>语言 / Language</label><div class='chips'>${[['auto','跟随系统'],['zh','中文'],['en','English']].map(([k,v])=>`<button class='chip' data-lg='${k}' aria-pressed='${(UI.lang==='en'||UI.lang==='auto'?UI.lang:'zh')===k}'>${v}</button>`).join('')}</div>`+`<button class='go alt' data-open='ui' style='margin-top:12px'>收起</button>`:`<button class='go alt' data-open='ui'>自定义界面</button>`)+`</div>`;
  const bks=Object.keys(B.cats),bleft=CATS.filter(c=>!B.cats[c]);
  const bud=!!OPEN.bud,fix=!!OPEN.fix;
@@ -1319,14 +1324,14 @@ document.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)r
  document.addEventListener('pointerup',end);document.addEventListener('pointercancel',end);
 })();
 /* ===== 内容区左右滑动切换顶部标签;底部导航栏左右滑动切换页面 ===== */
-(()=>{let s=null;const VIEWS=['add','list','stats','assets'];
+(()=>{let s=null;const VIEWS=['list','stats','assets'];
  const curView=()=>{const v=hv().slice(1);return VIEWS.includes(v)?v:'list'};
  const tabs=()=>{const h=document.querySelector('#app .fhead');if(!h)return null;const b=[...h.querySelectorAll('button.chip')].filter(x=>x.dataset.st||x.dataset.at||x.dataset.mp);return b.length>1?b:null};
  const hscroll=el=>{for(;el&&el.id!=='sc';el=el.parentElement){if(el.scrollWidth>el.clientWidth+2){const o=getComputedStyle(el).overflowX;if(o==='auto'||o==='scroll')return true}}return false};
  const target=(c,dir)=>{if(c.b){const ni=c.i+dir;if(ni>=0&&ni<c.b.length)return {tab:ni}}return null};
  const slideIn=dir=>{const n=$('sc');if(!n)return;const w=n.clientWidth;n.scrollTop=0;n.style.transition='none';n.style.transform=`translateX(${dir*w*.35}px)`;n.style.opacity='0';n.offsetWidth;
   n.style.transition='transform .2s ease-out,opacity .2s ease-out';n.style.transform='';n.style.opacity=''};
- document.addEventListener('touchstart',e=>{s=null;if(e.touches.length!==1)return;const sc=$('sc'),ap=$('app');if(!sc||!ap.contains(e.target))return;if(E||EI||SEL.on)return;
+ document.addEventListener('touchstart',e=>{s=null;if(e.touches.length!==1)return;const sc=$('sc'),ap=$('app');if(!sc||!ap.contains(e.target))return;if(E||EI||NEW||SEL.on)return;
   if(e.target.closest('input,select,textarea,.hd,.cord')||hscroll(e.target))return;const t=e.touches[0],b=tabs();if(!b)return;
   s={x:t.clientX,y:t.clientY,t:Date.now(),b,i:b?b.findIndex(x=>x.getAttribute('aria-pressed')==='true'):0,v:curView(),m:0,sc,dx:0}},{passive:true});
  document.addEventListener('touchmove',e=>{if(!s)return;if(e.touches.length!==1){s.sc.style.transform='';s=null;return}const t=e.touches[0],dx=t.clientX-s.x,dy=t.clientY-s.y;
