@@ -2083,7 +2083,10 @@ const unpaidCard=d=>{const items=[];if(!d)return {items,v:0};const B=A.bills||{}
  return {items,v:items.reduce((a,x)=>a+x.v,0)}};
 /* 现金 = ゆうちょ(减去还没扣的上月信用卡)+ PayPay残高;两者都没截过图时才按收支推算 */
 const cashSSm=()=>!!(A.cashSS||A.cashPP);
-const cashNow=()=>{if(cashSSm())return (A.cashSS?A.cashSS.val-unpaidCard(A.cashSS.upd).v:0)+(A.cashPP?A.cashPP.val:0);const f=flow();return A.cash+f.i-f.o};
+/* 截图之后记的现金 / PayPay余额消费、截图之后入账的收入,也要算进来(信用卡部分已在 unpaidCard 里) */
+const afterSS=(d,ms)=>d?sum(D.filter(x=>x.date>d&&ms.includes(x.method))):0;
+const cashNow=()=>{if(cashSSm()){const s=A.cashSS?A.cashSS.upd:null,p=A.cashPP?A.cashPP.upd:null;
+ return (A.cashSS?A.cashSS.val-unpaidCard(s).v-afterSS(s,['cash'])+sum(A.inc.filter(x=>x.date>s)):0)+(A.cashPP?A.cashPP.val-afterSS(p,A.cashSS?['paypay']:['paypay','cash']):0)}const f=flow();return A.cash+f.i-f.o};
 const totalA=()=>stockJ()+cashNow();
 /* 每天自动记录一次总资产(打开 App / 资产页时),当天内数值变了就更新当天这条 */
 function autoSnap(){if(!(A.assets.length||A.cash||A.start))return;const td=today(),fl=flow(),sn={date:td,total:Math.round(totalA()),inv:Math.round(stockJ()),cash:Math.round(cashNow()),items:A.assets.map(x=>[x.name,Math.round(x.val)])};
