@@ -758,7 +758,7 @@ window.addEventListener('hashchange',()=>{if(hv()==='#list'){if(PREV&&Q!==PREV.q
 /* in-app keypad with calculator for amount fields */
 const CALC=(()=>{
  const isC=el=>el&&el.tagName==='INPUT'&&el.hasAttribute('data-calc');
- const tag=()=>document.querySelectorAll('input[inputmode="numeric"],input[inputmode="decimal"]').forEach(el=>{if(el.id==='rd'||el.hasAttribute('data-calc'))return;el.dataset.calc=el.getAttribute('inputmode');el.setAttribute('inputmode','none');el.readOnly=true});
+ const tag=()=>document.querySelectorAll('input[inputmode="numeric"],input[inputmode="decimal"]').forEach(el=>{if(el.id==='rd'||el.hasAttribute('data-calc'))return;el.dataset.calc=el.getAttribute('inputmode');el.removeAttribute('inputmode');el.readOnly=true});
  new MutationObserver(tag).observe(document.body,{childList:true,subtree:true});tag();
  const norm=v=>String(v).replace(/[,，\s]/g,'').replace(/[×xX]/g,'*').replace(/[÷]/g,'/').replace(/[−–—]/g,'-');
  const hasOp=v=>/[+\-*/]/.test(norm(v).replace(/^-/,''));
@@ -1736,8 +1736,11 @@ document.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)r
  nav.addEventListener('touchend',nfin);nav.addEventListener('touchcancel',nfin);
 })();
 /* ===== iOS:弹出面板里点文字输入框有时不弹键盘(刚从数字键盘切过来、或点的瞬间面板重绘)→ 在手指抬起时主动聚焦 ===== */
+let LCALC=0;document.addEventListener('focusin',e=>{if(e.target&&e.target.dataset&&e.target.dataset.calc!==undefined)LCALC=Date.now()},true);
 document.addEventListener('touchend',e=>{const t=e.target;if(!t||!t.closest)return;const i=t.closest('input,textarea');if(!i||i.readOnly||i.dataset.calc!==undefined||/^(checkbox|radio|file|date|range)$/.test(i.type))return;
- const el=(i.isConnected?i:(i.id&&$(i.id)))||null;if(el&&document.activeElement!==el){try{el.focus()}catch(_){}}},{passive:true});
+ const el=(i.isConnected?i:(i.id&&$(i.id)))||null;if(!el)return;
+ /* 刚从自定义数字键盘(只读框)切过来时,iOS 会认为已经聚焦、不再弹键盘:先 blur 再在这次点击里重新 focus */
+ try{if(document.activeElement===el&&Date.now()-LCALC<4000){el.blur()}if(document.activeElement!==el)el.focus()}catch(_){}},{passive:true});
 /* ===== 禁止双指缩放 / 双击缩放 ===== */
 ['gesturestart','gesturechange','gestureend'].forEach(t=>document.addEventListener(t,e=>e.preventDefault(),{passive:false}));
 document.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault()},{passive:false});
