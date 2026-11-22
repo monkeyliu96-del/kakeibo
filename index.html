@@ -758,7 +758,7 @@ window.addEventListener('hashchange',()=>{if(hv()==='#list'){if(PREV&&Q!==PREV.q
 /* in-app keypad with calculator for amount fields */
 const CALC=(()=>{
  const isC=el=>el&&el.tagName==='INPUT'&&el.hasAttribute('data-calc');
- const tag=()=>document.querySelectorAll('input[inputmode="numeric"],input[inputmode="decimal"]').forEach(el=>{if(el.id==='rd'||el.hasAttribute('data-calc'))return;el.dataset.calc=el.getAttribute('inputmode');el.removeAttribute('inputmode');el.readOnly=true});
+ const tag=()=>document.querySelectorAll('input[inputmode="numeric"],input[inputmode="decimal"]').forEach(el=>{if(el.id==='rd'||el.hasAttribute('data-calc'))return;el.dataset.calc=el.getAttribute('inputmode');el.setAttribute('inputmode','none');el.readOnly=true});
  new MutationObserver(tag).observe(document.body,{childList:true,subtree:true});tag();
  const norm=v=>String(v).replace(/[,，\s]/g,'').replace(/[×xX]/g,'*').replace(/[÷]/g,'/').replace(/[−–—]/g,'-');
  const hasOp=v=>/[+\-*/]/.test(norm(v).replace(/^-/,''));
@@ -781,7 +781,7 @@ const CALC=(()=>{
   const v=cur.value,x=kp.querySelector('.kx'),y=kp.querySelector('.kv');
   if(hasOp(v)){const r=ev(v);x.textContent=v;y.textContent=isFinite(r)?'= '+Number(fmt(cur,r)).toLocaleString('ja-JP'):''}else{x.textContent=cur.getAttribute('aria-label')||cur.placeholder||'';y.textContent=''}};
  const open=el=>{cur=el;kp.classList.add('on');window.__kp=kp.offsetHeight;document.body.classList.add('kpo');paint();if(window.kbAdj)setTimeout(kbAdj,30)};
- const close=()=>{if(cur)commit(cur);const c=cur;cur=null;kp.classList.remove('on');window.__kp=0;document.body.classList.remove('kpo');if(c&&document.activeElement===c)c.blur();if(window.kbAdj)kbAdj()};
+ const close=()=>{if(cur)commit(cur);const c=cur;cur=null;kp.classList.remove('on');window.__kp=0;document.body.classList.remove('kpo');if(c&&document.activeElement===c)c.blur();if(c)c.removeAttribute('inputmode');if(window.kbAdj)kbAdj()};
  const set=v=>{cur.value=v;cur.dispatchEvent(new Event('input',{bubbles:true}));paint()};
  const press=k=>{if(!cur)return;let v=cur.value;
   if(k==='⌫')return set(v.slice(0,-1));
@@ -795,6 +795,7 @@ const CALC=(()=>{
   b.classList.add('hit');setTimeout(()=>b.classList.remove('hit'),110);press(b.dataset.ck)};
  kp.addEventListener('touchstart',act,{passive:false});kp.addEventListener('mousedown',act);
  kp.addEventListener('click',e=>{e.preventDefault();e.stopPropagation()});
+ ['touchstart','pointerdown','mousedown'].forEach(t=>document.addEventListener(t,e=>{const i=e.target.closest&&e.target.closest('input[data-calc]');if(i&&i.getAttribute('inputmode')!=='none')i.setAttribute('inputmode','none')},true));
  document.addEventListener('focusin',e=>{if(isC(e.target))open(e.target);else if(cur)close()},true);
  document.addEventListener('pointerdown',e=>{if(cur&&!e.target.closest('.kp')&&e.target!==cur&&!isC(e.target))close()},true);
  document.addEventListener('change',e=>commit(e.target),true);
