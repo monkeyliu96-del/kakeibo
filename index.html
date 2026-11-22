@@ -670,6 +670,7 @@ function render(){
   if(bst)$('shb').scrollTop=bst;
   if(isNew)requestAnimationFrame(()=>requestAnimationFrame(()=>sh.classList.add('on')));else sh.classList.add('on')}
  else if(!sh.hidden){sh.hidden=true;sh.classList.remove('on');sh.innerHTML=''}
+ if(!window.__kp){document.body.classList.remove('kpo');if(!document.activeElement||!/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)){document.body.classList.remove('kph');const b=$('shb');if(b)b.style.paddingBottom=''}}
 }
 var SHN=false,NEW=false,QPK=null,BACK=null,PREV=null;
 document.addEventListener('click',e=>{if(!e.target.closest('#fab'))return;NEW=true;E=null;EI=null;PF=null;F.type='out';F.manual=false;SHN=true;render();const a=$('amt');if(a)a.focus()});
@@ -1745,7 +1746,7 @@ let LCALC=0;document.addEventListener('focusin',e=>{if(e.target&&e.target.datase
 document.addEventListener('touchend',e=>{const t=e.target;if(!t||!t.closest)return;const i=t.closest('input,textarea');if(!i||i.readOnly||i.dataset.calc!==undefined||/^(checkbox|radio|file|date|range)$/.test(i.type))return;
  const el=(i.isConnected?i:(i.id&&$(i.id)))||null;if(!el)return;
  /* 刚从自定义数字键盘(只读框)切过来时,iOS 会认为已经聚焦、不再弹键盘:先 blur 再在这次点击里重新 focus */
- try{if(document.activeElement===el&&Date.now()-LCALC<4000){el.blur()}if(document.activeElement!==el)el.focus()}catch(_){}},{passive:true});
+ try{if(document.activeElement===el&&Date.now()-LCALC<4000){el.blur()}if(document.activeElement!==el)el.focus({preventScroll:true})}catch(_){}},{passive:true});
 /* ===== 禁止双指缩放 / 双击缩放 ===== */
 ['gesturestart','gesturechange','gestureend'].forEach(t=>document.addEventListener(t,e=>e.preventDefault(),{passive:false}));
 document.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault()},{passive:false});
