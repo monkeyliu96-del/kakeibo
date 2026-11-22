@@ -666,8 +666,11 @@ Object.assign(ZH2EN,{
 "更换头像":"Change avatar",
 "PayPay 上的名字,比如 LucasW":"Name in PayPay, e.g. LucasW"
 });
+Object.assign(ZH2EN,{"本月信用卡消费(还没扣款)":"This month's credit card spending (not yet debited)","下月27日起扣款":"Debited from the 27th of next month"});
 /* 日语词典:键是中文原文,值是日语 */
 const ZH2JA={
+"本月信用卡消费(还没扣款)":"今月のクレジットカード利用分(未引き落とし)",
+"下月27日起扣款":"来月27日から引き落とし",
 "记账本":"家計簿",
 "记一笔":"記帳",
 "明细":"明細",
@@ -2070,11 +2073,13 @@ function difBlock(u){const k='dif'+u.mth,op=OPEN[k],sus=op?difSuspects(u.m,u.mth
 const CARDS=[['card','ppc','PayPay卡'],['rakuten','rkc','乐天卡']];
 /* 账单所属月份:利用日在上个月、但晚入账进了下个月账单的,记 bm */
 const bmOf=x=>x.bm||x.date.slice(0,7);
-const unpaidCard=d=>{const items=[];if(!d||+d.slice(8)>=CARD_DAY)return {items,v:0};const B=A.bills||{},pm=prevM(d.slice(0,7));
- CARDS.forEach(([mth,key,nm])=>{const v=sum(D.filter(x=>bmOf(x)===pm&&x.method===mth)),b=B[key],bill=b&&b.pay&&b.pay.slice(0,7)===d.slice(0,7)?b:null;
+const unpaidCard=d=>{const items=[];if(!d)return {items,v:0};const B=A.bills||{},pm=prevM(d.slice(0,7));
+ if(+d.slice(8)<CARD_DAY)CARDS.forEach(([mth,key,nm])=>{const v=sum(D.filter(x=>bmOf(x)===pm&&x.method===mth)),b=B[key],bill=b&&b.pay&&b.pay.slice(0,7)===d.slice(0,7)?b:null;
   if(!v&&!bill)return;const df=bill?v-bill.val:0;
   items.push({nm,v,m:pm,mth,df,bill:bill?bill.val:null,lbl:nm+' '+(+pm.slice(5))+'月消费',sub:bill?('账单 '+yen(bill.val)+(df?' · 差 '+(df>0?'+':'−')+yen(Math.abs(df)):' · 一致')):'本月'+CARD_DAY+'日扣款',bad:!!(bill&&df)})});
- const v=sum(D.filter(x=>x.date.startsWith(pm)&&isCredit(x.method)&&!CARDS.some(c=>c[0]===x.method)));if(v)items.push({nm:'其他卡',v,m:pm,lbl:'其他信用卡 '+(+pm.slice(5))+'月消费',sub:'本月'+CARD_DAY+'日扣款'});
+ if(+d.slice(8)<CARD_DAY){const v=sum(D.filter(x=>x.date.startsWith(pm)&&isCredit(x.method)&&!CARDS.some(c=>c[0]===x.method)));if(v)items.push({nm:'其他卡',v,m:pm,lbl:'其他信用卡 '+(+pm.slice(5))+'月消费',sub:'本月'+CARD_DAY+'日扣款'})}
+ /* 截图时已刷、还没扣的本月信用卡 + 截图之后刷的信用卡:都还没从ゆうちょ扣走,要从现金里减掉 */
+ {const cm=d.slice(0,7),v=sum(D.filter(x=>isCredit(x.method)&&(x.date>d||(bmOf(x)===cm&&x.date<=d))));if(v)items.push({nm:'本月信用卡',v,lbl:'本月信用卡消费(还没扣款)',sub:'下月'+CARD_DAY+'日起扣款'})}
  return {items,v:items.reduce((a,x)=>a+x.v,0)}};
 /* 现金 = ゆうちょ(减去还没扣的上月信用卡)+ PayPay残高;两者都没截过图时才按收支推算 */
 const cashSSm=()=>!!(A.cashSS||A.cashPP);
