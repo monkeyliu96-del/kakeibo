@@ -2117,9 +2117,9 @@ function chgBox(p,fm,tot){if(!p)return '';
   +(p.items?'':`<p class='sub' style='margin:8px 0 0'>从下一次确认开始,会显示每项投资各自的涨跌。</p>`)+`</div>`}
 document.addEventListener('click',e=>{const t=e.target.closest('button[data-chg]');if(!t)return;const k=t.dataset.chg,from=t.dataset.from;
  if(k==='in'||k==='out'){Q={t:'',c:'',m:'',k,r:[from,today()]};LV='list';ym=today().slice(0,7);location.hash='#list';return}
- if(k==='cash'){OPEN.cash=true;render();return}
- if(k==='inv'){OPEN.inv=true;render();return}
- if(k.startsWith('a:')){const x=A.assets.find(z=>z.name===k.slice(2));OPEN.inv=true;AE=x?x.id:null;render();const f=$('av');if(f)f.scrollIntoView({block:'center'});return}});
+ const go=s=>{OPEN[s]=true;render();const b=document.querySelector(`button[data-axp='${s}']`);if(b)b.scrollIntoView({block:'start',behavior:'smooth'})};
+ if(k==='cash'){go('cash');return}
+ if(k==='inv'||k.startsWith('a:')){go('inv');return}});
 function assetForm(){if(AE==='xfer'){return `<div class="addv"><div class="strip"><span class="yen">¥</span><input id="av" class="amtin" inputmode="decimal" placeholder="0" autocomplete="off" aria-label="金额"></div><div class="grp"><div class="lrow"><label for="an">去向</label><input id="an" placeholder="例如 Binance" autocomplete="off"></div></div><p class="sub" style="margin:10px 4px 0">转进投资的钱不算支出,也不进统计。只是先从现金里减掉,避免和投资资产里重复算。下次更新ゆうちょ截图后会自动不再减。</p><button class="go save" id="asave">保存</button></div>`}
  if(AE==='goal'){const g=A.goal||{},o=[];let mm=today().slice(0,7);for(let i=0;i<48;i++){mm=nextM(mm);o.push(`<option value="${mm}"${g.by===mm?' selected':''}>${mm.slice(0,4)}年${+mm.slice(5)}月</option>`)}
   return `<div class="addv"><div class="strip"><span class="yen">¥</span><input id="av" class="amtin" inputmode="decimal" placeholder="目标金额" autocomplete="off" aria-label="目标金额" value="${g.target||''}"></div><div class="grp"><div class="lrow"><label for="an">名称</label><input id="an" placeholder="例如 搬家" autocomplete="off" value="${esc(g.name||'')}"></div><div class="lrow"><label for="gby">期限</label><select id="gby" style="flex:1;border:0;background:none;text-align:right;text-align-last:right;font-size:17px;padding:11px 0;outline:0;color:var(--tx)">${o.join('')}</select></div></div><p class="sub" style="margin:10px 4px 0">从设定时的总资产开始算,之后总资产增加多少就算存了多少。</p><button class="go save" id="asave">保存</button></div>`}
