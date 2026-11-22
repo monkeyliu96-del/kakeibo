@@ -392,11 +392,11 @@ const kbAdj=window.kbAdj=()=>{const sc=$('sc'),vv=window.visualViewport,a=docume
  document.body.classList.toggle('tko',!kp&&sk>80&&isF(a)&&!a.hasAttribute('data-calc')&&!(a.closest&&a.closest('.sec')));
  /* 弹出面板(记一笔)里:给面板底部留出键盘高度,输入框滚到键盘上方,下面的输入框也点得到(留白不立刻收回,免得点的瞬间内容跳动点偏) */
  if(!kp&&!(isF(a)&&!a.hasAttribute('data-calc'))&&Date.now()>(window.__kphT||0))document.body.classList.remove('kph');
- const shb=$('shb');if(shb){if(isF(a)&&shb.contains(a)&&(kp||sk>80)){if(!kp)shb.style.paddingBottom=(sk+16)+'px';const vis=kp?window.innerHeight-kp:vv.height,r=a.getBoundingClientRect();if(r.top<60||r.bottom>vis-16)shb.scrollTop+=r.top+r.height/2-vis*0.42}else if(shb.style.paddingBottom&&Date.now()>(window.__kphT||0)&&!(isF(a)&&shb.contains(a))){shb.style.paddingBottom='';shb.scrollTop=Math.min(shb.scrollTop,Math.max(0,shb.scrollHeight-shb.clientHeight))}}
+ const shb=$('shb');if(shb){if(isF(a)&&shb.contains(a)&&(kp||sk>80)){if(!kp)shb.style.paddingBottom=(sk+16)+'px';const vis=kp?window.innerHeight-kp:vv.height,r=a.getBoundingClientRect(),pb=parseFloat(getComputedStyle(shb).paddingBottom)||0,fit=shb.scrollHeight-pb+16<=vis-shb.getBoundingClientRect().top;if(fit){shb.scrollTop=0}else if(r.top<60||r.bottom>vis-16)shb.scrollTop+=r.top+r.height/2-vis*0.42}else if(shb.style.paddingBottom&&Date.now()>(window.__kphT||0)&&!(isF(a)&&shb.contains(a))){shb.style.paddingBottom='';shb.scrollTop=Math.min(shb.scrollTop,Math.max(0,shb.scrollHeight-shb.clientHeight))}}
  if(!(isF(a)&&sc.contains(a)&&(kp||sk>80))){sc.style.paddingBottom='';de.style.removeProperty('--kbh');return}
  sc.style.paddingBottom=(kb+24)+'px';de.style.setProperty('--kbh',kb+'px');if(!kp)fix();
  const vis=kp?window.innerHeight-kp:vv.height,r=a.getBoundingClientRect();if(r.top<70||r.bottom>vis-16)sc.scrollTop+=r.top+r.height/2-vis*0.42};
-document.addEventListener('focusin',e=>{const t=e.target;if(isF(t)){if(!t.hasAttribute('data-calc')&&!(t.closest&&t.closest('.sec'))){document.body.classList.add('kph');const b=$('shb');if(b&&b.contains(t)&&!window.__kp)b.style.paddingBottom=((window.__sk||300)+16)+'px'}setTimeout(kbAdj,350);setTimeout(kbAdj,700)}});
+document.addEventListener('focusin',e=>{const t=e.target;if(isF(t)){if(!t.hasAttribute('data-calc')&&!/^(numeric|decimal|none)$/.test(t.getAttribute('inputmode')||'')&&!(t.closest&&t.closest('.sec'))){document.body.classList.add('kph');const b=$('shb');if(b&&b.contains(t)&&!window.__kp)b.style.paddingBottom=((window.__sk||300)+16)+'px'}setTimeout(kbAdj,350);setTimeout(kbAdj,700)}});
 document.addEventListener('focusout',()=>{setTimeout(fix,120);setTimeout(fix,500);setTimeout(kbAdj,150)});
 window.addEventListener('pageshow',fix);window.addEventListener('orientationchange',()=>setTimeout(fix,300));
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(fix,100)});
@@ -673,7 +673,7 @@ function render(){
  if(!window.__kp){document.body.classList.remove('kpo');if(!document.activeElement||!/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)){document.body.classList.remove('kph');const b=$('shb');if(b)b.style.paddingBottom=''}}
 }
 var SHN=false,NEW=false,QPK=null,BACK=null,PREV=null;
-document.addEventListener('click',e=>{if(!e.target.closest('#fab'))return;NEW=true;E=null;EI=null;PF=null;F.type='out';F.manual=false;SHN=true;render();const a=$('amt');if(a)a.focus()});
+document.addEventListener('click',e=>{if(!e.target.closest('#fab'))return;NEW=true;E=null;EI=null;PF=null;F.type='out';F.manual=false;SHN=true;render();const a=$('amt');if(a){CALC.tag();a.focus()}});
 let SY=false,USO=false;
 let ST='o',AT='o',MP='i',RE=null,RIE=null,RSO=false,AE=null,CE=false;
 function tabBar(k,cur,items){return `<style>#app [data-g]:not([data-g="${cur}"]){display:none}</style><div class="chips" style="margin:0;padding:10px max(16px,calc((100% - 488px)/2)) 8px;flex-wrap:nowrap;background:var(--bg)">${items.map(([v,l])=>`<button class="chip" data-${k}="${v}" aria-pressed="${cur===v}" style="flex:1;text-align:center;padding:8px 2px">${l}</button>`).join('')}</div><!--H-->`}
@@ -807,7 +807,7 @@ const CALC=(()=>{
  document.addEventListener('click',e=>{if(!e.target.closest('.kp'))document.querySelectorAll('input[data-calc]').forEach(commit)},true);
  window.addEventListener('hashchange',()=>{if(cur)close()});
  document.addEventListener('keydown',e=>{if(!cur||e.target!==cur||e.metaKey||e.ctrlKey)return;const m={'Backspace':'⌫','Enter':'完成','Escape':'完成','*':'×','/':'÷','-':'−','+':'+','.':'.','=':'='}[e.key]||(/^[0-9]$/.test(e.key)?e.key:null);if(m){e.preventDefault();press(m)}},true);
- return {commit,close};
+ return {commit,close,tag};
 })();
 
 const AK='kakeibo.assets.v1';
@@ -948,9 +948,9 @@ document.addEventListener('click',e=>{
  if(t.id==='snap'){const td=today();A.snaps=A.snaps.filter(s=>s.date!==td);const fl=flow();A.snaps.push({date:td,total:Math.round(totalA()),inv:Math.round(stockJ()),cash:Math.round(cashNow()),items:A.assets.map(x=>[x.name,Math.round(x.val)])});saveA();toast('已确认今日总资产');render();return}
  if(t.dataset.disp){A.disp=t.dataset.disp;saveA();render();return}
  if(t.dataset.qn){$('an').value=t.dataset.qn;$('av').focus();return}
- if(t.dataset.aed){AE=/^(cash|goal)/.test(t.dataset.aed)?t.dataset.aed:+t.dataset.aed;ap=null;render();const e=$('av');if(e)e.focus();return}
+ if(t.dataset.aed){AE=/^(cash|goal)/.test(t.dataset.aed)?t.dataset.aed:+t.dataset.aed;ap=null;render();const e=$('av');if(e){CALC.tag();e.focus()}return}
  if(t.dataset.gdel){if(ap==='goal'){delete A.goal;ap=null;saveA();toast('已删除储蓄目标')}else ap='goal';render();return}
- if(t.dataset.anew){AE='new';ap=null;render();const e=$('av');if(e)e.focus();return}
+ if(t.dataset.anew){AE='new';ap=null;render();const e=$('av');if(e){CALC.tag();e.focus()}return}
  if(t.id==='acancel'){AE=null;ap=null;render();return}
  if(t.id==='asave'&&AE==='goal'){const name=$('an').value.trim()||'储蓄目标',v=num($('av').value),by=$('gby').value;if(!(v>0)){toast('请填写目标金额');return}
   A.goal=Object.assign({base:Math.round(stockJ()+cashNow())},A.goal||{},{name,target:Math.round(v),by});AE=null;saveA();toast('已保存储蓄目标');render();return}
