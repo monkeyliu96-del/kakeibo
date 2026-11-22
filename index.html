@@ -391,7 +391,7 @@ const kbAdj=window.kbAdj=()=>{const sc=$('sc'),vv=window.visualViewport,a=docume
  /* 打字时收起支付方式/分类区(只在输备注这类字段时;如果正在输新分类、新支付方式,它们就在这些区里,不能收) */
  document.body.classList.toggle('tko',!kp&&sk>80&&isF(a)&&!a.hasAttribute('data-calc')&&!(a.closest&&a.closest('.sec')));
  /* 弹出面板(记一笔)里:给面板底部留出键盘高度,输入框滚到键盘上方,下面的输入框也点得到(留白不立刻收回,免得点的瞬间内容跳动点偏) */
- const shb=$('shb');if(shb){if(isF(a)&&shb.contains(a)&&(kp||sk>80)){shb.style.paddingBottom=((kp||sk)+16)+'px';const vis=kp?window.innerHeight-kp:vv.height,r=a.getBoundingClientRect();if(r.top<60||r.bottom>vis-16)shb.scrollTop+=r.top+r.height/2-vis*0.42}}
+ const shb=$('shb');if(shb){if(isF(a)&&shb.contains(a)&&(kp||sk>80)){shb.style.paddingBottom=((kp||sk)+16)+'px';const vis=kp?window.innerHeight-kp:vv.height,r=a.getBoundingClientRect();if(r.top<60||r.bottom>vis-16)shb.scrollTop+=r.top+r.height/2-vis*0.42}else if(shb.style.paddingBottom){clearTimeout(window.__shbT);window.__shbT=setTimeout(()=>{const b=$('shb'),x=document.activeElement;if(!b||(isF(x)&&b.contains(x)&&((window.__kp||0)||(window.visualViewport&&window.innerHeight-window.visualViewport.height>80))))return;b.style.paddingBottom='';b.scrollTop=Math.min(b.scrollTop,Math.max(0,b.scrollHeight-b.clientHeight))},300)}}
  if(!(isF(a)&&sc.contains(a)&&(kp||sk>80))){sc.style.paddingBottom='';de.style.removeProperty('--kbh');return}
  sc.style.paddingBottom=(kb+24)+'px';de.style.setProperty('--kbh',kb+'px');if(!kp)fix();
  const vis=kp?window.innerHeight-kp:vv.height,r=a.getBoundingClientRect();if(r.top<70||r.bottom>vis-16)sc.scrollTop+=r.top+r.height/2-vis*0.42};
