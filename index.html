@@ -538,8 +538,8 @@ function goalLine(){
  const cm=today().slice(0,7),spent=monthSpend(ym),left=B.total-spent,pc=Math.min(100,spent/B.total*100),over=left<0;
  const has=mm=>D.some(x=>x.date.startsWith(mm)&&own(x)),ok=mm=>has(mm)&&monthSpend(mm)<=B.total;
  let st=0;{let mm=prevM(cm);for(let i=0;i<60&&ok(mm);i++){st++;mm=prevM(mm)}}
- if(ym<cm&&has(ym)&&monthSpend(ym)<=B.total&&!(UI.cel||[]).includes(ym)){UI.cel=[...(UI.cel||[]),ym];saveC();setTimeout(()=>{confetti();toast(+ym.slice(5)+'月目标达成')},350)}
- return `<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--ln)"><div class="pb" style="height:6px;margin:0 0 6px"><i style="width:${pc}%;background:var(${over?'--pp':'--ac'})"></i></div><div style="display:flex;justify-content:space-between;font-size:13px;color:var(--mu)"><span>目标 ${yen(B.total)}${st?' · 连续 '+st+' 个月达标':''}</span><b style="color:var(${over?'--pp':'--in'});font-weight:600">${over?'超出 '+yen(-left):'还剩 '+yen(left)}</b></div></div>`}
+ if(ym<cm&&has(ym)&&monthSpend(ym)<=B.total&&!(UI.cel||[]).includes(ym)){UI.cel=[...(UI.cel||[]),ym];saveC();setTimeout(()=>{confetti();toast(+ym.slice(5)+'月没有超预算')},350)}
+ return `<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--ln)"><div class="pb" style="height:6px;margin:0 0 6px"><i style="width:${pc}%;background:var(${over?'--pp':'--ac'})"></i></div><div style="display:flex;justify-content:space-between;font-size:13px;color:var(--mu)"><span>预算 ${yen(B.total)}${st?' · 连续 '+st+' 个月没超':''}</span><b style="color:var(${over?'--pp':'--in'});font-weight:600">${over?'超出 '+yen(-left):'还剩 '+yen(left)}</b></div></div>`}
 function top5(a){
  let top;
  if(T5==='single')top=a.slice().sort((p,q)=>q.amt-p.amt||q.date.localeCompare(p.date)).slice(0,5).map(x=>({nm:x.note||x.cat,sub:x.date.slice(5),amt:x.amt,key:x.note||x.cat}));
@@ -608,10 +608,9 @@ function yearReview(a,y,tr){
  const days=new Set(a.map(x=>x.date)),dEnd=isCur?now:y+'-12-31',dStart=y+'-01-01',span=Math.round((Date.parse(dEnd)-Date.parse(dStart))/864e5)+1,first=a.map(x=>x.date).sort()[0],sp=Math.round((Date.parse(dEnd)-Date.parse(first))/864e5)+1;
  const t=(lb,v,sub)=>`<div style="display:flex;align-items:baseline;gap:10px;padding:8px 0;border-top:1px solid var(--ln);font-size:14px"><span style="color:var(--mu);flex:none;width:6.5em">${lb}</span><b style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600">${v}</b><span style="color:var(--mu);font-size:12.5px;white-space:nowrap">${sub}</span></div>`;
  return `<div class="box" data-g="o" style="padding:12px 16px 4px"><h2 style="margin:0 0 6px">${y}年回顾</h2>`
-  +(mx?t('花得最多的月',+mx.mm.slice(5)+'月',yen(mx.o)):'')+(mn?t('花得最少的月',+mn.mm.slice(5)+'月',yen(mn.o)):'')
+  +(mx?t('花得最多的月',+mx.mm.slice(5)+'月',yen(mx.o)):'')
   +(big?t('最大的一笔',esc(big.note||big.cat),yen(big.amt)):'')
   +(shop?t('最常出现',esc(shop[0]),shop[1].n+' 笔'):'')
-  +(cat?t('花最多的分类',esc(cat[0]),Math.round(cat[1]/sum(a)*100)+'%'):'')
   +t('没花钱的日子',Math.max(0,sp-days.size)+' 天','共 '+sp+' 天')
   +`</div>`}
 function yearRaw(){
@@ -621,17 +620,17 @@ function yearRaw(){
  const mxio=Math.max(it,tot,1),pyLine=(lb,c,p)=>p?'<br>去年'+lb+' '+yen(p)+',今年'+(c>=p?'多':'少')+' '+yen(Math.abs(c-p)):'';
  let h=`<div class="box" data-g="o"><h2>${y}年收支</h2><button class="bar" data-si="收入"><span class="n">收入</span><span class="t"><i style="width:${it/mxio*100}%"></i></span><span class="v" style="width:auto">+${yen(it)}</span><span class="bch">›</span></button><button class="bar" data-sc=""><span class="n">支出</span><span class="t"><i style="width:${tot/mxio*100}%;background:var(--pp)"></i></span><span class="v" style="width:auto">${yen(tot)}</span><span class="bch">›</span></button><p class="sub" style="margin:8px 0 0">结余 <b style="color:var(${it>=tot?'--in':'--pp'})">${sgn(it-tot)}</b><br>月均支出 ${yen(tot/nm)}${pyLine('支出',tot,pt)}</p></div>`;
  const tr=Array.from({length:12},(_,i)=>{const mm=y+'-'+pad(i+1);return {mm,o:sum(a.filter(x=>x.date.startsWith(mm))),i:sum(inc.filter(x=>x.date.startsWith(mm)))}}),tm=Math.max(1,...tr.map(x=>Math.max(x.o,x.i)));
- h+=yearReview(a,y,tr)+`<div class="box" data-g="t"><h2>每月收支</h2><div style="display:flex;gap:3px;align-items:flex-end;height:110px;margin-top:8px">${tr.map(x=>`<button data-ym="${x.mm}" aria-label="${+x.mm.slice(5)}月 收入 ${yen(x.i)} 支出 ${yen(x.o)}" style="flex:1;display:flex;gap:1px;align-items:flex-end;height:100%;border:0;background:none;padding:0;cursor:pointer"><i style="flex:1;height:${x.i?Math.max(3,x.i/tm*100):1}%;background:var(--in);border-radius:2px 2px 0 0"></i><i style="flex:1;height:${x.o?Math.max(3,x.o/tm*100):1}%;background:var(--pp);border-radius:2px 2px 0 0"></i></button>`).join('')}</div><div style="display:flex;gap:3px;margin-top:4px">${tr.map(x=>`<span style="flex:1;text-align:center;font-size:11px;color:var(--mu)">${+x.mm.slice(5)}</span>`).join('')}</div><div class="leg" style="margin:8px 0 4px"><span><i class="dot" style="display:inline-block;background:var(--in)"></i> 收入</span><span><i class="dot" style="display:inline-block;background:var(--pp)"></i> 支出</span></div>${tr.slice().reverse().filter(x=>x.o||x.i).map(x=>`<button class="bar" data-ym="${x.mm}"><span class="n">${+x.mm.slice(5)}月</span><span style="flex:1;font-size:12px;color:var(--mu)">收 ${yen(x.i)} · 支 ${yen(x.o)}</span><span class="v" style="width:auto;color:var(${x.i>=x.o?'--in':'--pp'})">${sgn(x.i-x.o)}</span><span class="bch">›</span></button>`).join('')}</div>`;
+ h+=yearReview(a,y,tr)+`<div class="box" data-g="t"><h2>每月收支</h2><div style="display:flex;gap:3px;align-items:flex-end;height:110px;margin-top:8px">${tr.map(x=>`<button data-ym="${x.mm}" aria-label="${+x.mm.slice(5)}月 收入 ${yen(x.i)} 支出 ${yen(x.o)}" style="flex:1;display:flex;gap:1px;align-items:flex-end;height:100%;border:0;background:none;padding:0;cursor:pointer"><i style="flex:1;height:${x.i?Math.max(3,x.i/tm*100):1}%;background:var(--in);border-radius:2px 2px 0 0"></i><i style="flex:1;height:${x.o?Math.max(3,x.o/tm*100):1}%;background:var(--pp);border-radius:2px 2px 0 0"></i></button>`).join('')}</div><div style="display:flex;gap:3px;margin-top:4px">${tr.map(x=>`<span style="flex:1;text-align:center;font-size:11px;color:var(--mu)">${+x.mm.slice(5)}</span>`).join('')}</div><div class="leg" style="margin:8px 0 4px"><span><i class="dot" style="display:inline-block;background:var(--in)"></i> 收入</span><span><i class="dot" style="display:inline-block;background:var(--pp)"></i> 支出</span></div></div>`;
  if(!a.length)return h+`<div class="empty" data-g="o">${y}年还没有支出记录。</div>`;
  const bc={};a.forEach(x=>bc[x.cat]=(bc[x.cat]||0)+x.amt);
  const cs=Object.entries(bc).sort((p,q)=>q[1]-p[1]),mx=cs[0][1];
- h+=`<div class="box" data-g="o"><h2>${y}年分类</h2>`+cs.map(([c,v])=>`<button class="bar" data-sc="${esc(c)}"><span class="n">${esc(c)}</span><span class="t"><i style="width:${v/mx*100}%"></i></span><span class="v">${yen(v)} <span style="color:var(--mu)">${Math.round(v/tot*100)}%</span></span></button>`).join('')+`</div>`;
+ const csv=cs.length>6&&!OPEN.cats?cs.slice(0,5):cs;
+ h+=`<div class="box" data-g="o"><h2>${y}年分类</h2>`+csv.map(([c,v])=>`<button class="bar" data-sc="${esc(c)}"><span class="n">${esc(c)}</span><span class="t"><i style="width:${v/mx*100}%"></i></span><span class="v">${yen(v)} <span style="color:var(--mu)">${Math.round(v/tot*100)}%</span></span></button>`).join('')+(cs.length>6?`<button class="lk" data-catx="1" style="margin-top:4px;font-size:14px">${OPEN.cats?'收起':'其余 '+(cs.length-5)+' 个分类 ›'}</button>`:'')+`</div>`;
 
- if(pt){const pc={};pa.forEach(x=>pc[x.cat]=(pc[x.cat]||0)+x.amt);
+ if(false){const pc={};pa.forEach(x=>pc[x.cat]=(pc[x.cat]||0)+x.amt);
   h+=`<div class="box" data-g="t"><h2>与去年对比</h2><p class="sub" style="margin:0 0 6px">去年合计 ${yen(pt)},今年${tot>=pt?'多':'少'}花 ${yen(Math.abs(tot-pt))}</p>`+CATS.filter(c=>bc[c]||pc[c]).map(c=>{const d=(bc[c]||0)-(pc[c]||0);return `<button class="bar" data-sc="${esc(c)}"><span class="n">${c}</span><span style="flex:1;color:var(--mu);font-size:13px">${yen(pc[c]||0)} → ${yen(bc[c]||0)}</span><span class="v" style="color:var(${d>0?'--pp':'--in'})">${sgn(d)}</span></button>`}).join('')+`</div>`}
 
 
- h+=moreCard(a,tot);
  return h;
 }
 function bandHTML(view){
