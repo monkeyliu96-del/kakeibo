@@ -796,6 +796,9 @@ const CALC=(()=>{
  kp.addEventListener('touchstart',act,{passive:false});kp.addEventListener('mousedown',act);
  kp.addEventListener('click',e=>{e.preventDefault();e.stopPropagation()});
  ['touchstart','pointerdown','mousedown'].forEach(t=>document.addEventListener(t,e=>{const i=e.target.closest&&e.target.closest('input[data-calc]');if(i&&i.getAttribute('inputmode')!=='none')i.setAttribute('inputmode','none')},true));
+ /* 点金额框时:没聚焦就聚焦;已经是聚焦状态(键盘面板被收起/焦点丢了)就直接重新打开数字键盘 */
+ const tapC=e=>{const i=e.target.closest&&e.target.closest('input[data-calc]');if(!i||!i.isConnected)return;i.setAttribute('inputmode','none');if(document.activeElement!==i){try{i.focus()}catch(_){}}if(cur!==i)open(i)};
+ document.addEventListener('touchend',tapC,{capture:true,passive:true});document.addEventListener('click',tapC,true);
  document.addEventListener('focusin',e=>{if(isC(e.target))open(e.target);else if(cur)close()},true);
  document.addEventListener('pointerdown',e=>{if(cur&&!e.target.closest('.kp')&&e.target!==cur&&!isC(e.target))close()},true);
  document.addEventListener('change',e=>commit(e.target),true);
