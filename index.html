@@ -1737,7 +1737,9 @@ document.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)r
  if(t.dataset.pplt){const n=t.dataset.pplt;UI.ppl=Object.assign({},UI.ppl,{[n]:UI.ppl[n]==='px'?'aa':'px'});done('已修改 '+n);return}
  if(t.dataset.ppld){const n=t.dataset.ppld,o=Object.assign({},UI.ppl);delete o[n];UI.ppl=o;done('已删除 '+n);return}});
 /* 本月还没到扣款日的固定支出(房租等):预算里先预留 */
-function upFix(m){if(m!==today().slice(0,7))return {amt:0,txt:''};const xs=R.filter(r=>(r.last||'')<m&&r.cat!==PX_CAT&&r.cat!==INV_CAT);return {amt:xs.reduce((q,r)=>q+r.amt,0),txt:xs.map(r=>r.name+' '+yen(r.amt)).join('、')}}
+/* 本月已手动记过同分类、同金额、同备注(如 家賃)时,视为已付:不再预留,到期也不再自动重复记 */
+const manHit=(r,mm)=>D.some(x=>!x.rid&&x.date.startsWith(mm)&&x.cat===r.cat&&x.amt===r.amt&&(x.note||'').trim()===(r.name||'').trim());
+function upFix(m){if(m!==today().slice(0,7))return {amt:0,txt:''};const xs=R.filter(r=>(r.last||'')<m&&r.cat!==PX_CAT&&r.cat!==INV_CAT&&!manHit(r,m));return {amt:xs.reduce((q,r)=>q+r.amt,0),txt:xs.map(r=>r.name+' '+yen(r.amt)).join('、')}}
 function todayBud(){if(!(B.total>0))return '';
  const td=today(),m=td.slice(0,7),[y,mo,d]=td.split('-').map(Number),dl=new Date(y,mo,0).getDate()-d+1;
  const spent=sum(D.filter(x=>x.date.startsWith(m)&&own(x)))+upFix(m).amt,tdS=sum(D.filter(x=>x.date===td&&own(x))),rest=B.total-spent,left=(B.total-spent+tdS)/dl-tdS;
@@ -2263,7 +2265,7 @@ function applyRec(){
  R.forEach(r=>{let[y,m]=(r.last||prevM(cm)).split('-').map(Number);
   for(let k=0;k<24;k++){m++;if(m>12){m=1;y++}const mm=y+'-'+pad(m);if(mm>cm)break;
    const d=mm+'-'+pad(Math.min(r.day,new Date(y,m,0).getDate()));if(d>now)break;
-   D.push({id:nid(),amt:r.amt,method:r.method,cat:r.cat,note:r.name,date:d,rid:r.id});r.last=mm;ch=true}});
+   if(!manHit(r,mm))D.push({id:nid(),amt:r.amt,method:r.method,cat:r.cat,note:r.name,date:d,rid:r.id});r.last=mm;ch=true}});
  if(ch){save();saveC()}
 }
 applyRec();
