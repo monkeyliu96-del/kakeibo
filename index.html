@@ -1740,9 +1740,10 @@ document.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)r
 /* 本月已手动记过同分类、同金额、同备注(如 家賃)时,视为已付:不再预留,到期也不再自动重复记 */
 const manHit=(r,mm)=>D.some(x=>!x.rid&&x.date.startsWith(mm)&&x.cat===r.cat&&x.amt===r.amt&&(x.note||'').trim()===(r.name||'').trim());
 function upFix(m){if(m!==today().slice(0,7))return {amt:0,txt:''};const xs=R.filter(r=>(r.last||'')<m&&r.cat!==PX_CAT&&r.cat!==INV_CAT&&!manHit(r,m));return {amt:xs.reduce((q,r)=>q+r.amt,0),txt:xs.map(r=>r.name+' '+yen(r.amt)).join('、')}}
+/* 今天能花多少:房租等固定支出不算「今天的消费」,否则付房租那天永远显示超支 */
 function todayBud(){if(!(B.total>0))return '';
  const td=today(),m=td.slice(0,7),[y,mo,d]=td.split('-').map(Number),dl=new Date(y,mo,0).getDate()-d+1;
- const spent=sum(D.filter(x=>x.date.startsWith(m)&&own(x)))+upFix(m).amt,tdS=sum(D.filter(x=>x.date===td&&own(x))),rest=B.total-spent,left=(B.total-spent+tdS)/dl-tdS;
+ const spent=sum(D.filter(x=>x.date.startsWith(m)&&own(x)))+upFix(m).amt,tdS=sum(D.filter(x=>x.date===td&&own(x)&&!isFix(x)&&!R.some(r=>x.cat===r.cat&&x.amt===r.amt&&(x.note||'').trim()===(r.name||'').trim()))),rest=B.total-spent,left=(B.total-spent+tdS)/dl-tdS;
  if(rest<0)return `<div class="tbud">本月已超出预算 <b class="over">${yen(-rest)}</b></div>`;
  return `<div class="tbud">本月预算还剩 ${yen(rest)} · ${left>=0?`今天还能花 <b>${yen(left)}</b>`:`今天已超 <b class="over">${yen(-left)}</b>`}</div>`}
 const CCOL=['--pp','--c5','--cd','--cr','--c6','--cs','--c8','--c7'];
