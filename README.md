@@ -1,5 +1,24 @@
 # 记账本 kakeibo
 
+## 开发
+
+```
+npm install
+npm run dev        # 本地开发(热更新)
+npm run build      # 类型检查 + 构建到 dist/
+npm run preview    # 预览构建结果
+```
+
+代码结构(重构进行中,逐步从 `src/app.ts` 里拆出模块):
+
+| 路径 | 内容 |
+|---|---|
+| `src/main.ts` | 入口 |
+| `src/styles.css` | 全部样式 |
+| `src/i18n/translate.ts` | 中 / 英 / 日 翻译词典和翻译引擎 |
+| `src/app.ts` | 其余应用代码(待拆分,暂时不做类型检查) |
+| `public/` | `sw.js`、manifest、图标,原样复制到发布目录 |
+
 ## 程序分布
 
 | 部分 | 在哪里 | 作用 |

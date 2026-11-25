@@ -1,0 +1,1477 @@
+// @ts-nocheck  (逐步迁移:拆分完成的模块会移出这个文件并加上类型)
+import {LG,ZH2EN,ZH2JA,trs,bindUI} from './i18n/translate';
+const FRESH=(()=>{try{return !localStorage.getItem('kakeibo.v1')&&!localStorage.getItem('kakeibo.cfg.v1')}catch(e){return true}})();
+const HK='kakeibo.hint.v1';
+const hintOn=()=>{try{return !localStorage.getItem(HK)}catch(e){return false}};
+const K='kakeibo.v1';
+let D=[];
+try{D=JSON.parse(localStorage.getItem(K)||'[]')}catch(e){D=[]}
+const save=()=>{try{localStorage.setItem(K,JSON.stringify(D))}catch(e){toast('保存失败:浏览器禁止了本地存储')}dirty()};
+const CATS=['餐饮','日用品','交通','购物','娱乐','居住','医疗','其他'];
+const BASE=CATS.slice();
+const KW={
+ '餐饮':/餐|饭|飯|厨|食|料理|焼肉|寿司|すし|うどん|そば|カレー|バーガー|ピザ|中華|定食|デリ|コープ|ソムオー|レストラン|キッチン|[ヘへ]ジャンク|五右衛門|セブン|ローソン|ファミリーマート|ファミマ|マクド|マック|吉野家|すき家|スキヤ|松屋|サイゼリヤ|ガスト|コメダ|ドトール|スタバ|スターバックス|カフェ|ラーメン|食堂|居酒屋|弁当|パン|ベーカリー|丼|とんかつ|かつや|唐揚|からあげ|餃子|ぎょうざ|鳥貴族|焼鳥|やきとり|ホルモン|しゃぶ|お好み|たこ焼|鉄板|ステーキ|グリル|ビストロ|トラットリア|ダイニング|酒場|ビアホール|珈琲|喫茶|COFFEE|CAFE|CAFFE|BAKERY|DINING|KITCHEN|RESTAURANT|BURGER|PIZZA|SUSHI|RAMEN|マクドナルド|モスバーガー|ケンタッキー|KFC|ロッテリア|フレッシュネス|バーガーキング|サブウェイ|SUBWAY|ミスタードーナツ|ミスド|クリスピー|サーティワン|ゴンチャ|タリーズ|TULLY|エクセルシオール|ベローチェ|星乃珈琲|プロント|ルノアール|なか卯|はなまる|丸亀|天下一品|一蘭|一風堂|日高屋|幸楽苑|リンガーハット|大戸屋|やよい軒|てんや|松のや|CoCo壱|ココイチ|ココス|ジョナサン|バーミヤン|夢庵|デニーズ|ロイヤルホスト|びっくりドンキー|いきなり!?ステーキ|スシロー|くら寿司|はま寿司|かっぱ寿司|王将|ほっともっと|オリジン弁当|ミニストップ|デイリーヤマザキ|NEWDAYS|ニューデイズ|セイコーマート|成城石井|まいばすけっと|ウーバーイーツ|UBER ?EATS|出前館|Wolt|フードコート|ドミノ|ピザーラ|ピザハット|銀だこ|ペッパーランチ|牛角|温野菜|焼肉ライク|叙々苑|磯丸|塚田農場|魚民|白木屋|笑笑|和民|串カツ|海鮮|ビュッフェ|バイキング/i,
+ '日用品':/ドン・?キ|MEGAドン|ダイソー|ドラッグ|マツモトキヨシ|マツキヨ|ウエルシア|ニトリ|セリア|スーパー/,
+ '交通':/JR|Suica|京成|スカイライナ|スイカ|PASMO|ICOCA|メトロ|電車|駅|新幹線|バス|タクシー|TAXI|UBER(?! ?EATS)|DIDI|GO タクシー|ガソリン|ENEOS|出光|コスモ石油|\bETC\b|高速|交通|航空|\bANA\b|\bJAL\b|PEACH|ジェットスター|ZIPAIR|AIRLINE|AIRWAYS/i,
+ '购物':/Yahoo|Amazon|アマゾン|楽天(?!モバイル)|ユニクロ|ZOZO|ヨドバシ|ビックカメラ|OLIVE ?YOUNG/i,
+ '娱乐':/歌広場|映画|ゲーム|Netflix|Spotify|カラオケ|APPLE COM BILL|ICLOUD/i,
+ '居住':/家賃|電気|ガス|水道|NTT|ドコモ|ソフトバンク|楽天モバイル/,
+ '医疗':/病院|クリニック|薬局|歯科/,
+ /* 下面两个是自定义分类,只有你建了同名分类才会用到 */
+ '学习':/英会話|イングリ|ゴガツコウ|語学|語学校|HELLOTALK|UDEMY|DUOLINGO|スクール/i,
+ '旅游':/AGODA|アゴダ|TRIP\.COM|BOOKING\.COM|EXPEDIA|ホテル|HOTEL|旅館|\bOTA\b|空港|クウコウ|利用国(?!JPN)|GRAB|SOUVENIR/i};
+const isFix=x=>!!(x&&(x.rid||x.fix));
+const fixOf=s=>{s=(s||'').normalize('NFKC').trim();if(!s)return false;const h=D.slice().sort((p,q)=>q.id-p.id).find(x=>x.note===s);return !!(h&&h.fix)};
+/* 买加密货币、往证券账户入金 = 投资,不算消费 */
+const INV_CAT='投资',INVRE=/バイナンス|BINANCE|ビットフライヤー|BITFLYER|コインチェック|COINCHECK|GMOコイン|ビットバンク|BITBANK|SBI ?VC|楽天証券|SBI証券|PAYPAY証券|マネックス証券|松井証券|MOOMOO/i;
+const guess=s=>{s=(s||'').normalize('NFKC').trim();if(!s)return null;if(INVRE.test(s))return INV_CAT;const h=D.slice().sort((p,q)=>q.id-p.id).find(x=>x.note&&x.cat!=='其他'&&(x.note===s||(s.length>=2&&(x.note.includes(s)||s.includes(x.note)))));if(h)return h.cat;const s2=s.replace(/[・･\s\-－]/g,'');for(const c in KW)if((KW[c].test(s)||KW[c].test(s2))&&CATS.includes(c))return c;return null};
+const DEF_PM=[['paypay','PayPay','--pp'],['card','PayPay卡','--cd'],['rakuten','乐天卡','--cr'],['cash','现金','--cs']];
+const PMCOL=['--pp','--cd','--cr','--cs','--c5','--c6','--c7','--c8'];
+let PM=null;
+const pmSrc=()=>(PM&&PM.length?PM:DEF_PM);
+const MT=[];
+function applyPM(){MT.length=0;MT.push(...pmSrc().map(m=>[m[0],esc(m[1]),m[2]]))}
+const vm=k=>MT.some(m=>m[0]===k)?k:MT[0][0];
+const mname=k=>(MT.find(m=>m[0]===k)||[k,esc(k),'--mu'])[1];
+const mnr=k=>(pmSrc().find(m=>m[0]===k)||[k,k])[1];
+const mcol=k=>(MT.find(m=>m[0]===k)||[k,k,'--mu'])[2];
+let REV=false;
+const nf=n=>{if(UI.hide&&!REV)return '•••••';n=Math.round(n);if(UI.wan&&Math.abs(n)>=10000)return (Math.round(n/1000)/10).toString()+'万';return n.toLocaleString('ja-JP')};
+const yen=n=>'¥'+nf(n);
+const esc=s=>{s=String(s);const r=s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));return (ZH2EN[s]!==undefined||ZH2JA[s]!==undefined)?r:'\uE000'+r+'\uE001'};
+let i18nBusy=false;
+function i18nRun(){
+ if(i18nBusy)return;i18nBusy=true;if(i18nObs)i18nObs.disconnect();
+ try{
+  const lgc=typeof UI!=='undefined'?LG():'zh',en=lgc!=='zh';
+  ['band','app','toast','sheet'].forEach(id=>{const r=document.getElementById(id);if(!r)return;
+   const tw=document.createTreeWalker(r,4);let n;const L=[];while(n=tw.nextNode())L.push(n);
+   L.forEach(n=>{const v=n.nodeValue;if(/[　-〿一-鿿＀-￯]/.test(v)){const o=trs(v);if(o!==v)n.nodeValue=o}});
+   r.querySelectorAll('*').forEach(el=>{for(const a of Array.from(el.attributes)){const v=a.value;if(v.indexOf('')>=0||(en&&(a.name==='placeholder'||a.name==='aria-label'||a.name==='title')&&/[　-〿一-鿿＀-￯]/.test(v))){const o=trs(v);if(o!==v)el.setAttribute(a.name,o)}}})});
+  document.querySelectorAll('nav a').forEach(a=>{const n=a.lastChild;if(!n||n.nodeType!==3)return;if(!a.dataset.z)a.dataset.z=n.nodeValue.trim();const o=en?((lgc==='ja'?ZH2JA:ZH2EN)[a.dataset.z]||a.dataset.z):a.dataset.z;if(n.nodeValue!==o)n.nodeValue=o});
+  document.title=lgc==='en'?'Kakeibo':lgc==='ja'?'家計簿':'记账本';document.documentElement.lang=lgc;
+ }catch(e){}
+ i18nBusy=false;if(i18nObs)i18nStart();
+}
+let i18nObs=null;
+function i18nStart(){if(!i18nObs)return;['band','app','toast','sheet'].forEach(id=>{const r=document.getElementById(id);if(r)i18nObs.observe(r,{childList:true,subtree:true,characterData:true})})}
+if(typeof MutationObserver!=='undefined'){i18nObs=new MutationObserver(()=>i18nRun());}
+
+const pad=n=>String(n).padStart(2,'0');
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
+let ym=today().slice(0,7);
+let F={method:'paypay',cat:'餐饮',manual:false,type:'out'},PF=null,EI=null,RC=[],DK='',OPEN={},T5='single',OUI=false,ECAT=false,EPM=false;
+const homeV=()=>(typeof UI!=='undefined'&&UI.home&&UI.home!=='add'&&UI.home)||'list';
+const hv=()=>(location.hash||'#'+homeV()).split('?')[0];
+let pending=null,E=null;
+const $=id=>document.getElementById(id);
+document.addEventListener('toggle',e=>{if(e.target&&e.target.id==='rsd')RSO=e.target.open},true);
+(()=>{const fix=()=>{try{window.scrollTo(0,0);document.documentElement.scrollTop=0;document.body.scrollTop=0;const b=document.body;b.style.height='99.9%';void b.offsetHeight;b.style.height=''}catch(e){}};
+const isF=a=>a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&!['button','checkbox','radio','file','date'].includes(a.type);
+const sbh=window.__sbhF=()=>{const b=$('save');if(!b)return 0;return Math.round(b.offsetHeight+(parseFloat(getComputedStyle(b).marginTop)||0))};
+const kbAdj=window.kbAdj=()=>{const sc=$('sc'),vv=window.visualViewport,a=document.activeElement,de=document.documentElement;if(!sc)return;
+ const sk=vv?Math.max(0,window.innerHeight-vv.height):0;if(sk>80&&Math.abs(sk-(window.__sk||0))>2){window.__sk=sk;try{localStorage.setItem('kakeibo.sk',String(Math.round(sk)))}catch(_){}}const kp=window.__kp||0,nav=document.querySelector('nav'),nh=nav?window.innerHeight-nav.getBoundingClientRect().top:0;
+ const kb=Math.max(0,(kp||sk)-nh);
+ /* 打字时收起支付方式/分类区(只在输备注这类字段时;如果正在输新分类、新支付方式,它们就在这些区里,不能收) */
+ document.body.classList.toggle('tko',!kp&&sk>80&&isF(a)&&!a.hasAttribute('data-calc')&&!(a.closest&&a.closest('.sec')));
+ /* 弹出面板(记一笔)里:给面板底部留出键盘高度,输入框滚到键盘上方,下面的输入框也点得到(留白不立刻收回,免得点的瞬间内容跳动点偏) */
+ if(!kp&&!(isF(a)&&!a.hasAttribute('data-calc'))&&Date.now()>(window.__kphT||0))document.body.classList.remove('kph');
+ const shb=$('shb');if(shb){if(isF(a)&&shb.contains(a)&&(kp||sk>80)){if(!kp){const np=sk+16-sbh(),op=parseFloat(shb.style.paddingBottom)||0;if(Math.abs(np-op)>30)shb.style.paddingBottom=np+'px'}const vis=kp?window.innerHeight-kp:vv.height,r=a.getBoundingClientRect(),pb=parseFloat(getComputedStyle(shb).paddingBottom)||0,fit=shb.scrollHeight-pb+16<=vis-shb.getBoundingClientRect().top;if(fit){shb.scrollTop=0}else if(r.top<60||r.bottom>vis-16)shb.scrollTop+=r.top+r.height/2-vis*0.42}else if(shb.style.paddingBottom&&Date.now()>(window.__kphT||0)&&!(isF(a)&&shb.contains(a))){shb.style.paddingBottom='';shb.scrollTop=Math.min(shb.scrollTop,Math.max(0,shb.scrollHeight-shb.clientHeight))}}
+ if(!(isF(a)&&sc.contains(a)&&(kp||sk>80))){sc.style.paddingBottom='';de.style.removeProperty('--kbh');return}
+ sc.style.paddingBottom=(kb+24)+'px';de.style.setProperty('--kbh',kb+'px');if(!kp)fix();
+ const vis=kp?window.innerHeight-kp:vv.height,r=a.getBoundingClientRect();if(r.top<70||r.bottom>vis-16)sc.scrollTop+=r.top+r.height/2-vis*0.42};
+document.addEventListener('focusin',e=>{const t=e.target;if(isF(t)){if(!t.hasAttribute('data-calc')&&!/^(numeric|decimal|none)$/.test(t.getAttribute('inputmode')||'')&&!(t.closest&&t.closest('.sec'))){document.body.classList.add('kph');const b=$('shb');if(b&&b.contains(t)&&!window.__kp)b.style.paddingBottom=((window.__sk||+(function(){try{return localStorage.getItem('kakeibo.sk')}catch(_){return 0}})()||366)+16-sbh())+'px'}setTimeout(kbAdj,350);setTimeout(kbAdj,700)}});
+document.addEventListener('focusout',()=>{setTimeout(fix,120);setTimeout(fix,500);setTimeout(kbAdj,150)});
+window.addEventListener('pageshow',fix);window.addEventListener('orientationchange',()=>setTimeout(fix,300));
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(fix,100)});
+if(window.visualViewport)visualViewport.addEventListener('resize',()=>setTimeout(()=>{fix();kbAdj()},100))})();
+const inHS=el=>{for(;el&&el.id!=='sc';el=el.parentElement){if(el.scrollWidth>el.clientWidth+2&&/auto|scroll/.test(getComputedStyle(el).overflowX))return true}return false};
+document.addEventListener('touchmove',e=>{const s=$('sc'),t=e.target;if(t.closest&&t.closest('textarea,select,.cpg,.rcs,[style*="overflow-y"]'))return;{const b=$('shb');if(b&&b.contains(t)&&b.scrollHeight>b.clientHeight)return}if(inHS(t))return;if(s&&s.contains(t)&&s.scrollHeight>s.clientHeight)return;if(e.cancelable)e.preventDefault()},{passive:false});
+document.addEventListener('touchstart',e=>{const m=[$('shb'),$('sc')].find(x=>x&&x.contains(e.target));if(!m)return;if(m.scrollHeight<=m.clientHeight)return;if(m.scrollTop<=0)m.scrollTop=1;else if(m.scrollTop+m.clientHeight>=m.scrollHeight)m.scrollTop=m.scrollHeight-m.clientHeight-1},{passive:true});
+let UNDO=null,TMR=0;
+function toast(t,undo){const e=$('toast');clearTimeout(TMR);e.textContent=t;UNDO=undo||null;e.classList.toggle('act',!!undo);if(undo){const b=document.createElement('button');b.id='undo';b.textContent='撤销';e.appendChild(b)}e.classList.add('on');TMR=setTimeout(()=>{e.classList.remove('on','act');UNDO=null},undo?5000:1800)}
+function shift(n){Q.d='';const[y,m]=ym.split('-').map(Number);const d=new Date(y,m-1+n,1);ym=d.getFullYear()+'-'+pad(d.getMonth()+1);render()}
+const monthData=()=>D.filter(x=>x.date.startsWith(ym));
+/* ===== 转账对象:代购(px)不算自己的收支;AA(aa)的回款冲抵消费 =====
+   代购:帮朋友买的东西分类记「代购」,不算消费;朋友打来的钱记为「代购回款」,不算收入;每月单独显示代购收益 = 回款 − 垫付。
+   AA:朋友还我的钱记成负数支出(默认餐饮),直接冲抵消费;我转给朋友的记成支出。 */
+const PX_CAT='代购',own=x=>x.cat!==PX_CAT&&x.cat!==INV_CAT,ownI=x=>!x.px;
+const pkey=n=>String(n||'').normalize('NFKC').replace(/\s+/g,'').toLowerCase();
+const pplOf=n=>{const P=(typeof UI!=='undefined'&&UI.ppl)||{},k=pkey(n);if(!k)return '';for(const nm in P){const q=pkey(nm);if(q&&(k===q||k.startsWith(q)))return P[nm]}return ''};
+/* 按转账对象整理已有记录(设置变了之后调用) */
+function applyPpl(){let ch=0;
+ A.inc=A.inc.filter(x=>{const t=pplOf(x.note);
+  if(t==='aa'&&x.ref&&/^(pp|pi):/.test(x.ref)){if(!D.some(z=>z.ref===x.ref))D.push({id:nid(),amt:-x.amt,method:vm('paypay'),cat:'餐饮',note:x.note,date:x.date,ref:x.ref,aa:1});ch++;return false}
+  if(t==='px'&&!x.px){x.px=1;ch++}
+  if(t!=='px'&&x.px){delete x.px;ch++}
+  return true});
+ D.forEach(x=>{if(x.amt>0&&x.cat==='其他'&&x.ref&&/^pp:/.test(x.ref)&&pplOf(x.note)==='aa'){x.cat='餐饮';ch++}});
+ D=D.filter(x=>{if(x.aa&&x.amt<0&&pplOf(x.note)!=='aa'){A.inc.push({id:nid(),amt:-x.amt,note:x.note,date:x.date,ref:x.ref,...(pplOf(x.note)==='px'?{px:1}:{})});ch++;return false}return true});
+ if(ch){save();saveA()}return ch}
+function head(){return ''}
+const yq=o=>{if(SY&&hv()==='#stats'){const y=+ym.slice(0,4);o.r=[(y-1)+'-12-31',y+'-12-31'];o.rl=y+'年全年'}return o};
+const inR=x=>x.date>Q.r[0]&&x.date<=Q.r[1];
+function filt(){const q=Q.t.trim().toLowerCase();return (Q.pt?D.filter(x=>x.ptu):Q.r?D.filter(inR):monthData()).filter(x=>(!Q.d||x.date===Q.d)&&(!Q.f||(Q.f==='fix')===isFix(x))&&(!Q.c||x.cat===Q.c)&&(!Q.m||x.method===Q.m)&&(!Q.cr||isCredit(x.method))&&(!q||(x.note||'').toLowerCase().includes(q)||x.cat.includes(q)))}
+function listItems(){
+ const q=Q.t.trim().toLowerCase();
+ const ex=Q.k==='in'?[]:filt().map(x=>({...x,key:x.id}));
+ const inc=(Q.c||Q.m||Q.f||Q.pt||Q.k==='out')?[]:A.inc.filter(x=>(Q.r?inR(x):x.date.startsWith(ym))&&(!Q.d||x.date===Q.d)&&(!q||(x.note||'').toLowerCase().includes(q)||'收入'.includes(q))).map(x=>({...x,inc:true,key:'i'+x.id}));
+ return [...ex,...inc].sort((p,q)=>q.date.localeCompare(p.date)||q.id-p.id);
+}
+let SEL={on:false,ids:[],cf:false},clrc=false;
+function selBar(a){
+ if(!SEL.on)return '';
+ const n=SEL.ids.length,all=a.length&&n===a.length;
+ return `<div class="srch" style="gap:6px"><button class="go alt" style="margin:0;flex:1;padding:8px 6px;font-size:14px" data-s="all">${all?'取消全选':'全选 ('+a.length+')'}</button><button class="go" style="margin:0;flex:1;padding:8px 6px;font-size:14px;background:var(--pp);color:#fff${n?'':';opacity:.45'}" data-s="del"${n?'':' disabled'}>${SEL.cf?'确认删除 '+n+' 笔':'删除所选 '+n}</button><button class="go alt" style="margin:0;flex:0 0 auto;width:auto;padding:8px 16px;font-size:14px" data-s="off">完成</button></div>${(()=>{const xs=SEL.ids.map(k=>D.find(x=>x.id===k)).filter(x=>x&&!x.rid);if(!xs.length)return '';const on=xs.every(x=>x.fix),sel='margin:0;flex:1;min-width:0;padding:8px 10px;font-size:14px';
+  return `<div style="display:flex;gap:6px;margin:6px 0 0"><select class="f" data-sbc="1" style="${sel}" aria-label="改分类"><option value="">改分类(${xs.length} 笔)</option>${CATS.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')}</select><select class="f" data-sbm="1" style="${sel}" aria-label="改支付方式"><option value="">改支付方式</option>${MT.map(m=>`<option value="${m[0]}">${m[1]}</option>`).join('')}</select></div><button class="go alt" style="margin:6px 0 4px;padding:8px 6px;font-size:14px" data-s="fix">${on?'取消固定支出标签('+xs.length+' 笔)':'标为固定支出('+xs.length+' 笔)'}</button>`})()}`;
+}
+function listSplit(){const h=listBody(),i=h.indexOf('<!--S-->');return [h.slice(0,i),h.slice(i+8)]}
+function updList(){const r=listSplit();$('lsum').innerHTML=r[0];$('lst').innerHTML=r[1]}
+function listBody(){
+ const L=listItems(),a=L.filter(x=>!x.inc);
+ const ia=L.filter(x=>x.inc),fl=Q.t||Q.c||Q.m||Q.k||Q.d||Q.f||Q.r||Q.cr||Q.pt,all=sum(monthData().filter(own)),tot=sum((Q.c&&!own({cat:Q.c}))||Q.pt?a:a.filter(own));
+ SEL.ids=SEL.ids.filter(k=>L.some(x=>x.key===k));
+ const msb=L.length&&!SEL.on?`<button class="lk" data-s="on" style="float:right;font-size:13px;padding:0">多选</button>`:'';
+ let h='<div class="lsum">'+(Q.k==='in'?`<p class="big" style="color:var(--in)"><small>+¥</small>${nf(sum(ia))}</p><p class="sub">${msb}${Q.t?'筛选结果':'本月收入'},共 ${ia.length} 笔</p>`:`<p class="big"><small>¥</small>${nf(tot)}</p><p class="sub">${msb}${fl?'筛选结果':'本月支出'},共 ${a.length} 笔${Q.pt?(()=>{const c0=prevM(today().slice(0,7))+'-01',n=D.filter(x=>x.ptu&&x.date<c0).length;return n?`<br><button class="lk" data-ptold="1" style="font-size:13px;padding:0;margin-top:4px">${+c0.slice(5,7)}月之前的 ${n} 笔不处理了(按原价算)</button>`:''})():''}${!fl&&inM(ym)?' · 收入 '+yen(inM(ym))+' · 结余 '+sgn(inM(ym)-all):''}</p>`);
+ if(!fl&&B.total>0){const uf=upFix(ym),al=all+uf.amt;h+=`<div class="pg"><i style="width:${Math.min(100,all/B.total*100)}%;background:var(${al>B.total?'--pp':'--ac'})"></i>${uf.amt?`<i style="width:${Math.max(0,Math.min(100-all/B.total*100,uf.amt/B.total*100))}%;background:var(--ac);opacity:.35"></i>`:''}</div><p class="sub">预算 ${yen(B.total)} · ${al>B.total?'已超出 '+yen(al-B.total):'剩余 '+yen(B.total-al)}${uf.amt?' · 已预留 '+esc(uf.txt):''}</p>`}
+ /* 分类预算:平时只提醒快用完(≥80%)或已超的;按分类筛选时显示这个分类的预算 */
+ const mcs=c=>sum(monthData().filter(x=>x.cat===c));
+ if(!fl){const wn=Object.keys(B.cats).map(c=>[c,mcs(c),B.cats[c]]).filter(([c,u,l])=>l>0&&u>=l*.8).sort((p,q)=>q[1]/q[2]-p[1]/p[2]);
+  if(wn.length)h+=`<p class="sub" style="margin:2px 0 0">${wn.map(([c,u,l])=>u>l?`<b style="color:var(--pp)">${esc(c)}已超 ${yen(u-l)}</b>`:`<b style="color:var(--tx)">${esc(c)}已用 ${Math.round(u/l*100)}%</b>`).join(' · ')}</p>`}
+ if(Q.c&&B.cats[Q.c]&&!Q.r&&Q.k!=='in'){const u=mcs(Q.c),l=B.cats[Q.c];
+  h+=`<div class="pg"><i style="width:${Math.min(100,u/l*100)}%;background:var(${u>l?'--pp':'--ac'})"></i></div><p class="sub">${esc(Q.c)}预算 ${yen(l)} · ${u>l?'已超出 '+yen(u-l):'剩余 '+yen(l-u)}</p>`}
+ h+='</div><!--S-->';
+ h+=selBar(L);
+ if(!L.length)return h+`<div class="empty">${fl?'没有符合条件的记录。':'这个月还没有记录。<br><a href="#add">记第一笔</a>'}</div>`;
+ const g={};L.forEach(x=>(g[x.date]=g[x.date]||[]).push(x));
+ for(const d of Object.keys(g)){
+  const dt=new Date(d+'T00:00:00'),wd='日一二三四五六'[dt.getDay()],ei=sum(g[d].filter(x=>x.inc)),eo=sum(g[d].filter(x=>!x.inc&&(own(x)||(Q.c&&!own({cat:Q.c}))||Q.pt)));
+  h+=`<div class="day"><span>${+d.slice(5,7)}月${+d.slice(8)}日 周${wd}</span><span>${eo?yen(eo):''}${eo&&ei?' · ':''}${ei?'收入 +'+yen(ei):''}</span></div><div class="box">`;
+  g[d].forEach(x=>{
+   const inf=x.inc?`<i class="dot" style="background:var(--in)"></i><div class="rm"><div>${esc(x.note||'收入')}</div><span>${x.px?'代购回款(不算收入)':'收入'}</span></div><div class="amt" style="color:var(--in)">+${yen(x.amt)}</div>`:`<i class="dot" style="background:var(${mcol(x.method)})"></i><div class="rm"><div>${esc(x.note||x.cat)}</div><span>${esc(x.cat)} · ${mname(x.method)}${isFix(x)?' · 固定':''}${x.amt<0?' · 还款':''}${x.pt?' · 原价 '+yen(x.amt+x.pt)+'(积分抵 '+yen(x.pt)+')':x.ptu?' · 含积分':''}${reconTag(x)}${x.bm?' · 算'+(+x.bm.slice(5))+'月账单':''}${own(x)?'':' · 不计入支出'}</span></div><div class="amt"${x.amt<0?' style="color:var(--in)"':own(x)?'':' style="color:var(--mu);font-weight:500"'}>${x.amt<0?'−'+yen(-x.amt):yen(x.amt)}</div>`;
+   const btn=x.inc?`<button class="del" data-iedit="${x.id}">编辑</button><button class="del${ip===x.id?' on':''}" data-idel="${x.id}">${ip===x.id?'确认删除':'删除'}</button>`:`<button class="del" data-edit="${x.id}">编辑</button><button class="del${pending===x.id?' on':''}" data-del="${x.id}">${pending===x.id?'确认删除':'删除'}</button>`;
+   h+=SEL.on?`<label class="row" style="cursor:pointer"><input type="checkbox" data-sel="${x.key}"${SEL.ids.includes(x.key)?' checked':''} style="width:22px;height:22px;flex:none;accent-color:var(--ac)" aria-label="选择">${inf}</label>`:`<div class="row">${inf}${btn}</div>`});
+  h+='</div>';
+ }
+ return h;
+}
+let LV='list',SRCH=false;
+/* 多选:批量改分类 / 支付方式 */
+document.addEventListener('change',e=>{const t=e.target;if(!t.dataset||!(t.dataset.sbc||t.dataset.sbm)||!t.value)return;
+ const xs=SEL.ids.map(k=>D.find(x=>x.id===k)).filter(x=>x&&!x.rid);if(!xs.length)return;const v=t.value;
+ xs.forEach(x=>{if(t.dataset.sbc)x.cat=v;else x.method=v});save();toast((t.dataset.sbc?'已改为「'+v+'」':'已改为 '+mnr(v))+' · '+xs.length+' 笔');SEL.cf=false;updList()});
+document.addEventListener('click',e=>{if(!e.target.closest('button[data-qcr]'))return;delete Q.cr;render()});
+document.addEventListener('click',e=>{if(!e.target.closest('button[data-ptold]'))return;const c0=prevM(today().slice(0,7))+'-01';let n=0;D.forEach(x=>{if(x.ptu&&x.date<c0){delete x.ptu;n++}});save();if(!D.some(x=>x.ptu))delete Q.pt;toast('已忽略 '+n+' 笔');render()});
+document.addEventListener('click',e=>{if(!e.target.closest('button[data-qpt]'))return;if(Q.pt)delete Q.pt;else{Q.pt=1;if(!D.some(x=>x.ptu))delete Q.pt}render()});
+document.addEventListener('click',e=>{const t=e.target.closest('button[data-srx]');if(!t)return;const on=SRCH||Q.t||Q.c||Q.m;if(on){SRCH=false;Q.t='';Q.c='';Q.m='';render()}else{SRCH=true;render();const i=$('qs');if(i)i.focus()}});
+function calHtml(){
+ const d0=Q.d;Q.d='';const base=Q.k==='in'?[]:filt();Q.d=d0;
+ const q=Q.t.trim().toLowerCase(),inc=(Q.c||Q.m||Q.k==='out'||Q.f)?[]:A.inc.filter(x=>x.date.startsWith(ym)&&(!q||(x.note||'').toLowerCase().includes(q)||'收入'.includes(q)));
+ const [y,m]=ym.split('-').map(Number),nd=new Date(y,m,0).getDate(),f0=new Date(y,m-1,1).getDay(),td=today();
+ const o={},n={};base.forEach(x=>o[x.date]=(o[x.date]||0)+x.amt);inc.forEach(x=>n[x.date]=(n[x.date]||0)+x.amt);
+ const cp=v=>v>=1000?(v/1000).toFixed(v>=10000?0:1).replace('.0','')+'k':String(Math.round(v));
+ const WK=LG()==='en'?['Su','Mo','Tu','We','Th','Fr','Sa']:LG()==='ja'?['日','月','火','水','木','金','土']:['日','一','二','三','四','五','六'];
+ let h='<div class="cal">'+WK.map(w=>`<div class="wk">${w}</div>`).join('')+'<i class="e"></i>'.repeat(f0);
+ for(let i=1;i<=nd;i++){const d=ym+'-'+pad(i),v=Q.k==='in'?n[d]:o[d];
+  h+=`<button data-cd="${d}" aria-pressed="${Q.d===d}" class="${d===td?'td':''}" aria-label="${m}/${i}">${Q.k!=='in'&&n[d]?'<em></em>':''}<b>${i}</b><small>${v?cp(v):''}</small></button>`}
+ return h+'</div>';
+}
+function listView(){
+ const o=(a,v)=>a.map(x=>`<option value="${x[0]}"${x[0]===v?' selected':''}>${x[1]}</option>`).join('');
+ const LB=listSplit();const srcs=[...new Set(A.inc.map(x=>(x.note||'').trim()).filter(Boolean))];
+ const shS=SRCH||Q.t||Q.c||Q.m;
+ return head()+`<div class="lhead">${!shS?'':Q.k==='in'?`<div class="srch"><label class="sq"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="qs" type="search" enterkeyhint="search" placeholder="搜索" value="${esc(Q.t)}" autocomplete="off"></label><span class="ss${srcs.includes(Q.t)?' on':''}"><select id="qsrc" aria-label="收入来源"><option value="">全部来源</option>${srcs.map(n=>`<option value="${esc(n)}"${Q.t===n?' selected':''}>${esc(n)}</option>`).join('')}</select></span></div>`:`<div class="srch"><label class="sq"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="qs" type="search" enterkeyhint="search" placeholder="搜索" value="${esc(Q.t)}" autocomplete="off"></label><button class="pill${Q.c?' on':''}" data-qpk="c" aria-label="分类">${Q.c?esc(Q.c):'分类'}</button><button class="pill${Q.m?' on':''}" data-qpk="m" aria-label="支付方式">${Q.m?esc(mname(Q.m)):'支付'}</button></div>`}<div class="chips" style="margin:8px 0 4px">${[['','全部'],['out','支出'],['in','收入']].map(c=>`<button class="chip" data-qk="${c[0]}" aria-pressed="${(Q.k||'')===c[0]}" style="padding:6px 14px;font-size:14px">${c[1]}</button>`).join('')}<button class="chip" data-srx="1" aria-pressed="${!!shS}" aria-label="搜索" style="padding:6px 11px;margin-left:auto;display:flex;align-items:center"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button><button class="chip" data-lv="${LV==='cal'?'list':'cal'}" aria-pressed="${LV==='cal'}" style="padding:6px 14px;font-size:14px">日历</button>${(()=>{const n=D.filter(x=>x.ptu).length;return Q.pt?`<button class="chip" data-qpt="1" aria-pressed="true" style="padding:6px 14px;font-size:14px">含积分 ×</button>`:n?`<button class="chip" data-qpt="1" aria-pressed="false" style="padding:6px 14px;font-size:14px">含积分 ${n}</button>`:''})()}${Q.cr?`<button class="chip" data-qcr="1" aria-pressed="true" style="padding:6px 14px;font-size:14px">信用卡 ×</button>`:''}${Q.f?`<button class="chip" data-qf="1" aria-pressed="true" style="padding:6px 14px;font-size:14px">${Q.f==='fix'?'固定':'变动'} ×</button>`:''}${Q.d&&LV!=='cal'?`<button class="chip" data-qd="1" aria-pressed="true" style="padding:6px 14px;font-size:14px">${+Q.d.slice(5,7)}月${+Q.d.slice(8)}日 ×</button>`:''}${Q.r?`<button class="chip" data-qr="1" aria-pressed="true" style="padding:6px 14px;font-size:14px">${Q.rl||(+Q.r[0].slice(5,7)+'/'+ +Q.r[0].slice(8)+' 之后')} ×</button>`:''}${(Q.t||Q.c||Q.m||Q.k||Q.cr||Q.pt)?`<button class="chip" data-qclear="1" style="padding:6px 14px;font-size:14px">清除筛选</button>`:''}</div><div id="lsum">${LB[0]}</div></div><!--H-->${LV==='cal'?calHtml():''}<div id="lst">${LB[1]}</div>`;
+}
+function recentNotes(inn){
+ const src=(inn?A.inc:D).slice().sort((p,q)=>q.date.localeCompare(p.date)||q.id-p.id),seen=new Set(),out=[];
+ for(const x of src){const n=(x.note||'').trim();if(!n||seen.has(n))continue;seen.add(n);out.push(inn?{note:n,amt:x.amt}:{note:n,cat:x.cat,method:x.method});if(out.length>=5)break}
+ RC=out;return out;
+}
+function pplPage(){const P=UI.ppl||{},T={px:'代购',aa:'AA 吃饭'};
+ return `<div class='box'><p class='sub' style='margin:0'><b>代购</b>:帮他买的东西分类选「代购」,不算你的消费;他转给你的钱记为「代购回款」,不算收入。统计页显示每月代购收益(回款 − 垫付)。<br><b>AA 吃饭</b>:他还你的钱直接冲抵你的餐饮消费;你转给他的记成餐饮支出。<br>名字填 PayPay 上显示的名字。</p></div>`
+ +`<div class='box' style='padding:2px 16px'>${Object.keys(P).map(n=>`<div class='row'><div class='rm'><div>${esc(n)}</div><span>${T[P[n]]||''}</span></div><button class='lk' data-pplt='${esc(n)}' style='font-size:14px'>改为${P[n]==='px'?'AA 吃饭':'代购'}</button><button class='lk' data-ppld='${esc(n)}' style='font-size:14px;color:var(--pp)'>删除</button></div>`).join('')||`<p class='sub' style='margin:12px 0'>还没有设置。</p>`}</div>`
+ +`<div class='box'><input id='ppln' class='f' placeholder='PayPay 上的名字,比如 LucasW' autocomplete='off'><div class='btns' style='margin-top:8px'><button class='go alt' data-ppla='px'>加为代购</button><button class='go alt' data-ppla='aa'>加为 AA 吃饭</button></div></div>`}
+document.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)return;
+ const done=msg=>{if(Object.values(UI.ppl||{}).includes('px')&&!CATS.includes(PX_CAT)){CC.push(PX_CAT);applyCats()}saveC();const k=applyPpl();toast(msg+(k?',整理了 '+k+' 笔以前的记录':''));render()};
+ if(t.dataset.ppla){const n=($('ppln').value||'').trim();if(!n){toast('请填写名字');return}UI.ppl=Object.assign({},UI.ppl,{[n]:t.dataset.ppla});done('已添加 '+n);return}
+ if(t.dataset.pplt){const n=t.dataset.pplt;UI.ppl=Object.assign({},UI.ppl,{[n]:UI.ppl[n]==='px'?'aa':'px'});done('已修改 '+n);return}
+ if(t.dataset.ppld){const n=t.dataset.ppld,o=Object.assign({},UI.ppl);delete o[n];UI.ppl=o;done('已删除 '+n);return}});
+/* 本月还没到扣款日的固定支出(房租等):预算里先预留 */
+/* 本月已手动记过同分类、同金额、同备注(如 家賃)时,视为已付:不再预留,到期也不再自动重复记 */
+const manHit=(r,mm)=>D.some(x=>!x.rid&&x.date.startsWith(mm)&&x.cat===r.cat&&x.amt===r.amt&&(x.note||'').trim()===(r.name||'').trim());
+function upFix(m){if(m!==today().slice(0,7))return {amt:0,txt:''};const xs=R.filter(r=>(r.last||'')<m&&r.cat!==PX_CAT&&r.cat!==INV_CAT&&!manHit(r,m));return {amt:xs.reduce((q,r)=>q+r.amt,0),txt:xs.map(r=>r.name+' '+yen(r.amt)).join('、')}}
+/* 今天能花多少:房租等固定支出不算「今天的消费」,否则付房租那天永远显示超支 */
+function todayBud(){if(!(B.total>0))return '';
+ const td=today(),m=td.slice(0,7),[y,mo,d]=td.split('-').map(Number),dl=new Date(y,mo,0).getDate()-d+1;
+ const spent=sum(D.filter(x=>x.date.startsWith(m)&&own(x)))+upFix(m).amt,tdS=sum(D.filter(x=>x.date===td&&own(x)&&!isFix(x)&&!R.some(r=>x.cat===r.cat&&x.amt===r.amt&&(x.note||'').trim()===(r.name||'').trim()))),rest=B.total-spent,left=(B.total-spent+tdS)/dl-tdS;
+ if(rest<0)return `<div class="tbud">本月已超出预算 <b class="over">${yen(-rest)}</b></div>`;
+ return `<div class="tbud">本月预算还剩 ${yen(rest)} · ${left>=0?`今天还能花 <b>${yen(left)}</b>`:`今天已超 <b class="over">${yen(-left)}</b>`}</div>`}
+const CCOL=['--pp','--c5','--cd','--cr','--c6','--cs','--c8','--c7'];
+var PXD=false,CXD=false,LASTK='';const pmNm=k=>((MT.find(m=>m[0]===k)||[])[1])||'';
+function addView(){
+ if(((typeof E!=='undefined'&&E)||(typeof EI!=='undefined'&&EI)||'new')!==LASTK){LASTK=(E||EI||'new');PXD=false;CXD=false}
+ const e=E?D.find(x=>x.id===E):null,ei=EI?A.inc.find(x=>x.id===EI):null,cur=e||ei,inn=F.type==='in',pf=cur?null:PF;
+ const av=cur?Math.abs(cur.amt):(pf&&pf.amt)||'',nv=cur?(cur.note||''):(pf&&pf.note)||'',dv=cur?cur.date:today(),rc=recentNotes(inn);
+if(!MT.some(m=>m[0]===F.method))F.method=MT[0][0];
+ const hint=(!cur&&hintOn()&&!D.length&&!A.inc.length)?`<div class="box" style="margin:12px 0 24px"><h2>欢迎使用记账本</h2><p class="sub" style="margin:6px 0">点右上角头像登录账号后,记录会自动同步到云端,换手机也能找回。不登录的话,记录只保存在这台手机上。</p><p class="sub" style="margin:6px 0 10px">用 Safari 打开后,点「分享 → 添加到主屏幕」,就能像 App 一样使用。</p><button class="go" data-hint="1" style="margin:0;padding:11px">知道了</button></div>`:'';
+ const bg=bkGet(),bkb=(!cur&&!hint&&bkDue()&&!(typeof SESS!=='undefined'&&SESS))?`<div class="box" style="margin:12px 0 24px"><h2>该备份了</h2><p class="sub" style="margin:6px 0 10px">${bg.last?'上次备份是 '+bg.last+'(已过 '+dayDiff(bg.last,today())+' 天)。':'你还没有备份过数据。'}没登录账号时,数据只保存在这台手机上,建议备份一份,或者点右上角头像登录,自动同步到云端。</p><div style="display:flex;gap:8px"><button class="go" data-bkn="1" style="margin:0;padding:10px;flex:1">立即备份</button><button class="go alt" data-bkl="1" style="margin:0;padding:10px;flex:1">稍后提醒</button></div></div>`:'';
+ return hint+bkb+`<div class="addv">
+ ${inn?'':`<div class="sec secp${PXD&&!EPM?' done':''}"><div class="sech"><span class="sl">支付方式<b class="sv">${esc(pmNm(F.method))}</b></span><button data-epm="1">${EPM?'完成':'添加/编辑'}</button></div><div class="cpg" id="ms">${Array.from({length:Math.ceil(MT.length/8)},(_,p)=>`<div class="grid4">${MT.slice(p*8,p*8+8).map(m=>`<button class="chip" data-mt="${m[0]}" aria-pressed="${F.method===m[0]}"><i class="md" style="background:var(${m[2]})"></i>${m[1]}</button>`).join('')}</div>`).join('')}</div>${MT.length>8?`<div class="pdots" id="msd">${Array.from({length:Math.ceil(MT.length/8)},(_,p)=>`<i${p?'':' class="on"'}></i>`).join('')}</div>`:''}${EPM?`<div class="addrow"><input id="pmnew" placeholder="新支付方式名称(最多 12 个字)" maxlength="12" autocomplete="off"><button id="pmadd">添加</button></div><p class="sub" style="margin:12px 0 0">按住 ≡ 拖动调整顺序,点色点可以更换颜色,点名称可以改名(有记录在使用的支付方式不能删除)</p><ul class="cord" id="pord">${pmSrc().map(m=>`<li data-p="${esc(m[0])}"><span class="hd" aria-hidden="true">≡</span><button class="cib" data-pcol="${esc(m[0])}" aria-label="更换颜色"><i class="md" style="background:var(${m[2]})"></i></button><input class="pnm" data-pmn="${esc(m[0])}" value="${esc(LG()==='en'&&ZH2EN[m[1]]?ZH2EN[m[1]]:m[1])}" maxlength="12" aria-label="支付方式"><button class="dl2" data-pmdel="${esc(m[0])}">删除</button></li>`).join('')}</ul>`:''}</div>
+ <div class="sec secc${CXD&&!ECAT?' done':''}"><div class="sech"><span class="sl">分类<b class="sv">${esc(F.cat||'')}</b></span><button data-ecat="1">${ECAT?'完成':'添加/编辑'}</button></div><div class="cpg" id="cs">${Array.from({length:Math.ceil(CATS.length/8)},(_,p)=>`<div class="grid4">${CATS.slice(p*8,p*8+8).map(c=>`<button class="chip" data-ct="${c}" aria-pressed="${F.cat===c}">${catIcon(c)}<span>${c}</span></button>`).join('')}</div>`).join('')}</div>${CATS.length>8?`<div class="pdots" id="csd">${Array.from({length:Math.ceil(CATS.length/8)},(_,p)=>`<i${p?'':' class="on"'}></i>`).join('')}</div>`:''}${ECAT?`<div class="addrow"><input id="ccn" placeholder="新分类名称(最多 8 个字)" maxlength="8" autocomplete="off"><button id="ccadd">添加</button></div><p class="sub" style="margin:12px 0 0">按住 ≡ 拖动调整顺序,点图标可以更换图标(「其他」固定在最后,不能删除)</p><ul class="cord" id="cord">${CATS.filter(c=>c!=='其他').map(c=>`<li data-c="${esc(c)}"><span class="hd" aria-hidden="true">≡</span><button class="cib" data-cico="${esc(c)}" aria-label="更换图标">${catIcon(c)}</button><span class="nm">${esc(c)}</span><button class="dl2" data-ccdel="${esc(c)}"${CDP===c?' style="color:var(--pp);font-weight:600"':''}>${CDP===c?'确认删除':'删除'}</button></li>`).join('')}</ul>${CIP&&CATS.includes(CIP)?iconPicker(CIP):''}`:''}</div>`}
+ <div class="grp"><div class="lrow"><label for="note">备注</label><input id="note" placeholder="${inn?'工资、奖金、副业':'商户或品名'}" autocomplete="off" value="${esc(nv)}"></div>
+ ${rc.length?`<div class="sec" style="padding-top:8px"><div class="sech"><span>最近常用</span></div><div class="chips rcs">${rc.map((r,i)=>`<button class="chip" data-rc="${i}" style="padding:6px 12px;font-size:14px;max-width:60%;flex:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.note)}</button>`).join('')}</div></div>`:''}
+ <div class="lrow dfx"><label for="dt">日期</label><input id="dt" type="date" value="${dv}">${inn?'':(e&&e.rid)?`<span class="vsep"></span><span class="fxl" style="color:var(--mu)">固定(自动)</span>`:`<span class="vsep"></span><label for="fx" class="fxl">固定支出</label><input id="fx" type="checkbox" class="sw"${e&&e.fix?' checked':''}>`}</div>
+ </div><div class="strip"><span class="yen">¥</span><input id="amt" class="amtin" inputmode="numeric" pattern="[0-9]*" placeholder="0" autocomplete="off" aria-label="金额" value="${esc(av)}">${inn||cur?'':todayBud()}</div>
+<button class="go save" id="save">${cur?'保存修改':'保存'}</button>${cur?'<button class="go alt" id="cancel" style="display:block;width:calc(100% - 48px);margin:12px auto 0">取消</button>':''}</div>`;
+}
+function lrm(vals,total){const fl=vals.map(v=>total>0?v/total*100:0),pp=fl.map(Math.floor);if(total>0&&Math.abs(vals.reduce((q,x)=>q+x,0)-total)<.01){let rm=100-pp.reduce((q,x)=>q+x,0);fl.map((x,i)=>[x-pp[i],i]).sort((a,b)=>b[0]-a[0]).slice(0,Math.max(0,rm)).forEach(([,i])=>pp[i]++);return pp}return fl.map(Math.round)}
+function catCard(csv,cs,mx,tot,bud){
+ const pp=lrm(cs.map(z=>z[1]),tot),pcOf=c=>{const i=cs.findIndex(z=>z[0]===c);return i<0?0:pp[i]};
+ return `<div class="box" style="padding:14px 16px 10px"><h2 style="margin:0 0 6px">分类</h2>`+csv.map(([c,v])=>{const ov=bud[c]&&v>bud[c];return `<button class="bar" data-sc="${esc(c)}" style="display:flex;align-items:center;gap:12px;width:100%;margin:0;padding:7px 0;text-align:left">${catIcon(c)}<span style="flex:1;min-width:0"><span style="display:flex;justify-content:space-between;align-items:baseline;font-size:15px"><span>${esc(c)}</span><span><b style="font-weight:600">${yen(v)}</b> <span style="color:var(--mu);font-size:12.5px;display:inline-block;min-width:2.6em;text-align:right">${pcOf(c)}%</span></span></span><span style="display:block;height:6px;border-radius:3px;background:var(--sel);margin-top:5px;overflow:hidden"><i style="display:block;height:100%;width:${Math.min(100,Math.max(2,v/tot*100))}%;border-radius:3px;background:var(${ov?'--pp':'--ac'})"></i></span></span></button>`}).join('')+(cs.length>6?`<button class="lk" data-catx="1" style="margin:4px 0;font-size:14px">${OPEN.cats?'收起':'其余 '+(cs.length-5)+' 个分类 ›'}</button>`:'')+`</div>`}
+function monthSpend(mm){return sum(D.filter(x=>x.date.startsWith(mm)&&own(x)))}
+function confetti(){const c=['#e0833a','#2f6fed','#d6336c','#0e7a68','#e3b04a','#7c4dff'];for(let i=0;i<36;i++){const e=document.createElement('i');e.className='cf';e.style.cssText=`left:${Math.random()*100}vw;background:${c[i%6]};animation-delay:${Math.random()*.5}s;animation-duration:${1.4+Math.random()*1.2}s;transform:rotate(${Math.random()*360}deg)`;document.body.appendChild(e);setTimeout(()=>e.remove(),3200)}}
+function goalLine(){
+ if(!(B.total>0))return '';
+ const cm=today().slice(0,7),spent=monthSpend(ym),left=B.total-spent,pc=Math.min(100,spent/B.total*100),over=left<0;
+ const has=mm=>D.some(x=>x.date.startsWith(mm)&&own(x)),ok=mm=>has(mm)&&monthSpend(mm)<=B.total;
+ let st=0;{let mm=prevM(cm);for(let i=0;i<60&&ok(mm);i++){st++;mm=prevM(mm)}}
+ if(ym<cm&&has(ym)&&monthSpend(ym)<=B.total&&!(UI.cel||[]).includes(ym)){UI.cel=[...(UI.cel||[]),ym];saveC();setTimeout(()=>{confetti();toast(+ym.slice(5)+'月没有超预算')},350)}
+ return `<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--ln)"><div class="pb" style="height:6px;margin:0 0 6px"><i style="width:${pc}%;background:var(${over?'--pp':'--ac'})"></i></div><div style="display:flex;justify-content:space-between;font-size:13px;color:var(--mu)"><span>预算 ${yen(B.total)}${st?' · 连续 '+st+' 个月没超':''}</span><b style="color:var(${over?'--pp':'--in'});font-weight:600">${over?'超出 '+yen(-left):'还剩 '+yen(left)}</b></div></div>`}
+function top5(a){
+ let top;
+ if(T5==='single')top=a.slice().sort((p,q)=>q.amt-p.amt||q.date.localeCompare(p.date)).slice(0,5).map(x=>({nm:x.note||x.cat,sub:x.date.slice(5),amt:x.amt,key:x.note||x.cat}));
+ else{const g={};a.forEach(x=>{const k=x.note||x.cat;(g[k]=g[k]||{n:0,s:0,cat:x.cat});g[k].n++;g[k].s+=x.amt});top=Object.entries(g).sort((p,q)=>q[1].s-p[1].s).slice(0,5).map(([k,v])=>({nm:k,sub:v.n+' 笔',amt:v.s,key:k}))}
+ return {top,html:`<div class="chips" style="margin:0 0 4px;gap:4px">${[['single','单笔'],['shop','按商户']].map(c=>`<button class="chip" data-t5="${c[0]}" aria-pressed="${T5===c[0]}" style="padding:3px 10px;font-size:13px">${c[1]}</button>`).join('')}</div>`+top.map((x,i)=>`<button class="bar" data-sn="${esc(x.key)}"><span class="n" style="width:20px;color:var(--mu)">${i+1}</span><span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(x.nm)} <small style="color:var(--mu)">${x.sub}</small></span><span class="v" style="width:auto;white-space:nowrap">${yen(x.amt)}</span></button>`).join('')};
+}
+/* 不常看的放一张卡里,一行一个摘要,点开才显示 */
+function moreCard(a,tot,ex){
+ const t5=top5(a),fx=sum(a.filter(isFix)),vr=tot-fx,bm={};a.forEach(x=>bm[x.method]=(bm[x.method]||0)+x.amt);
+ /* 有朋友还款(负数)时,占比按正的支出算 */
+ const tp=a.reduce((q,x)=>q+(x.amt>0?x.amt:0),0)||1;Object.keys(bm).forEach(k=>{if(bm[k]<=0)delete bm[k]});
+ const ms=MT.filter(k=>bm[k[0]]).sort((p,q)=>bm[q[0]]-bm[p[0]]),pc=v=>Math.round(v/tp*100)+'%',[pfx,pvr]=lrm([fx,vr],tp).map(x=>x+'%');tot=tp;
+ const dot=c=>`<i class="dot" style="display:inline-block;background:var(${c})"></i>`;
+ const meta={};
+ const SXI={px:'<path d="M7 7h10l-1.5 10h-7zM9 7a3 3 0 016 0"/>',cmp:'<path d="M7 4v16M7 4L4 7M7 4l3 3M17 20V4M17 20l-3-3M17 20l3-3"/>',day:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',rk:'<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 01-10 0zM7 6H4v2a3 3 0 003 3M17 6h3v2a3 3 0 01-3 3"/>',fx:'<path d="M17 2l3 3-3 3M20 5H8a4 4 0 00-4 4v1M7 22l-3-3 3-3M4 19h12a4 4 0 004-4v-1"/>',pts:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',pm:'<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h3"/>'};
+ const xs=(k,lb,sm,inner)=>(meta[k]=[lb,sm],`<button class="row arow" data-sx="${k}" style="padding:9px 0;min-height:0"><i class="ci" style="--cc:var(--ac)"><svg viewBox="0 0 24 24" aria-hidden="true">${SXI[k]||''}</svg></i><div class="rm"><div>${lb}</div></div><div style="color:var(--mu);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%">${sm}</div><span class="chev" style="transform:rotate(${OPEN['s'+k]?90:0}deg)">›</span></button>${OPEN['s'+k]?`<div style="padding:0 0 12px">${inner}</div>`:''}`);
+ const rows={};(ex||[]).forEach(e=>{rows[e[0]]=xs(...e)});
+ rows.rk=(t5.top.length?xs('rk','消费排行',esc(t5.top[0].nm)+' '+yen(t5.top[0].amt),t5.html):'');
+ rows.fx=(fx?xs('fx','固定支出',yen(fx)+' · '+pfx,`<div class="stack"><i style="width:${fx/tot*100}%;background:var(--cd)"></i><i style="width:${vr/tot*100}%;background:var(--cs)"></i></div><div class="leg"><button class="lg" data-sf="fix">${dot('--cd')} 固定 ${yen(fx)} · ${pfx}</button><button class="lg" data-sf="var">${dot('--cs')} 变动 ${yen(vr)} · ${pvr}</button></div>`):'');
+ rows.pts=(()=>{const pa=a.filter(x=>x.pt>0),ps=pa.reduce((q,x)=>q+x.pt,0);return ps?xs('pts','积分抵扣',yen(ps)+' · '+pa.length+'笔',`<p class="sub" style="margin:0 0 6px">支出按实付计;原价 ${yen(ps+sum(pa))}</p>`+pa.sort((p,q)=>q.pt-p.pt).map(x=>`<div style="display:flex;justify-content:space-between;font-size:14px;padding:4px 0"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:55%">${esc(x.note||x.cat)}</span><span style="color:var(--mu)">${yen(x.amt+x.pt)} − ${yen(x.pt)} = <b style="color:var(--tx)">${yen(x.amt)}</b></span></div>`).join('')):''})();
+ rows.pm=(ms.length?xs('pm','支付方式',ms[0][1]+' 最多 · '+pc(bm[ms[0][0]]),`<div class="stack">${ms.map(k=>`<i style="width:${bm[k[0]]/tot*100}%;background:var(${k[2]})"></i>`).join('')}</div><div class="leg">${ms.map(k=>`<button class="lg" data-sm="${k[0]}">${dot(k[2])} ${k[1]} ${yen(bm[k[0]])}</button>`).join('')}</div>`):'');
+ const DEF=['px','cmp','day','rk','fx','pts','pm'],so=(UI.so||[]).filter(k=>DEF.includes(k)),all=[...so,...DEF.filter(k=>!so.includes(k))].filter(k=>rows[k]),hid=UI.sh||[],canSort=all.length>1,sorting=USO&&canSort,ord=sorting?all:all.filter(k=>!hid.includes(k));
+ return `<div class="box" data-g="o" style="padding:2px 16px">`+(sorting?`<ul class="cord" id="sord" style="margin:10px 0 4px">${ord.map(k=>`<li data-k="${k}" style="${hid.includes(k)?'opacity:.5':''}"><span class="hd" aria-hidden="true">≡</span><span class="nm">${meta[k][0]}</span><button class="lk" data-shk="${k}" style="font-size:13px;flex:none;padding:6px 10px">${hid.includes(k)?'显示':'隐藏'}</button></li>`).join('')}</ul>`:ord.map(k=>rows[k]).join(''))
+  +(canSort?`<div style="text-align:center;border-top:1px solid var(--ln);padding:8px 0 6px"><button class="lk" data-uso="1" style="font-size:14px">${sorting?'完成':'排序与显示'}</button></div>`:'')+`</div>`}
+function statsView(){return statsRaw()}
+function statsRaw(){
+ if(SY)return yearRaw();
+ const a=monthData().filter(own),tot=sum(a),inc=A.inc.filter(x=>x.date.startsWith(ym)&&ownI(x)),it=sum(inc);
+ let h=head();
+ if(!a.length&&!inc.length)return h+`<div class="empty">这个月还没有数据可统计。</div>`;
+ const [y,m]=ym.split('-').map(Number),nd=new Date(y,m,0).getDate(),isCur=today().startsWith(ym);
+ const bc={};a.forEach(x=>bc[x.cat]=(bc[x.cat]||0)+x.amt);
+ const pm=prevM(ym),pa=D.filter(x=>x.date.startsWith(pm)&&own(x)),pt=sum(pa),pc={};pa.forEach(x=>pc[x.cat]=(pc[x.cat]||0)+x.amt);
+ const lk='border:0;background:none;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:left';
+ const brow=(nm,u,l)=>`<div style="margin:8px 0 0"><div style="display:flex;justify-content:space-between;font-size:13px"><span>${esc(nm)}</span><span style="color:var(${u>l?'--pp':'--mu'})">${yen(u)} / ${yen(l)}${u>l?' · 超出 '+yen(u-l):''}</span></div><div class="pg" style="height:5px"><i style="width:${Math.min(100,u/l*100)}%;background:var(${u>l?'--pp':'--ac'})"></i></div></div>`;
+ /* 近 6 个月(小图,放在总览卡里) */
+ const ms=[];{let mm=ym;for(let i=0;i<6;i++){ms.unshift(mm);mm=prevM(mm)}}
+ const tr=ms.map(mm=>({mm,o:sum(D.filter(x=>x.date.startsWith(mm)&&own(x)))})),om=Math.max(1,...tr.map(x=>x.o)),pv=tr.slice(0,-1).filter(x=>x.o),avg=pv.length?pv.reduce((s,x)=>s+x.o,0)/pv.length:0;
+ const mini=tr.filter(x=>x.o).length>1?`<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--ln)"><p class="sub" id="tro" style="margin:0;font-size:13px">近 6 个月${avg?' · 平均 '+yen(avg)+' / 月':''}</p><div style="display:flex;gap:8px;align-items:flex-end;height:54px;margin-top:6px">${tr.map((x,k)=>`<button data-trl="${+x.mm.slice(5)}月支出 ${yen(x.o)}${avg&&k===tr.length-1?(x.o>=avg?' · 比平均多 ':' · 比平均少 ')+yen(Math.abs(x.o-avg)):''}" aria-label="${+x.mm.slice(5)}月支出 ${yen(x.o)}" style="flex:1;height:100%;display:flex;align-items:flex-end;border:0;background:none;padding:0;cursor:pointer"><i style="display:block;width:100%;height:${x.o?Math.max(4,x.o/om*100):2}%;background:var(${B.total>0&&x.o<=B.total?'--in':'--pp'});opacity:${k===tr.length-1?1:.35};border-radius:3px 3px 0 0"></i></button>`).join('')}</div><div style="display:flex;gap:8px;margin-top:2px">${tr.map(x=>`<span style="flex:1;text-align:center;font-size:11px;color:var(--mu)">${+x.mm.slice(5)}月</span>`).join('')}</div></div>`:'';
+ const dpt=tot-pt;
+ h+=`<div class="box"><div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px"><button data-sc="" style="${lk}"><span style="display:block;font-size:13px;color:var(--mu)">${isCur?'本月':m+'月'}支出</span><span style="display:block;font-size:32px;font-weight:700;letter-spacing:-.02em;line-height:1.15"><small style="font-size:16px;color:var(--mu);margin-right:3px">¥</small>${nf(tot)}</span></button><div style="text-align:right;font-size:13px;color:var(--mu);line-height:1.55">${pt?`比上月 <b style="color:var(${dpt>0?'--pp':'--in'})">${dpt>0?'+':'−'}${yen(Math.abs(dpt))}</b><br>`:''}<button data-si="收入" style="${lk};color:var(--mu)">收入 ${yen(it)}</button><br>结余 <b style="color:var(${it>=tot?'--in':'--pp'})">${sgn(it-tot)}</b></div></div>${mini}${goalLine()}</div>`;
+ if(!a.length)return h+`<div class="empty">这个月还没有支出记录。</div>`;
+ const cs=Object.entries(bc).sort((p,q)=>q[1]-p[1]),mx=cs[0][1];
+ const csv=cs.length>6&&!OPEN.cats?cs.slice(0,5):cs;
+ h+=catCard(csv,cs,mx,tot,B.cats);
+ /* 和上月比、每日支出也收进「更多」 */
+ const chg=CATS.filter(c=>bc[c]||pc[c]).map(c=>[c,pc[c]||0,bc[c]||0]).sort((p,q)=>Math.abs(q[2]-q[1])-Math.abs(p[2]-p[1]));
+ const cmpIn=chg.map(([c,p0,c0])=>{const d=c0-p0;return `<button class="bar" data-sc="${esc(c)}"><span class="n">${esc(c)}</span><span style="flex:1;color:var(--mu);font-size:13px">${yen(p0)} → ${yen(c0)}</span><span class="v" style="width:auto;white-space:nowrap;color:var(${d>0?'--pp':'--in'})">${sgn(d)}</span></button>`}).join('');
+ const bd=Array(nd).fill(0);a.forEach(x=>bd[+x.date.slice(8)-1]+=x.amt);
+ const dm=Math.max(...bd),di=bd.indexOf(dm);
+ const dayIn=`<div id="dro" class="dro"> </div><div class="days">${bd.map((v,i)=>v?`<button class="dc" data-sd="${ym}-${pad(i+1)}" data-lb="${i+1}日 ${yen(v)}" aria-label="${i+1}日 ${yen(v)}"><i style="height:${Math.max(4,v/dm*100)}%"></i></button>`:`<i class="z" style="height:3%" aria-label="${i+1}日 ${yen(v)}"></i>`).join('')}</div><div class="leg" style="justify-content:space-between;margin-top:6px"><span>1日</span><span>${nd}日</span></div>`;
+ const ex=[];
+ if(pt&&chg.length){const [c,p0,c0]=chg[0];ex.push(['cmp','和上月比',esc(c)+' '+sgn(c0-p0)+' 变化最大',cmpIn])}
+ ex.push(['day','每日支出','最多 '+(di+1)+'日 '+yen(dm),dayIn]);
+ {const po=D.filter(x=>x.date.startsWith(ym)&&x.cat===PX_CAT),pi=A.inc.filter(x=>x.date.startsWith(ym)&&x.px);
+  if(po.length||pi.length){const o=sum(po),i=sum(pi),net=i-o;
+   ex.unshift(['px','代购收益',`<span style="color:var(${net>=0?'--in':'--pp'})">${sgn(net)}</span>`,`<p class="sub" style="margin:4px 0">回款 ${yen(i)} − 垫付 ${yen(o)}。代购不算进你的消费和收入。</p>`+[...po.map(x=>({d:x.date,n:x.note||'代购',v:-x.amt})),...pi.map(x=>({d:x.date,n:(x.note||'回款')+' 回款',v:x.amt}))].sort((p,q)=>p.d.localeCompare(q.d)).map(r=>`<div class="bar"><span class="n" style="width:auto;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${+r.d.slice(5,7)}/${+r.d.slice(8)} ${esc(r.n)}</span><span class="v" style="width:auto;color:var(${r.v>=0?'--in':'--pp'})">${sgn(r.v)}</span></div>`).join('')])}}
+ h+=moreCard(a,tot,ex);
+ return h;
+}
+function yearReview(a,y,tr){
+ if(!a.length)return '';
+ const now=today(),isCur=now.startsWith(y),ms=tr.filter(x=>x.o>0&&(!isCur||x.mm<=now.slice(0,7)));
+ const mx=ms.slice().sort((p,q)=>q.o-p.o)[0],big=a.slice().sort((p,q)=>q.amt-p.amt)[0],g={};
+ a.forEach(x=>{if(x.note){(g[x.note]=g[x.note]||{n:0,s:0});g[x.note].n++;g[x.note].s+=x.amt}});
+ const shop=Object.entries(g).sort((p,q)=>q[1].n-p[1].n||q[1].s-p[1].s)[0];
+ const days=new Set(a.map(x=>x.date)),first=a.map(x=>x.date).sort()[0],dEnd=isCur?now:y+'-12-31',sp=Math.round((Date.parse(dEnd)-Date.parse(first))/864e5)+1;
+ const ic=d=>`<i class="ci" style="--cc:var(--ac)"><svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg></i>`;
+ const t=(d,lb,v,sub,attr)=>{const body=`${ic(d)}<div class="rm"><div>${lb}</div></div><div style="color:var(--mu);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%">${v} · ${sub}</div>${attr?'<span class="chev">›</span>':'<span class="chev" style="visibility:hidden">›</span>'}`;return attr?`<button class="row arow" ${attr} style="padding:9px 0;min-height:0">${body}</button>`:`<div class="row" style="padding:9px 0">${body}</div>`};
+ return `<div class="box" style="padding:14px 16px 4px"><h2 style="margin:0 0 4px">${y}年回顾</h2>`
+  +(mx?t('<path d="M5 20V10M12 20V4M19 20v-7"/>','花得最多的月',+mx.mm.slice(5)+'月',yen(mx.o),`data-ym="${mx.mm}"`):'')
+  +(big?t('<circle cx="12" cy="12" r="9"/><path d="M9 8l3 4 3-4M12 12v5M9.5 13h5"/>','最大的一笔',esc(big.note||big.cat),yen(big.amt),`data-sd="${big.date}" data-go="1"`):'')
+  +(shop?t('<path d="M4 9l1.5-5h13L20 9M4 9v11h16V9M4 9a2.7 2.7 0 005.3 0 2.7 2.7 0 005.4 0A2.7 2.7 0 0020 9"/>','最常出现',esc(shop[0]),shop[1].n+' 笔',`data-sn="${esc(shop[0])}"`):'')
+  +t('<path d="M20 14.5A8.5 8.5 0 119.5 4a7 7 0 0010.5 10.5z"/>','没花钱的日子',Math.max(0,sp-days.size)+' 天','共 '+sp+' 天','')
+  +`</div>`}
+function yearRaw(){
+ const y=ym.slice(0,4),py=String(+y-1),a=D.filter(x=>x.date.startsWith(y)&&own(x)),inc=A.inc.filter(x=>x.date.startsWith(y)&&ownI(x)),tot=sum(a),it=sum(inc);
+ if(!a.length&&!inc.length)return `<div class="empty">${y}年还没有数据可统计。</div>`;
+ const now=today(),nm=now.startsWith(y)?+now.slice(5,7):12,pt=sum(D.filter(x=>x.date.startsWith(py)&&own(x)));
+ const lk='border:0;background:none;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:left',dpt=tot-pt;
+ const tr=Array.from({length:12},(_,i)=>{const mm=y+'-'+pad(i+1);return {mm,o:sum(a.filter(x=>x.date.startsWith(mm))),i:sum(inc.filter(x=>x.date.startsWith(mm)))}}),om=Math.max(1,...tr.map(x=>x.o)),curM=now.startsWith(y)?now.slice(0,7):'';
+ const mini=`<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--ln)"><p class="sub" style="margin:0;font-size:13px">每月支出${tot?' · 平均 '+yen(tot/nm)+' / 月':''}</p><div style="display:flex;gap:5px;align-items:flex-end;height:54px;margin-top:6px">${tr.map(x=>`<button data-ym="${x.mm}" aria-label="${+x.mm.slice(5)}月 收入 ${yen(x.i)} 支出 ${yen(x.o)}" style="flex:1;height:100%;display:flex;align-items:flex-end;border:0;background:none;padding:0;cursor:pointer"><i style="display:block;width:100%;height:${x.o?Math.max(4,x.o/om*100):2}%;background:var(${B.total>0&&x.o&&x.o<=B.total?'--in':'--pp'});opacity:${x.mm===curM||!curM?1:.4};border-radius:3px 3px 0 0"></i></button>`).join('')}</div><div style="display:flex;gap:5px;margin-top:2px">${tr.map(x=>`<span style="flex:1;text-align:center;font-size:11px;color:var(--mu)">${+x.mm.slice(5)}</span>`).join('')}</div></div>`;
+ let h=`<div class="box"><div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px"><button data-sc="" style="${lk}"><span style="display:block;font-size:13px;color:var(--mu)">${y}年支出</span><span style="display:block;font-size:32px;font-weight:700;letter-spacing:-.02em;line-height:1.15"><small style="font-size:16px;color:var(--mu);margin-right:3px">¥</small>${nf(tot)}</span></button><div style="text-align:right;font-size:13px;color:var(--mu);line-height:1.55">${pt?`比去年 <b style="color:var(${dpt>0?'--pp':'--in'})">${dpt>0?'+':'−'}${yen(Math.abs(dpt))}</b><br>`:''}<button data-si="收入" style="${lk};color:var(--mu)">收入 ${yen(it)}</button><br>结余 <b style="color:var(${it>=tot?'--in':'--pp'})">${sgn(it-tot)}</b></div></div>${mini}</div>`;
+ if(!a.length)return h+`<div class="empty">${y}年还没有支出记录。</div>`;
+ const bc={};a.forEach(x=>bc[x.cat]=(bc[x.cat]||0)+x.amt);
+ const cs=Object.entries(bc).sort((p,q)=>q[1]-p[1]),mx=cs[0][1],csv=cs.length>6&&!OPEN.cats?cs.slice(0,5):cs;
+ h+=catCard(csv,cs,mx,tot,{});
+ return h+yearReview(a,y,tr);
+}
+function bandHTML(view){
+ if(view==='add'){if(E||EI)return `<span class="band-t">${EI?'编辑收入':'编辑记录'}</span>`;return `<div class="seg"><button data-ty="out" aria-pressed="${F.type!=='in'}">支出</button><button data-ty="in" aria-pressed="${F.type==='in'}">收入</button></div>`}
+ if(view==='stats'&&SY){const y=ym.slice(0,4);return `<button class="ib ymt" data-sy="0" aria-label="切换到按月">月</button><div class="mon"><button class="ib" data-yy="-1" aria-label="上一年">‹</button><button class="mt" data-now="1" aria-label="回到今年"><b>${y}年</b></button><button class="ib" data-yy="1" aria-label="下一年">›</button></div>`}
+ if(view==='list'||view==='stats'){const[y,m]=ym.split('-');return (view==='list'&&BACK?`<button class="ib bkb" data-bk="1" aria-label="返回" style="width:auto;padding:0 12px;font-size:14px;font-weight:700">返回</button>`:'')+(view==='stats'?`<button class="ib ymt" data-sy="1" aria-label="切换到全年">年</button>`:'')+`<div class="mon"><button class="ib" data-m="-1" aria-label="上个月">‹</button><button class="mt" data-now="1" aria-label="回到本月"><b>${y}年${+m}月</b></button><button class="ib" data-m="1" aria-label="下个月">›</button></div>`}
+ if(view==='me')return `<button class="ib bkb" data-back="1" aria-label="返回">‹</button><span class="band-t">${MESUB?(SETL[MESUB]||'设置'):'设置'}</span>`;
+ return `<span class="band-t">${view==='assets'?'总资产':'更多'}</span>`;
+}
+function render(){
+ const v0=hv().slice(1),v=v0==='more'?'me':v0.split('/')[0];MESUB=v==='me'?(v0.split('/')[1]||''):'';
+ const view=['add','stats','assets','me'].includes(v)?v:'list';if(view!=='me')window.__back=view;if(view!=='list'&&view!=='add')PREV={h:location.hash||'#'+view,SY,ym,q:Q};if(MESUB==='ui')OPEN.ui=true;if(MESUB==='bud')OPEN.bud=true;if(MESUB==='rs')RSO=true;
+ $('band').innerHTML='<div class="bi">'+bandHTML(view)+'</div>'+(view==='me'?'':(UI.hide?`<button class="avb eyb" data-eye2="1" aria-label="显示/隐藏金额"><svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round">${REV?'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>':'<path d="M3 3l18 18M10.6 6.1A10 10 0 0112 6c6.4 0 10 6 10 6a17 17 0 01-3.2 3.9M6.6 7.6A17 17 0 002 12s3.6 7 10 7c1.6 0 3-.4 4.3-.9"/><path d="M9.9 9.9a3 3 0 004.2 4.2"/>'}</svg></button>`:'')+`<button class="avb" data-me="1" aria-label="账号">${avHTML()}</button>`);document.documentElement.style.setProperty('--bh',$('band').offsetHeight+'px');const lv=view+'/'+MESUB,os=$('sc'),st=(os&&window.__lv===lv)?os.scrollTop:0;window.__lv=lv;
+ const hm=(view===homeV()||view==='list')&&(view==='add'||view==='list')&&!E&&!EI,dg=(view===homeV()&&(view==='add'||view==='list')&&!E&&!EI)?dupCharges():[],ban=(hm?acCard():'')+(dg.length?`<button class="dupb" data-sub="dup"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg><span>发现 ${dg.length} 组疑似重复扣款<small>可能多扣了 ${yen(dg.reduce((q,o)=>q+o.amt*(o.xs.length-1),0))}</small></span><b>查看 ›</b></button>`:'');
+ const html0=view==='me'?meView():view==='add'?addView():view==='stats'?statsView():view==='assets'?assetsView():view==='more'?moreView():listView(),h0i=html0.indexOf('<!--H-->'),html=!ban?html0:h0i>=0?html0.slice(0,h0i+8)+ban+html0.slice(h0i+8):ban+html0,hi=html.indexOf('<!--H-->');
+ $('app').innerHTML=(hi>=0?'<div class="fhead">'+html.slice(0,hi)+'</div>':'')+'<div id="sc">'+(hi>=0?html.slice(hi+8):html)+'</div>';if(st)$('sc').scrollTop=st;['cs','ms'].forEach(id=>{const cs=$(id),b=cs&&cs.querySelector('[aria-pressed="true"]');if(b&&b.parentElement.offsetLeft)cs.scrollLeft=b.parentElement.offsetLeft});
+ ['list','stats','assets'].forEach(k=>$('n-'+k).classList.toggle('on',k===view));
+ if(view==='add'&&!E&&!EI){F.manual=false}
+ const sh=$('sheet'),shOn=view!=='add'&&(E||EI||NEW),ash=view==='assets'&&AE!==null&&(AE==='new'||AE==='goal'||AE==='xfer'||AE==='xferW'||AE==='cashW'||/^cash/.test(AE)&&A[AE]||A.assets.some(z=>z.id===AE));const qpk=view==='list'&&QPK&&!shOn;$('fab').hidden=!!(shOn||ash||qpk||view==='add'||view==='me');
+ if(shOn){const isNew=sh.hidden;sh.hidden=false;
+  const bs=$('shb'),bst=(!isNew&&bs)?bs.scrollTop:0;
+  sh.innerHTML=`<div class="shbg" data-shx="1"></div><div class="shp" role="dialog" aria-modal="true" aria-label="${NEW&&!E&&!EI?'记一笔':'编辑记录'}"><div class="shh"><button class="lk" data-shx="1">取消</button>${NEW&&!E&&!EI?`<div class="chips" style="margin:0;gap:4px;flex-wrap:nowrap"><button class="chip" data-ty="out" aria-pressed="${F.type!=='in'}" style="padding:5px 16px;font-size:14px">支出</button><button class="chip" data-ty="in" aria-pressed="${F.type==='in'}" style="padding:5px 16px;font-size:14px">收入</button></div>`:`<b>${EI?'编辑收入':'编辑支出'}</b>`}<span style="width:36px"></span></div><div class="shb" id="shb">${addView()}</div></div>`;
+  if(bst)$('shb').scrollTop=bst;
+  ['cs','ms'].forEach(id=>{const cs=$(id),b=cs&&cs.querySelector('[aria-pressed="true"]');if(b&&b.parentElement.offsetLeft)cs.scrollLeft=b.parentElement.offsetLeft});
+  if(isNew||SHN){SHN=false;requestAnimationFrame(()=>requestAnimationFrame(()=>sh.classList.add('on')))}else sh.classList.add('on')}
+ else if(qpk){const isNew=sh.hidden;sh.hidden=false;const bs=$('shb'),bst=(!isNew&&bs)?bs.scrollTop:0,isC=QPK==='c',cur=isC?Q.c:Q.m,items=isC?CATS.map(c=>[c,c]):MT.map(m=>[m[0],m[1]]);
+  const pg=items.length>8?Math.ceil(items.length/8):1;
+  const chip=([k,n])=>isC?`<button class="chip" data-qpv="${esc(k)}" aria-pressed="${cur===k}">${catIcon(k)}<span>${esc(n)}</span></button>`:`<button class="chip" data-qpv="${esc(k)}" aria-pressed="${cur===k}"><i class="md" style="background:var(${mcol(k)})"></i>${esc(n)}</button>`;
+  const grid=Array.from({length:Math.ceil(items.length/8)},(_,p)=>`<div class="grid4">${items.slice(p*8,p*8+8).map(chip).join('')}</div>`).join('');
+  sh.innerHTML=`<div class="shbg" data-qpx="1"></div><div class="shp" role="dialog" aria-modal="true" aria-label="${isC?'分类':'支付方式'}"><div class="shh"><button class="lk" data-qpx="1">取消</button><b>${isC?'分类':'支付方式'}</b><button class="lk" data-qpv="" style="${cur?'':'visibility:hidden'}">清除</button></div><div class="shb" id="shb"><div class="addv"><div class="sec"><div class="cpg" id="${isC?'cs':'ms'}">${grid}</div>${pg>1?`<div class="pdots" id="${isC?'csd':'msd'}">${Array.from({length:pg},(_,p)=>`<i${p?'':' class="on"'}></i>`).join('')}</div>`:''}</div></div></div></div>`;
+  if(isNew)requestAnimationFrame(()=>requestAnimationFrame(()=>sh.classList.add('on')));else sh.classList.add('on')}
+ else if(ash){const isNew=sh.hidden;sh.hidden=false;const bs=$('shb'),bst=(!isNew&&bs)?bs.scrollTop:0;
+  sh.innerHTML=`<div class="shbg" data-ashx="1"></div><div class="shp" role="dialog" aria-modal="true" aria-label="${AE==='new'?'添加投资资产':'编辑资产'}"><div class="shh"><button class="lk" id="acancel">取消</button><b>${AE==='new'?'添加投资资产':AE==='goal'?'储蓄目标':AE==='xfer'?'转入投资':AE==='xferW'?'从ATM取钱':AE==='cashW'?'钱包现金':/^cash/.test(AE)?'编辑现金 / 存款':'编辑投资资产'}</b><span style="width:36px"></span></div><div class="shb" id="shb">${assetForm()}</div></div>`;
+  if(bst)$('shb').scrollTop=bst;
+  if(isNew)requestAnimationFrame(()=>requestAnimationFrame(()=>sh.classList.add('on')));else sh.classList.add('on')}
+ else if(!sh.hidden){sh.hidden=true;sh.classList.remove('on');sh.innerHTML=''}
+ if(!window.__kp){document.body.classList.remove('kpo');if(!document.activeElement||!/^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)){document.body.classList.remove('kph');const b=$('shb');if(b)b.style.paddingBottom=''}}
+}
+function mkDone(k,name){if(k==='p')PXD=true;else CXD=true;setTimeout(()=>{const sc=document.querySelector(k==='p'?'.secp':'.secc');if(sc&&!(k==='p'?EPM:ECAT)){sc.classList.add('done');const v=sc.querySelector('.sv');if(v)v.textContent=name}},160)}
+document.addEventListener('click',e=>{const h=e.target.closest&&e.target.closest('.sec.done .sech');if(!h||e.target.closest('button'))return;const sc=h.closest('.sec');sc.classList.remove('done');if(sc.classList.contains('secp'))PXD=false;else CXD=false});
+var SHN=false,NEW=false,QPK=null,BACK=null,PREV=null;
+document.addEventListener('click',e=>{if(!e.target.closest('#fab'))return;NEW=true;E=null;EI=null;PF=null;F.type='out';F.manual=false;SHN=true;PXD=false;CXD=false;LASTK='new';render()});
+let SY=false,USO=false;
+let ST='o',AT='o',MP='i',RE=null,RIE=null,RSO=false,AE=null,CE=false;
+function tabBar(k,cur,items){return `<style>#app [data-g]:not([data-g="${cur}"]){display:none}</style><div class="chips" style="margin:0;padding:10px max(16px,calc((100% - 488px)/2)) 8px;flex-wrap:nowrap;background:var(--bg)">${items.map(([v,l])=>`<button class="chip" data-${k}="${v}" aria-pressed="${cur===v}" style="flex:1;text-align:center;padding:8px 2px">${l}</button>`).join('')}</div><!--H-->`}
+let LPT='mouse';
+document.addEventListener('scroll',e=>{const s=e.target;if(!s||(s.id!=='cs'&&s.id!=='ms'))return;const p=Math.round(s.scrollLeft/s.clientWidth);document.querySelectorAll('#'+s.id+'d i').forEach((d,i)=>d.classList.toggle('on',i===p))},true);
+function showDay(b,go){const r=$('dro');if(!r)return;r.innerHTML=b?`<span>${b.dataset.lb}</span>`+(go?`<button data-sd="${b.dataset.sd}" data-go="1">查看明细 ›</button>`:''):' '}
+document.addEventListener('pointerdown',e=>{LPT=e.pointerType||'mouse'},true);
+document.addEventListener('pointerover',e=>{if(e.pointerType&&e.pointerType!=='mouse')return;const b=e.target.closest&&e.target.closest('.dc');if(b)showDay(b,false)});
+document.addEventListener('pointerout',e=>{if(e.pointerType&&e.pointerType!=='mouse')return;if(e.target.closest&&e.target.closest('.dc')&&!(e.relatedTarget&&e.relatedTarget.closest&&e.relatedTarget.closest('.dc')))showDay(null)});
+document.addEventListener('click',async e=>{
+ const t=e.target.closest('button');if(!t)return;
+ if(t.dataset.m){pending=null;return shift(+t.dataset.m)}
+ if(t.dataset.now){pending=null;Q.d='';const n=today().slice(0,7);if(ym===n){toast(SY&&hv()==='#stats'?'已经是今年':'已经是本月');return}ym=n;return render()}
+ if(t.dataset.sy!==undefined){SY=t.dataset.sy==='1';if(SY&&!['o','c','t'].includes(ST))ST='o';return render()}
+ if(t.dataset.yy){const y=+ym.slice(0,4)+ +t.dataset.yy;ym=y+ym.slice(4);return render()}
+ if(t.dataset.ym){SY=false;ym=t.dataset.ym;return render()}
+ if(t.dataset.trl!==undefined){const r=$('tro');if(r)r.textContent=t.dataset.trl;return}
+if(t.dataset.cmpx){OPEN.cmp=!OPEN.cmp;return render()}
+if(t.dataset.catx){OPEN.cats=!OPEN.cats;return render()}
+if(t.dataset.uso){USO=!USO;return render()}
+if(t.dataset.shk){const h=new Set(UI.sh||[]);if(h.has(t.dataset.shk))h.delete(t.dataset.shk);else h.add(t.dataset.shk);UI.sh=[...h];saveC();return render()}
+if(t.dataset.sx){const k='s'+t.dataset.sx;OPEN[k]=!OPEN[k];return render()}
+if(t.dataset.st){ST=t.dataset.st;return render()}
+ if(t.dataset.at){AT=t.dataset.at;return render()}
+ if(t.dataset.mp){MP=t.dataset.mp;return render()}
+ if(t.dataset.epm){if($('amt'))PF={amt:$('amt').value,note:$('note').value};EPM=!EPM;return render()}
+ if(t.dataset.pcol){const k=t.dataset.pcol;if(!PM)PM=DEF_PM.map(m=>m.slice());const m=PM.find(x=>x[0]===k);if(m){m[2]=PMCOL[(PMCOL.indexOf(m[2])+1)%PMCOL.length];applyPM();saveC()}if($('amt'))PF={amt:$('amt').value,note:$('note').value};render();return}
+ if(t.dataset.pmdel){const k=t.dataset.pmdel;if(MT.length<=1){toast('至少保留一个支付方式');return}if(D.some(x=>x.method===k)||R.some(r=>r.method===k)){toast('还有记录在使用「'+mnr(k)+'」,无法删除');return}
+  if(!PM)PM=DEF_PM.map(m=>m.slice());PM=PM.filter(m=>m[0]!==k);applyPM();saveC();toast('已删除支付方式');if($('amt'))PF={amt:$('amt').value,note:$('note').value};render();return}
+ if(t.id==='pmadd'){const n=($('pmnew').value||'').trim();if(!n){toast('请输入分类名称'.replace('分类','支付方式'));return}if(pmSrc().some(m=>m[1]===n)){toast('已有同名支付方式');return}
+  if(!PM)PM=DEF_PM.map(m=>m.slice());const used=PM.map(m=>m[2]);const col=PMCOL.find(c=>!used.includes(c))||PMCOL[PM.length%PMCOL.length];PM.push(['m'+Date.now().toString(36),n,col]);applyPM();saveC();toast('已添加支付方式');if($('amt'))PF={amt:$('amt').value,note:$('note').value};render();return}
+ if(t.dataset.bkl){const d=new Date();d.setDate(d.getDate()+7);bkSet({snooze:d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())});return render()}
+ if(t.dataset.bkn){if(await saveFile('kakeibo-backup-'+today()+'.json',JSON.stringify({v:1,D,A,B,R,UI,CC,PM}),'application/json')!==false){bkSet({last:today()});toast('已备份')}return render()}
+ if(t.dataset.hint){try{localStorage.setItem(HK,'1')}catch(e){}return render()}
+ if(t.dataset.sf){Q=yq({t:'',c:'',m:'',k:'out',f:t.dataset.sf});location.hash='#list';return}
+ if(t.dataset.qf!==undefined){Q.f='';return render()}
+ if(t.dataset.sd){if(LPT!=='mouse'&&!t.dataset.go){document.querySelectorAll('.dc.on').forEach(b=>b.classList.remove('on'));t.classList.add('on');showDay(t,true);return}
+  Q={t:'',c:'',m:'',k:'out',d:t.dataset.sd};location.hash='#list';return}
+ if(t.dataset.qd!==undefined){Q.d='';return render()}
+ if(t.dataset.lv){LV=t.dataset.lv;if(LV==='list')Q.d='';return render()}
+ if(t.dataset.cd){Q.d=Q.d===t.dataset.cd?'':t.dataset.cd;return render()}
+ if(t.dataset.sc!==undefined){Q=yq({t:'',c:t.dataset.sc,m:'',k:'out'});location.hash='#list';return}
+ if(t.dataset.sm){Q=yq({t:'',c:'',m:t.dataset.sm,k:'out'});location.hash='#list';return}
+ if(t.dataset.si!==undefined){Q=yq({t:t.dataset.si==='收入'?'':t.dataset.si,c:'',m:'',k:'in'});location.hash='#list';return}
+ if(t.dataset.sn!==undefined){Q=yq({t:t.dataset.sn,c:'',m:'',k:'out'});location.hash='#list';return}
+ if(t.dataset.t5){T5=t.dataset.t5;return render()}
+ if(t.dataset.ecat){if($('amt'))PF={amt:$('amt').value,note:$('note').value};ECAT=!ECAT;CDP='';return render()}
+ if(t.dataset.qk!==undefined){Q.k=t.dataset.qk;if(Q.k==='in'){Q.c='';Q.m=''}return render()}
+ if(t.dataset.qr){delete Q.r;return render()}
+ if(t.dataset.qclear){Q={t:'',c:'',m:'',k:''};return render()}
+ if(t.dataset.edit){const x=D.find(z=>z.id===+t.dataset.edit);if(x){E=x.id;EI=null;PF=null;F={method:x.method,cat:x.cat,manual:true,type:'out'};if(hv()==='#add')render();else{SHN=true;render()}}return}
+ if(t.dataset.iedit){const x=A.inc.find(z=>z.id===+t.dataset.iedit);if(x){EI=x.id;E=null;PF=null;F={...F,type:'in'};if(hv()==='#add')render();else{SHN=true;render()}}return}
+ if(t.dataset.ty){PF={amt:$('amt').value,note:$('note').value};F.type=t.dataset.ty;F.manual=false;return render()}
+ if(t.dataset.rc!==undefined){const r=RC[+t.dataset.rc];if(r){$('note').value=r.note;if(F.type==='in'){if(!$('amt').value&&r.amt)$('amt').value=r.amt}else{F.cat=r.cat;F.method=r.method;F.manual=true;document.querySelectorAll('[data-ct]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.ct===r.cat));document.querySelectorAll('[data-mt]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.mt===r.method));mkDone('p',pmNm(r.method));mkDone('c',r.cat)}}return}
+ if(t.id==='cancel'||t.dataset.shx){NEW=false;E=null;EI=null;PF=null;F.type='out';if(hv()==='#add')location.hash='#list';else render();return}
+ if(t.dataset.del){const id=+t.dataset.del,it=D.find(x=>x.id===id);if(it){D=D.filter(x=>x.id!==id);pending=null;save();toast('已删除',()=>{D.push(it);save();render()})}return render()}
+ if(t.id==='undo'){const f=UNDO;UNDO=null;$('toast').classList.remove('on','act');if(f)f();return}
+ if(t.dataset.mt){F.method=t.dataset.mt;document.querySelectorAll('[data-mt]').forEach(b=>b.setAttribute('aria-pressed',b===t));mkDone('p',pmNm(F.method))}
+ if(t.dataset.ct){F.cat=t.dataset.ct;F.manual=true;document.querySelectorAll('[data-ct]').forEach(b=>b.setAttribute('aria-pressed',b===t));mkDone('c',F.cat)}
+ if(t.id==='save'){
+  let amt=parseInt($('amt').value.replace(/[^0-9]/g,''),10);
+  if(!amt){toast('请先输入金额');$('amt').focus();return}
+  const date=$('dt').value||today();
+  if(F.type==='in'||EI){const r={amt,note:$('note').value.trim(),date};if(EI)Object.assign(A.inc.find(x=>x.id===EI),r);else A.inc.push({id:nid(),...r});
+   const was=EI;EI=null;PF=null;F.type='out';saveA();ym=date.slice(0,7);toast((was?'已修改收入 ':'已记录收入 ')+yen(amt));if(NEW&&!was){NEW=false;render()}else{NEW=false;location.hash='#list';render()}return}
+  if(!E){const key=date+'|'+amt;if(D.some(x=>x.date===date&&x.amt===amt)&&DK!==key){DK=key;toast('同一天已有相同金额的记录,再点一次才会保存');$('save').textContent='仍然保存';return}}
+  DK='';PF=null;
+  /* 编辑朋友还款(负数)时保持负数 */
+  {const o=E&&D.find(x=>x.id===E);if(o&&o.amt<0)amt=-amt}
+  const rec={amt,method:F.method,cat:F.cat,note:$('note').value.trim(),date};if($('fx'))rec.fix=$('fx').checked;if(E){const o=D.find(x=>x.id===E);if(o.ptu&&amt<o.amt){o.pt=(o.pt||0)+o.amt-amt;delete o.ptu}Object.assign(o,rec)}else D.push({id:Date.now(),...rec});const was=E;E=null;
+  save();ym=date.slice(0,7);toast((was?'已修改 ':'已记录 ')+yen(amt));if(NEW&&!was){NEW=false;render()}else{NEW=false;location.hash='#list';render()}
+ }
+ if(t.id==='exp'||t.id==='expm'){
+  const mo=t.id==='expm',f=x=>!mo||x.date.startsWith(ym);
+  const rows=[...D.filter(f).map(x=>({date:x.date,t:'支出',amt:x.amt,mt:mnr(x.method),cat:x.cat,note:x.note})),...A.inc.filter(f).map(x=>({date:x.date,t:'收入',amt:x.amt,mt:'',cat:'',note:x.note}))].sort((p,q)=>p.date.localeCompare(q.date));
+  const csv='﻿日期,类型,金额,支付方式,分类,备注\n'+rows.map(x=>[x.date,x.t,x.amt,x.mt,x.cat,'"'+String(x.note||'').replace(/"/g,'""')+'"'].join(',')).join('\n');
+  await saveFile(mo?'kakeibo-'+ym+'.csv':'kakeibo.csv',csv,'text/csv');
+ }
+});
+document.addEventListener('input',e=>{
+ if(e.target.id==='note'&&!F.manual){const c=guess(e.target.value);if(c){F.cat=c;document.querySelectorAll('[data-ct]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.ct===c))}}
+});
+window.addEventListener('hashchange',()=>{if(hv()==='#list'){if(PREV&&Q!==PREV.q)BACK=PREV}else if(BACK){BACK=null;Q={t:'',c:'',m:'',k:''}}pending=null;BE=null;BCS=null;CIP=null;if(/^#(me|more)/.test(hv()))sbBoot().catch(()=>{});AE=null;CE=false;USO=false;RIE=null;QPK=null;clrc=false;SEL={on:false,ids:[],cf:false};if(hv()!=='#add'){E=null;EI=null;PF=null;DK='';ECAT=false;EPM=false}OPEN={};if(OUI){OPEN.ui=true;OUI=false}render()});
+
+/* in-app keypad with calculator for amount fields */
+const CALC=(()=>{
+ const isC=el=>el&&el.tagName==='INPUT'&&el.hasAttribute('data-calc');
+ const tag=()=>document.querySelectorAll('input[inputmode="numeric"],input[inputmode="decimal"]').forEach(el=>{if(el.id==='rd'||el.hasAttribute('data-calc'))return;el.dataset.calc=el.getAttribute('inputmode');el.setAttribute('inputmode','none');el.readOnly=true});
+ new MutationObserver(tag).observe(document.body,{childList:true,subtree:true});tag();
+ const norm=v=>String(v).replace(/[,，\s]/g,'').replace(/[×xX]/g,'*').replace(/[÷]/g,'/').replace(/[−–—]/g,'-');
+ const hasOp=v=>/[+\-*/]/.test(norm(v).replace(/^-/,''));
+ const ev=v=>{let e=norm(v).replace(/[+\-*/.]+$/,'');if(!e||!/^[0-9.+\-*/]+$/.test(e))return NaN;try{const r=Function('"use strict";return ('+e+')')();return typeof r==='number'&&isFinite(r)?r:NaN}catch(_){return NaN}};
+ const dec=el=>el.dataset.calc==='decimal';
+ const fmt=(el,r)=>dec(el)?String(Math.round(r*10000)/10000):String(Math.round(r));
+ const commit=el=>{if(!isC(el)||!hasOp(el.value))return;const r=ev(el.value);if(isFinite(r)){el.value=fmt(el,r);el.dispatchEvent(new Event('input',{bubbles:true}))}};
+ const kp=document.createElement('div');kp.className='kp';kp.setAttribute('role','group');kp.setAttribute('aria-label','数字键盘');
+ const K=(k,c,l)=>`<button type="button" data-ck="${k}"${c?` class="${c}"`:''} aria-label="${l||k}">${k}</button>`;
+ kp.innerHTML='<div class="kr"><span class="kx"></span><b class="kv"></b></div><div class="kg">'+
+  K('7')+K('8')+K('9')+K('⌫','','删除')+K('=','eq','计算')+
+  K('4')+K('5')+K('6')+K('+','op','加')+
+  K('1')+K('2')+K('3')+K('−','op','减')+K('完成','ok')+
+  K('.','','小数点')+K('0')+K('×','op','乘')+K('÷','op','除')+'</div>';
+ document.body.appendChild(kp);
+ let cur=null;
+ const okB=kp.querySelector('.ok'),dotB=kp.querySelector('[data-ck="."]');
+ const isSave=()=>cur&&cur.id==='amt'&&$('save');
+ const paint=()=>{if(!cur)return;okB.textContent=isSave()?'保存':'完成';dotB.style.visibility=dec(cur)?'':'hidden';
+  const v=cur.value,x=kp.querySelector('.kx'),y=kp.querySelector('.kv');
+  if(hasOp(v)){const r=ev(v);x.textContent=v;y.textContent=isFinite(r)?'= '+Number(fmt(cur,r)).toLocaleString('ja-JP'):''}else{x.textContent=cur.getAttribute('aria-label')||cur.placeholder||'';y.textContent=''}};
+ const open=el=>{cur=el;kp.classList.add('on');window.__kp=kp.offsetHeight;document.body.classList.add('kpo','kph');document.documentElement.style.setProperty('--kph',kp.offsetHeight+'px');document.documentElement.style.setProperty('--sbh',(window.__sbhF?window.__sbhF():0)+'px');paint();if(window.kbAdj)setTimeout(kbAdj,30)};
+ const close=keep=>{if(cur)commit(cur);if(!keep)document.body.classList.remove('kph');const c=cur;cur=null;kp.classList.remove('on');window.__kp=0;document.body.classList.remove('kpo');window.__kphT=Date.now()+300;setTimeout(()=>window.kbAdj&&kbAdj(),360);if(c&&document.activeElement===c)c.blur();if(c)c.removeAttribute('inputmode');if(window.kbAdj)kbAdj()};
+ const set=v=>{cur.value=v;cur.dispatchEvent(new Event('input',{bubbles:true}));paint()};
+ const press=k=>{if(!cur)return;let v=cur.value;
+  if(k==='⌫')return set(v.slice(0,-1));
+  if(k==='='){commit(cur);return paint()}
+  if(k==='完成'){if(isSave()){commit(cur);const b=$('save');close();b.click()}else close();return}
+  if(/[+−×÷]/.test(k)){const o={'−':'-'}[k]||k;if(!v&&o!=='-')return;if(/[+\-×÷*/]$/.test(v))v=v.slice(0,-1);return set(v+o)}
+  if(k==='.'){const seg=v.split(/[+\-×÷*/]/).pop();if(seg.includes('.'))return;return set(v+(seg?'':'0')+'.')}
+  const seg=v.split(/[+\-×÷*/]/).pop();if(seg==='0')v=v.slice(0,-1);set(v+k)};
+ let lastT=0;
+ const act=e=>{const b=e.target.closest('[data-ck]');e.preventDefault();e.stopPropagation();if(e.type==='touchstart')lastT=Date.now();else if(Date.now()-lastT<800)return;if(!b)return;
+  b.classList.add('hit');setTimeout(()=>b.classList.remove('hit'),110);press(b.dataset.ck)};
+ kp.addEventListener('touchstart',act,{passive:false});kp.addEventListener('mousedown',act);
+ kp.addEventListener('click',e=>{e.preventDefault();e.stopPropagation()});
+ ['touchstart','pointerdown','mousedown'].forEach(t=>document.addEventListener(t,e=>{const i=e.target.closest&&e.target.closest('input[data-calc]');if(i&&i.getAttribute('inputmode')!=='none')i.setAttribute('inputmode','none')},true));
+ /* 点金额框时:没聚焦就聚焦;已经是聚焦状态(键盘面板被收起/焦点丢了)就直接重新打开数字键盘 */
+ const tapC=e=>{const i=e.target.closest&&e.target.closest('input[data-calc]');if(!i||!i.isConnected)return;i.setAttribute('inputmode','none');if(document.activeElement!==i){try{i.focus()}catch(_){}}if(cur!==i)open(i)};
+ document.addEventListener('touchend',tapC,{capture:true,passive:true});document.addEventListener('click',tapC,true);
+ document.addEventListener('focusin',e=>{if(isC(e.target))open(e.target);else if(cur)close()},true);
+ document.addEventListener('pointerdown',e=>{if(cur&&!e.target.closest('.kp')&&e.target!==cur&&!isC(e.target))close(!!e.target.closest('input:not([data-calc]),textarea'))},true);
+ document.addEventListener('change',e=>commit(e.target),true);
+ document.addEventListener('click',e=>{if(!e.target.closest('.kp'))document.querySelectorAll('input[data-calc]').forEach(commit)},true);
+ window.addEventListener('hashchange',()=>{if(cur)close()});
+ document.addEventListener('keydown',e=>{if(!cur||e.target!==cur||e.metaKey||e.ctrlKey)return;const m={'Backspace':'⌫','Enter':'完成','Escape':'完成','*':'×','/':'÷','-':'−','+':'+','.':'.','=':'='}[e.key]||(/^[0-9]$/.test(e.key)?e.key:null);if(m){e.preventDefault();press(m)}},true);
+ return {commit,close,tag};
+})();
+
+const AK='kakeibo.assets.v1';
+let A={rate:150,cash:0,stock:0,cur:'JPY',inc:[],start:'',snaps:[],assets:[],disp:'JPY'};
+const saveA=()=>{try{localStorage.setItem(AK,JSON.stringify(A))}catch(e){toast('保存失败:浏览器禁止了本地存储')}dirty()};
+try{const o=JSON.parse(localStorage.getItem(AK)||'{}');A=Object.assign(A,o);
+ if(o.stock===undefined&&Array.isArray(o.hold)&&o.hold.length){A.stock=Math.round(o.hold.reduce((s,h)=>s+h.sh*h.px*(h.cur==='USD'?(o.rate||150):1),0));A.cur='JPY'}}catch(e){}
+function migA(){A.rates=Object.assign({USD:A.rate||150,CNY:21},A.rates||{});if(!Array.isArray(A.assets))A.assets=[];if(!Array.isArray(A.inc))A.inc=[];
+ if(!A.assets.length&&A.stock>0){A.assets.push({id:Date.now(),name:'股票',val:Math.round(A.stock*(A.cur==='USD'?(A.rate||150):1))});A.stock=0}
+ if(!['JPY','CNY','USD'].includes(A.disp))A.disp='JPY'}
+migA();
+if(!A.start){A.start=today()}
+saveA();
+const sum=a=>a.reduce((s,x)=>s+x.amt,0);
+const inM=m=>sum(A.inc.filter(x=>x.date.startsWith(m)&&ownI(x)));
+const flow=()=>({i:sum(A.inc.filter(x=>x.date>=A.start)),o:sum(D.filter(x=>x.date>=A.start))});
+const stockJ=()=>A.assets.reduce((s,x)=>s+x.val,0);
+/* 现金:有ゆうちょ截图时直接用截图余额,否则按「起算余额 + 收入 − 支出」推算 */
+/* 截图当天还没从银行扣走的信用卡账单:每月 27 日扣上个月的,所以 27 日之前截的图要减去上个月的信用卡消费 */
+const CARD_DAY=27,isCredit=m=>m!=='paypay'&&m!=='cash';
+/* 每张卡:扣的是按记账算出的上个月刷卡合计(和导入的明细一致,方便核对);
+   截过账单页(PayPay ウォレット、乐天卡 App)的话,旁边列出实际账单做对照,不一致就标红 */
+/* 账单和记账对不上时:列出最可能出问题的几笔 */
+function difSuspects(m,mth,df){const xs=D.filter(x=>bmOf(x)===m&&x.method===mth&&!x.difok),out=[],seen=new Set(),add=(x,why)=>{const o=out.find(z=>z.x.id===x.id);if(o){if(!o.why.includes(why))o.why+=' · '+why;return}seen.add(x.id);out.push({x,why})};
+ const ad=Math.abs(df);
+ xs.filter(x=>x.amt===ad).forEach(x=>add(x,'金额正好等于差额'));
+ if(df>0){const g={};xs.forEach(x=>{const k=x.date+'|'+x.amt;(g[k]=g[k]||[]).push(x)});Object.values(g).filter(a=>a.length>1).forEach(a=>a.forEach(x=>add(x,'同一天同金额,可能重复')))}
+ xs.filter(x=>!x.ref||AUTOR.test(x.ref)).forEach(x=>add(x,x.ref?'自动记的,还没和明细对上':'手动记的,还没和明细对上'));
+ return out}
+function difBlock(u){const k='dif'+u.mth,op=OPEN[k],sus=op?difSuspects(u.m,u.mth,u.df):[];
+ return `<button class='row arow' data-difx='${k}'><div class='rm'><div>减 ${esc(u.lbl)}</div><span style='color:var(--pp)'>${esc(u.sub)}</span></div><div class='amt' style='color:var(--pp)'>−${yen(u.v)}</div><span class='chev' style='transform:rotate(${op?90:0}deg)'>›</span></button>`
+ +(op?`<div style='padding:0 0 10px'><p class='sub' style='margin:4px 0 6px'>记账 ${yen(u.v)} − 账单 ${yen(u.bill)} = ${u.df>0?'多记了':'少记了'} ${yen(Math.abs(u.df))}。${u.df>0?'先看有没有重复或已取消的。':'可能有漏记的,导入这张卡的明细就能补上。'}</p>`
+  +(sus.length?sus.map(({x,why})=>`<div class='row' style='gap:8px'><button class='arow' data-edit='${x.id}' style='flex:1;min-width:0;display:flex;align-items:center;gap:8px;border:0;padding:0'><div class='rm'><div>${esc(x.note||x.cat)}</div><span>${+x.date.slice(5,7)}/${+x.date.slice(8)} · ${esc(why)}</span></div><div class='amt'>${yen(x.amt)}</div></button><div style='display:flex;flex-direction:column;align-items:flex-end;flex:none'><button class='lk' data-difnx='${x.id}' style='font-size:13px'>算下月账单</button><button class='lk' data-difok='${x.id}' style='font-size:13px;color:var(--mu)'>没问题</button></div></div>`).join(''):`<p class='sub' style='margin:0'>没找到明显可疑的记录。</p>`)
+  +`<button class='lk' data-upc='${u.m}' data-upm='${u.mth}' style='margin-top:6px'>查看 ${+u.m.slice(5)}月全部 ${esc(u.nm)} 记录 ›</button></div>`:'')}
+const CARDS=[['card','ppc','PayPay卡'],['rakuten','rkc','乐天卡']];
+/* 账单所属月份:利用日在上个月、但晚入账进了下个月账单的,记 bm */
+const bmOf=x=>x.bm||x.date.slice(0,7);
+const unpaidCard=d=>{const items=[];if(!d)return {items,v:0};const B=A.bills||{},pm=prevM(d.slice(0,7));
+ if(+d.slice(8)<CARD_DAY)CARDS.forEach(([mth,key,nm])=>{const v=sum(D.filter(x=>bmOf(x)===pm&&x.method===mth)),b=B[key],bill=b&&b.pay&&b.pay.slice(0,7)===d.slice(0,7)?b:null;
+  if(!v&&!bill)return;const df=bill?v-bill.val:0;
+  items.push({nm,v,m:pm,mth,df,bill:bill?bill.val:null,lbl:nm+' '+(+pm.slice(5))+'月消费',sub:bill?('账单 '+yen(bill.val)+(df?' · 差 '+(df>0?'+':'−')+yen(Math.abs(df)):' · 一致')):'本月'+CARD_DAY+'日扣款',bad:!!(bill&&df)})});
+ if(+d.slice(8)<CARD_DAY){const v=sum(D.filter(x=>x.date.startsWith(pm)&&isCredit(x.method)&&!CARDS.some(c=>c[0]===x.method)));if(v)items.push({nm:'其他卡',v,m:pm,lbl:'其他信用卡 '+(+pm.slice(5))+'月消费',sub:'本月'+CARD_DAY+'日扣款'})}
+ /* 截图时已刷、还没扣的本月信用卡 + 截图之后刷的信用卡:都还没从ゆうちょ扣走,要从现金里减掉 */
+ {const cm=d.slice(0,7),v=sum(D.filter(x=>isCredit(x.method)&&(x.date>d||(bmOf(x)===cm&&x.date<=d))));if(v)items.push({nm:'本月信用卡',v,lbl:'本月信用卡消费(还没扣款)',sub:'下月'+CARD_DAY+'日起扣款'})}
+ return {items,v:items.reduce((a,x)=>a+x.v,0)}};
+/* 现金 = ゆうちょ(减去还没扣的上月信用卡)+ PayPay残高;两者都没截过图时才按收支推算 */
+const cashSSm=()=>!!(A.cashSS||A.cashPP);
+/* 截图之后记的现金 / PayPay余额消费、截图之后入账的收入,也要算进来(信用卡部分已在 unpaidCard 里) */
+const afterSS=(d,ms)=>d?sum(D.filter(x=>x.date>d&&ms.includes(x.method))):0;
+/* 钱包现金:手动填一次实际金额,之后用「现金」支付的消费自动减(设了它,「现金」就不再从ゆうちょ里扣) */
+const walletNow=()=>{const w=A.cashW;if(!w)return 0;return w.val-sum(D.filter(x=>x.method==='cash'&&(x.date>w.upd||(x.date===w.upd&&!(w.ex||[]).includes(x.id)))))};
+const ppM=()=>(A.cashSS||A.cashW)?['paypay']:['paypay','cash'];
+const cashNow=()=>{if(cashSSm()){const s=A.cashSS?A.cashSS.upd:null,p=A.cashPP?A.cashPP.upd:null;
+ return (A.cashSS?A.cashSS.val-unpaidCard(s).v-(A.cashW?0:afterSS(s,['cash']))+sum(A.inc.filter(x=>x.date>s)):0)+(A.cashPP?A.cashPP.val-afterSS(p,ppM()):0)+walletNow()}const f=flow();return A.cash+f.i-f.o};
+const totalA=()=>stockJ()+cashNow();
+/* 每天自动记录一次总资产(打开 App / 资产页时),当天内数值变了就更新当天这条 */
+function autoSnap(){if(!(A.assets.length||A.cash||A.start))return;const td=today(),fl=flow(),sn={date:td,total:Math.round(totalA()),inv:Math.round(stockJ()),cash:Math.round(cashNow()),items:A.assets.map(x=>[x.name,Math.round(x.val)])};
+ const cur=A.snaps.find(x=>x.date===td);if(cur&&JSON.stringify(cur)===JSON.stringify(sn))return;A.snaps=A.snaps.filter(x=>x.date!==td);A.snaps.push(sn);saveA()}
+const sgn=n=>(n<0?'−':'+')+yen(Math.abs(n));
+const num=s=>{const n=parseFloat(String(s).replace(/,/g,''));return isFinite(n)?n:NaN};
+let ip=null,ap=null;
+let RFX=false;
+async function fetchRates(force){if(RFX||(!force&&A.rateAt===today()))return;RFX=true;let r=null;
+ try{const j=await (await fetch('https://api.frankfurter.app/latest?from=JPY&to=USD,CNY',{cache:'no-store'})).json();if(j&&j.rates&&j.rates.USD>0&&j.rates.CNY>0)r={USD:1/j.rates.USD,CNY:1/j.rates.CNY,d:j.date}}catch(e){}
+ if(!r)try{const j=await (await fetch('https://open.er-api.com/v6/latest/JPY',{cache:'no-store'})).json();if(j&&j.rates&&j.rates.USD>0&&j.rates.CNY>0)r={USD:1/j.rates.USD,CNY:1/j.rates.CNY,d:today()}}catch(e){}
+ RFX=false;
+ if(!r){if(force)toast('获取汇率失败,请检查网络后再试');return}
+ A.rates.USD=+r.USD.toFixed(2);A.rates.CNY=+r.CNY.toFixed(2);A.rateAt=today();A.rateD=r.d;saveA();if(force)toast('汇率已更新');
+ if(hv()==='#assets'&&AE===null&&!CE&&!(document.activeElement&&document.activeElement.matches('input,textarea')))render()}
+function chgBox(p,fm,tot){if(!p)return '';
+ const td=today(),inP=x=>x.date>p.date&&x.date<=td&&x.date>=A.start,inc=sum(A.inc.filter(inP)),out=sum(D.filter(inP)),rows=[],sg=v=>(v<0?'−':'+')+fm(Math.abs(v));
+ if(p.items){const pm=new Map(p.items),cm=new Map(A.assets.map(x=>[x.name,x.val]));
+  new Set([...pm.keys(),...cm.keys()]).forEach(n=>{const d=(cm.get(n)||0)-(pm.get(n)||0);if(Math.round(d))rows.push([n,d,!cm.has(n)?'已删除':!pm.has(n)?'新增':'','a:'+n])});
+  const adj=cashNow()-p.cash-(inc-out);
+  if(cashSSm()){const dc0=cashNow()-p.cash;if(Math.round(dc0))rows.push(['现金 / 存款',dc0,'截图更新','cash'])}else{if(inc)rows.push(['收入',inc,'','in']);if(out)rows.push(['支出',-out,'','out']);if(Math.round(adj))rows.push(['现金余额调整',adj,'修改了起算余额或起算日','cash'])}}
+ else{if(inc)rows.push(['收入',inc,'','in']);if(out)rows.push(['支出',-out,'','out']);const o=tot-p.total-(inc-out);if(Math.round(o))rows.push(['投资等其他变化',o,'看投资','inv'])}
+ const d=tot-p.total;
+ return `<div class='box' data-g='o' style='padding:12px 16px 4px'><p class='sub' style='margin:0 0 2px'>和 ${+p.date.slice(5,7)}/${+p.date.slice(8)} 的 ${fm(p.total)} 相比,变化来自:</p>`
+  +(rows.length?rows.map(([n,v,t,k])=>`<button class='row crow' data-chg='${esc(k)}' data-from='${p.date}'><div class='rm'><div>${esc(n)}</div>${t?`<span>${t}</span>`:''}</div><div class='amt' style='color:var(${v<0?'--pp':'--in'})'>${sg(v)}</div><span class='chev'>›</span></button>`).join(''):`<p class='sub' style='margin:6px 0 0'>没有变化。</p>`)
+  +(p.items?'':`<p class='sub' style='margin:8px 0 0'>从下一次确认开始,会显示每项投资各自的涨跌。</p>`)+`</div>`}
+document.addEventListener('click',e=>{const t=e.target.closest('button[data-chg]');if(!t)return;const k=t.dataset.chg,from=t.dataset.from;
+ if(k==='in'||k==='out'){Q={t:'',c:'',m:'',k,r:[from,today()]};LV='list';ym=today().slice(0,7);location.hash='#list';return}
+ const go=s=>{OPEN[s]=true;render();const b=document.querySelector(`button[data-axp='${s}']`);if(b)b.scrollIntoView({block:'start',behavior:'smooth'})};
+ if(k==='cash'){go('cash');return}
+ if(k==='inv'||k.startsWith('a:')){go('inv');return}});
+function assetForm(){if(AE==='xferW'){return `<div class="addv"><div class="strip"><span class="yen">¥</span><input id="av" class="amtin" inputmode="decimal" placeholder="0" autocomplete="off" aria-label="取出金额"></div><p class="sub" style="margin:10px 4px 0">钱包现金加上这笔,ゆうちょ减去这笔,总资产不变。取钱后马上记;如果已经更新过ゆうちょ截图,就不要用这里,直接把钱包现金改成实际金额。</p><button class="go save" id="asave">保存</button></div>`}if(AE==='xfer'){return `<div class="addv"><div class="strip"><span class="yen">¥</span><input id="av" class="amtin" inputmode="decimal" placeholder="0" autocomplete="off" aria-label="金额"></div><div class="grp"><div class="lrow"><label for="an">去向</label><input id="an" placeholder="例如 Binance" autocomplete="off"></div></div><p class="sub" style="margin:10px 4px 0">转进投资的钱不算支出,也不进统计。只是先从现金里减掉,避免和投资资产里重复算。下次更新ゆうちょ截图后会自动不再减。</p><button class="go save" id="asave">保存</button></div>`}
+ if(AE==='goal'){const g=A.goal||{},o=[];let mm=today().slice(0,7);for(let i=0;i<48;i++){mm=nextM(mm);o.push(`<option value="${mm}"${g.by===mm?' selected':''}>${mm.slice(0,4)}年${+mm.slice(5)}月</option>`)}
+  return `<div class="addv"><div class="strip"><span class="yen">¥</span><input id="av" class="amtin" inputmode="decimal" placeholder="目标金额" autocomplete="off" aria-label="目标金额" value="${g.target||''}"></div><div class="grp"><div class="lrow"><label for="an">名称</label><input id="an" placeholder="例如 搬家" autocomplete="off" value="${esc(g.name||'')}"></div><div class="lrow"><label for="gby">期限</label><select id="gby" style="flex:1;border:0;background:none;text-align:right;text-align-last:right;font-size:17px;padding:11px 0;outline:0;color:var(--tx)">${o.join('')}</select></div></div><p class="sub" style="margin:10px 4px 0">从设定时的总资产开始算,之后总资产增加多少就算存了多少。</p><button class="go save" id="asave">保存</button></div>`}
+ if(/^cash/.test(AE)){const c=AE==='cashW'?{val:A.cashW?Math.round(walletNow()):''}:A[AE];return `<div class="addv"><div class="strip"><span class="yen">¥</span><input id="av" class="amtin" inputmode="decimal" placeholder="0" autocomplete="off" aria-label="金额" value="${c.val}"></div><div class="grp"><div class="lrow"><label>项目</label><span style="flex:1;text-align:right;padding:11px 0;font-size:17px">${AE==='cashSS'?'ゆうちょ 現在高':AE==='cashW'?'钱包现金':'PayPay残高'}</span></div></div><p class="sub" style="margin:10px 4px 0">${AE==='cashW'?'填钱包里现在实际有的现金。之后用「现金」支付的消费会自动减;从ATM取钱后,记得同时更新这里和ゆうちょ。':'手动修改后以这个数为准,下次截图更新会再覆盖它。'}</p><button class="go save" id="asave">保存修改</button></div>`}
+ const x=AE==='new'?null:A.assets.find(z=>z.id===AE);
+ return `<div class="addv"><div class="strip"><span class="yen">¥</span><input id="av" class="amtin" inputmode="decimal" placeholder="0" autocomplete="off" aria-label="市值(日元)" value="${x?x.val:''}"></div>`
+ +(x?'':`<div class="sec"><div class="sech"><span>常用</span></div><div class="chips">${['美股','日股','比特币','基金'].map(n=>`<button class="chip" data-qn="${n}" style="padding:6px 12px;font-size:14px">${n}</button>`).join('')}</div></div>`)
+ +`<div class="grp"><div class="lrow"><label for="an">名称</label><input id="an" placeholder="例如 纳斯达克" autocomplete="off" value="${x?esc(x.name):''}"></div></div><p class="sub" style="margin:10px 4px 0">填券商或交易所显示的日元市值。</p><button class="go save" id="asave">${x?'保存修改':'添加'}</button></div>`}
+document.addEventListener('click',e=>{if(e.target.closest('[data-bk]')&&BACK){const b=BACK;BACK=null;Q={t:'',c:'',m:'',k:''};SY=b.SY;ym=b.ym;location.hash=b.h;return}
+ if(e.target.closest('[data-ashx]')){AE=null;ap=null;render()}
+ if(e.target.closest('[data-qpx]')){QPK=null;render();return}
+ const pk=e.target.closest('[data-qpk]');if(pk){QPK=pk.dataset.qpk;render();return}
+ const pv=e.target.closest('[data-qpv]');if(pv&&QPK){const v=pv.dataset.qpv,f=QPK==='c'?'c':'m';Q[f]=(Q[f]===v)?'':v;if(Q.k==='in')Q.k='';QPK=null;render()}});
+function assetsView(){setTimeout(()=>fetchRates(false),0);return assetsRaw()}
+const fmtD=d=>d?d.slice(0,4)+'年'+ +d.slice(5,7)+'月'+ +d.slice(8)+'日':'未设';
+function assetsRaw(){
+ try{autoSnap()}catch(e){}
+ const f=flow(),oth=cashNow(),inv=stockJ(),tot=inv+oth,dc=A.disp||'JPY';
+ const fm=n=>dc==='JPY'?yen(n):(dc==='USD'?'US$':'CN¥')+Math.round(n/A.rates[dc]).toLocaleString('en-US');
+ const sn=A.snaps.slice().sort((p,q)=>p.date.localeCompare(q.date));
+ const td=today(),prev=sn.filter(s=>s.date<td).pop(),cur=sn.find(s=>s.date===td),yd=(()=>{const x=new Date();x.setDate(x.getDate()-1);return ymd(x)})();
+ const md0=d=>d.slice(5),ccy=`<div class='chips' style='margin:2px 0 14px;gap:6px'>${[['JPY','日元'],['CNY','人民币'],['USD','美元']].map(c=>`<button class='chip' data-disp='${c[0]}' aria-pressed='${dc===c[0]}' style='padding:4px 12px;font-size:13px'>${c[1]}</button>`).join('')}</div>`;
+ let h=`<div data-g='o'><p class='big'>${dc==='JPY'?'<small>¥</small>'+nf(tot):fm(tot)}</p>`;
+ const lkS="border:0;background:none;padding:0;font:inherit;color:inherit;cursor:pointer";
+ h+=`<p class='sub' style='margin:2px 0 8px'>${prev?`<button data-chgx='1' style='${lkS}'>${prev.date===yd?'较昨天':'较 '+(+prev.date.slice(5,7))+'/'+(+prev.date.slice(8))} <b style="color:var(${tot>=prev.total?'--in':'--pp'})">${tot-prev.total<0?'−':'+'}${fm(Math.abs(tot-prev.total))}</b> <span style='display:inline-block;transform:rotate(${OPEN.chg?90:0}deg)'>›</span></button>`:'总资产 = 投资 + 现金存款'}${dc!=='JPY'?`<br><button data-rtx='1' style='${lkS}'>1 ${dc==='USD'?'美元':'人民币'} = ¥${A.rates[dc]} <span style='display:inline-block;transform:rotate(${OPEN.rt?90:0}deg)'>›</span></button>`:''}</p>${ccy}</div>`;
+ const rtb=!OPEN.rt?'':`<div class='box' data-g='o'><h2 style='margin:0 0 4px'>汇率</h2>${`<div style='display:flex;gap:8px'><div style='flex:1;min-width:0'><label for='rt-USD'>1 美元 = ?日元</label><input id='rt-USD' class='f' data-rt='USD' inputmode='decimal' value='${A.rates.USD}'></div><div style='flex:1;min-width:0'><label for='rt-CNY'>1 人民币 = ?日元</label><input id='rt-CNY' class='f' data-rt='CNY' inputmode='decimal' value='${A.rates.CNY}'></div></div><p class='sub' style='margin:8px 0 10px'>${A.rateD?'每天自动更新('+A.rateD+')':'打开资产页时自动获取'},手动改的当天不会被覆盖。<button class='lk' data-rfetch='1'>立即更新</button></p>`}</div>`;
+ const invb=`<div><p class='sub' style='margin:0 0 4px'>填券商显示的日元市值,点「编辑」可修改。</p><div>`
+ +A.assets.map(x=>`<div class='row'><div class='rm'><div>${esc(x.name)}</div>${x.src?`<span>截图更新${x.upd?' · '+(+x.upd.slice(5,7))+'/'+(+x.upd.slice(8)):''}</span>`:''}</div><div class='amt'>${yen(x.val)}</div><button class='del' data-aed='${x.id}'>编辑</button><button class='del${ap===x.id?' on':''}' data-adel='${x.id}'>${ap===x.id?'确认删除':'删除'}</button></div>`).join('')
+ +(A.assets.length?'':`<p class='sub' style='margin:8px 0 0'>还没有投资资产。</p>`)+`</div>`
+ +`<button class='go alt' data-anew='1' style='margin:10px 0 0;padding:9px'>+ 添加投资资产</button></div>`;
+ const snapb='',chb=OPEN.chg?chgBox(prev,fm,tot):'';
+ const upc=A.cashSS?unpaidCard(A.cashSS.upd):{items:[],v:0},sd=d=>(+d.slice(5,7))+'/'+(+d.slice(8));
+ const cashb=cashSSm()?`<div>${A.cashSS?`<div class='row'><div class='rm'><div>ゆうちょ 現在高</div><span>截图更新 · ${sd(A.cashSS.upd)}</span></div><div class='amt'>${yen(A.cashSS.val)}</div><button class='del' data-aed='cashSS'>编辑</button></div>`:''}${A.cashPP?`<div class='row'><div class='rm'><div>PayPay残高</div><span>截图更新 · ${sd(A.cashPP.upd)}</span></div><div class='amt'>${yen(A.cashPP.val)}</div><button class='del' data-aed='cashPP'>编辑</button></div>`:''}${A.cashW?`<div class='row'><div class='rm'><div>钱包现金</div><span>${sd(A.cashW.upd)} 起算 · 现金消费自动减</span></div><div class='amt'>${yen(walletNow())}</div><button class='del' data-aed='cashW'>编辑</button></div>`:''}${(upc.items||[]).map(u=>u.bad?difBlock(u):u.m?`<button class='row arow' data-upc='${u.m}' data-upm='${u.mth||''}'><div class='rm'><div>减 ${esc(u.lbl)}</div><span${u.bad?" style='color:var(--pp)'":''}>${esc(u.sub)}</span></div><div class='amt' style='color:var(--pp)'>−${yen(u.v)}</div><span class='chev'>›</span></button>`:`<div class='row'><div class='rm'><div>减 ${esc(u.lbl)}</div><span>${esc(u.sub)}</span></div><div class='amt' style='color:var(--pp)'>−${yen(u.v)}</div></div>`).join('')}${(()=>{const s=A.cashSS?A.cashSS.upd:null,p=A.cashPP?A.cashPP.upd:null,o=[],r=(sg,l,sub,v)=>v?`<div class='row'><div class='rm'><div>${sg} ${l}</div><span>${sub}</span></div><div class='amt' style='color:var(${sg==='减'?'--pp':'--tx'})'>${sg==='减'?'−':'+'}${yen(v)}</div></div>`:'';if(s){o.push(r('减','现金消费','ゆうちょ截图 '+sd(s)+' 之后',afterSS(s,A.cashW?[]:['cash'])));o.push(r('加','收入','ゆうちょ截图 '+sd(s)+' 之后',sum(A.inc.filter(x=>x.date>s&&!x.px))));o.push(r('加','代购回款(不算收入)','ゆうちょ截图 '+sd(s)+' 之后',sum(A.inc.filter(x=>x.date>s&&x.px))))}if(p)o.push(r('减','PayPay余额消费','PayPay截图 '+sd(p)+' 之后',afterSS(p,ppM())));const cm=today().slice(0,7),inf=(l,ms,d)=>{if(!d)return '';const L=D.filter(x=>x.date.startsWith(cm)&&ms.includes(x.method)&&own(x)),all=sum(L),b=sum(L.filter(x=>x.date<=d));return L.length?`<p class='sub' style='margin:6px 0 0'>本月${l} ${yen(all)}(截图前 ${yen(b)} 已含,截图后 ${yen(all-b)} 已减) <button data-upc='${cm}' data-upm='${ms[0]}' style='${lkS}'>明细 ›</button></p>`:''};{const cm2=today().slice(0,7),po=sum(D.filter(x=>x.date.startsWith(cm2)&&x.cat===PX_CAT)),pi=sum(A.inc.filter(x=>x.date.startsWith(cm2)&&x.px));if(po||pi)o.push(`<p class='sub' style='margin:6px 0 0'>本月代购:垫付 ${yen(po)} · 回款 ${yen(pi)} · 净 ${sgn(pi-po)}(已含在上面的加减里)</p>`)}return o.join('')})()}${A.cashW?`<button class='go alt' data-aed='xferW' style='margin:8px 0 0;padding:9px'>从ATM取钱</button>`:`<button class='go alt' data-aed='cashW' style='margin:8px 0 0;padding:9px'>+ 添加钱包现金</button>`}<p class='sub' style='margin:8px 0 0'>在ゆうちょ App 首页、PayPay ウォレット、乐天卡 App 的「合計お支払い金額」页双击手机背面就会更新。<button class='lk' data-cssoff='1'>改回按收支推算</button></p></div>`:`<div>`+(CE?`<label for='ce-cash'>起算日当天开始时的余额(日元)</label><input id='ce-cash' class='f' inputmode='numeric' value='${A.cash||''}' placeholder='0'><label for='ce-sd'>起算日</label><div class='dwrap f'><span id='ce-sdl'>${fmtD(A.start)}</span><span class='chev'>›</span><input id='ce-sd' type='date' value='${A.start}' aria-label='起算日'></div><p class='sub' style='margin:6px 0 0'>一般设一次就行。改了以后,现金会从新的起算日重新计算,已确认过的总资产数值不会变。</p><div style='display:flex;gap:6px;margin-top:12px'><button class='go' id='csave' style='margin:0;flex:1;padding:9px'>保存</button><button class='go alt' id='ccancel' style='margin:0;flex:1;padding:9px'>取消</button></div>`
+  :`<div><div class='row'><div class='rm'><div>起算余额</div><span>${A.start} 起算</span></div><div class='amt'>${yen(A.cash||0)}</div></div><div class='row'><div class='rm'><div>起算日以来收入</div></div><div class='amt' style='color:var(--in)'>${sgn(f.i)}</div></div><div class='row'><div class='rm'><div>起算日以来支出</div></div><div class='amt'>${f.o?'−'+yen(f.o):yen(0)}</div></div></div><button class='go alt' id='cedit' style='margin:10px 0 0;padding:9px'>修改起算余额 / 起算日</button><p class='sub' style='margin:10px 0 0'>余额 = 起算余额 + 收入 − 支出</p>`)+`</div>`;
+ let trb='';{const all=sn,RG=A.rg||'3m',lastD=all.length?all[all.length-1].date:td,dd0=(d,n)=>{const x=new Date(d+'T00:00:00');x.setDate(x.getDate()-n);return ymd(x)};
+  const longer=all.length>1&&Date.parse(lastD)-Date.parse(all[0].date)>31*864e5,cutD=!longer||RG==='all'?'':dd0(lastD,RG==='1m'?30:91);
+  let pts=all.filter(s=>!cutD||s.date>=cutD);if(pts.length<2)pts=all.slice(-2);
+  if(pts.length<2)trb=`<div class='box' data-g='o'><h2>总资产走势</h2><p class='sub' style='margin:4px 0 0'>每天打开资产页时会自动记录一次总资产,记满 2 天就能看到走势。</p></div>`;
+  else{const n=pts.length,md=d=>+d.slice(5,7)+'/'+ +d.slice(8),t0=Date.parse(pts[0].date),sp=(Date.parse(pts[n-1].date)-t0)||1;
+   const vs=pts.map(s=>s.total),mn=Math.min(...vs),mx=Math.max(...vs),pd=(mx-mn)*.18||Math.abs(mx)*.02||1,lo=mn-pd,hi=mx+pd;
+   const X=s=>(Date.parse(s.date)-t0)/sp*100,Y=v=>(hi-v)/(hi-lo)*100,first=pts[0],last=pts[n-1],d0=last.total-first.total;
+   const cpt=v=>dc==='JPY'?(Math.abs(v)>=1e4?'¥'+(v/1e4).toFixed(Math.abs(v)>=1e6?0:1).replace(/\.0$/,'')+'万':yen(v)):fm(v);
+   const gl=[hi-(hi-lo)*.12,(hi+lo)/2,lo+(hi-lo)*.12];
+   const xy=pts.map(s=>[X(s)*3,Y(s.total)]),line=xy.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+   const rgc=longer?`<div class='chips' style='margin:0;gap:4px;flex-wrap:nowrap'>${[['1m','1个月'],['3m','3个月'],['all','全部']].map(c=>`<button class='chip' data-rg='${c[0]}' aria-pressed='${RG===c[0]}' style='padding:3px 10px;font-size:12.5px'>${c[1]}</button>`).join('')}</div>`:'';
+   trb=`<div class='box' data-g='o'><div style='display:flex;justify-content:space-between;align-items:center;gap:8px'><h2 style='margin:0'>总资产走势</h2>${rgc}</div>`
+   +`<p class='sub' style='margin:6px 0 0'>${md(first.date)} <b style='color:var(${d0>=0?'--in':'--pp'})'>${d0>=0?'+':'−'}${fm(Math.abs(d0))}${first.total?' ('+(d0>=0?'+':'−')+Math.abs(d0/first.total*100).toFixed(1)+'%)':''}</b></p><p class='sub' id='sro' style='margin:0 0 8px;font-size:13px'>${md(last.date)} ${fm(last.total)}</p>`
+   +`<div style='position:relative;height:130px;margin:8px 6px 0 46px'>`
+   +gl.map(v=>`<div style='position:absolute;left:-6px;right:-6px;top:${Y(v)}%;border-top:1px dashed var(--ln)'><span style='position:absolute;right:calc(100% + 4px);top:-8px;font-size:10.5px;color:var(--mu);white-space:nowrap'>${cpt(v)}</span></div>`).join('')
+   +`<svg viewBox='0 0 300 100' preserveAspectRatio='none' style='position:absolute;inset:0;width:100%;height:100%;overflow:visible'><defs><linearGradient id='sg' x1='0' y1='0' x2='0' y2='1'><stop offset='0' stop-color='var(--ac)' stop-opacity='.3'/><stop offset='1' stop-color='var(--ac)' stop-opacity='0'/></linearGradient></defs><polygon fill='url(#sg)' points='${xy[0][0].toFixed(1)},100 ${line} ${xy[n-1][0].toFixed(1)},100'/><polyline fill='none' stroke='var(--ac)' stroke-width='2.5' stroke-linejoin='round' stroke-linecap='round' vector-effect='non-scaling-stroke' points='${line}'/></svg>`
+   +pts.map((s,k)=>`<button class='sp${k===n-1?' on':''}' data-sp='${k}' data-lb='${md(s.date)} ${fm(s.total)}' aria-label='${md(s.date)} ${fm(s.total)}' style='left:${X(s).toFixed(2)}%'><i style='top:${Y(s.total).toFixed(2)}%${n>12&&k!==n-1?';opacity:0':''}'></i></button>`).join('')
+   +`</div><div class='leg' style='justify-content:space-between;margin:6px 0 0 46px;font-size:12px'><span>${md(first.date)}</span>${n>2?`<span>${md(pts[Math.floor((n-1)/2)].date)}</span>`:''}<span>${md(last.date)}</span></div></div>`}}
+ const xr=(k,lb,sub,v,inner)=>`<button class='row arow' data-axp='${k}'><div class='rm'><div>${lb}</div>${sub?`<span>${sub}</span>`:''}</div><div class='amt'>${v}</div><span class='chev' style='transform:rotate(${OPEN[k]?90:0}deg)'>›</span></button>${OPEN[k]?`<div style='padding:2px 0 14px'>${inner}</div>`:''}`;
+ const gcard=(()=>{const g=A.goal;if(!g)return `<button class='go alt' data-aed='goal' style='margin:0 0 14px;padding:10px'>＋ 设置储蓄目标</button>`;
+  const saved=Math.max(0,tot-g.base),pc=Math.min(100,saved/g.target*100),c=today().slice(0,7),ml=(+g.by.slice(0,4)*12+ +g.by.slice(5))-(+c.slice(0,4)*12+ +c.slice(5)),need=Math.max(0,g.target-saved),done=saved>=g.target;
+  return `<div class='box' data-g='o'><div style='display:flex;align-items:center;gap:6px'><h2 style='margin:0;flex:1'>储蓄目标 · ${esc(g.name)}</h2><button class='del' data-aed='goal'>编辑</button><button class='del${ap==='goal'?' on':''}' data-gdel='1'>${ap==='goal'?'确认删除':'删除'}</button></div><div class='pb' style='height:10px;margin:10px 0 6px'><i style='width:${pc}%;background:var(${done?'--in':'--ac'})'></i></div><div style='display:flex;justify-content:space-between;font-size:13.5px'><span>已存 ${yen(saved)} / ${yen(g.target)}</span><b style='color:var(${done?'--in':'--tx'})'>${done?'已达成':Math.round(pc)+'%'}</b></div><p class='sub' style='margin:6px 0 0;font-size:12.5px'>${done?'目标达成,可以编辑设一个新目标。':ml>0?'到 '+g.by.slice(0,4)+'年'+ +g.by.slice(5)+'月还差 '+yen(need)+',每月约存 '+yen(Math.ceil(need/ml/1000)*1000):'已到期,还差 '+yen(need)}</p></div>`})();
+ return h+asnCard()+rtb+chb+trb+gcard+`<div class='box' style='padding:2px 16px'>`+xr('inv','投资资产',A.assets.length?A.assets.length+' 项':'',fm(inv),invb)+xr('cash','现金 / 存款','',fm(oth),cashb)+`</div>`+snapb;
+}
+document.addEventListener('click',e=>{
+ const t=e.target.closest('button');if(!t)return;
+ if(t.dataset.sp!==undefined){const r=$('sro');if(r){r.textContent=t.dataset.lb;document.querySelectorAll('.sp.on').forEach(b=>b.classList.remove('on'));t.classList.add('on')}return}
+ if(t.id==='snap'){const td=today();A.snaps=A.snaps.filter(s=>s.date!==td);const fl=flow();A.snaps.push({date:td,total:Math.round(totalA()),inv:Math.round(stockJ()),cash:Math.round(cashNow()),items:A.assets.map(x=>[x.name,Math.round(x.val)])});saveA();toast('已确认今日总资产');render();return}
+ if(t.dataset.disp){A.disp=t.dataset.disp;saveA();render();return}
+ if(t.dataset.qn){$('an').value=t.dataset.qn;$('av').focus();return}
+ if(t.dataset.aed){AE=/^(cash|goal|xfer)/.test(t.dataset.aed)?t.dataset.aed:+t.dataset.aed;ap=null;render();const e=$('av');if(e){CALC.tag();e.focus()}return}
+ if(t.dataset.gdel){if(ap==='goal'){delete A.goal;ap=null;saveA();toast('已删除储蓄目标')}else ap='goal';render();return}
+ if(t.dataset.anew){AE='new';ap=null;render();const e=$('av');if(e){CALC.tag();e.focus()}return}
+ if(t.id==='acancel'){AE=null;ap=null;render();return}
+ if(t.id==='asave'&&AE==='xfer'){const v=num($('av').value);if(!(v>0)){toast('请填写金额');return}(A.xfer=A.xfer||[]).push({id:Date.now(),date:today(),amt:Math.round(v),nm:$('an').value.trim()});AE=null;saveA();toast('已记录,现金已减去这笔');render();return}
+ if(t.dataset.xdel){A.xfer=(A.xfer||[]).filter(x=>x.id!==+t.dataset.xdel);saveA();render();return}
+ if(t.id==='asave'&&AE==='goal'){const name=$('an').value.trim()||'储蓄目标',v=num($('av').value),by=$('gby').value;if(!(v>0)){toast('请填写目标金额');return}
+  A.goal=Object.assign({base:Math.round(stockJ()+cashNow())},A.goal||{},{name,target:Math.round(v),by});AE=null;saveA();toast('已保存储蓄目标');render();return}
+ if(t.id==='asave'&&AE==='xferW'){const v=num($('av').value);if(!(v>0)){toast('请填写金额');return}const td=today();A.cashW={val:Math.round(walletNow()+v),upd:td,ex:D.filter(x=>x.method==='cash'&&x.date===td).map(x=>x.id)};if(A.cashSS)A.cashSS.val=Math.round(A.cashSS.val-v);AE=null;saveA();try{autoSnap()}catch(e){}toast('已记录:钱包现金 +'+Math.round(v));render();return}
+ if(t.id==='asave'&&AE==='cashW'){const v=num($('av').value);if(!(v>=0)){toast('请填写金额');return}const td=today();A.cashW={val:Math.round(v),upd:td,ex:D.filter(x=>x.method==='cash'&&x.date===td).map(x=>x.id)};AE=null;saveA();try{autoSnap()}catch(e){}toast('已保存');render();return}
+ if(t.id==='asave'&&/^cash/.test(AE)){const v=num($('av').value);if(!(v>=0)){toast('请填写金额');return}A[AE].val=Math.round(v);AE=null;saveA();toast('已保存');render();return}
+ if(t.id==='asave'){const name=$('an').value.trim(),v=num($('av').value);if(!name||!(v>=0)){toast('请填写名称和市值');return}if(AE==='new'){A.assets.push({id:Date.now(),name,val:Math.round(v)});toast('已添加 '+name)}else{const x=A.assets.find(z=>z.id===AE);if(x){x.name=name;x.val=Math.round(v);toast('已保存')}}AE=null;saveA();render();return}
+ if(t.id==='cedit'){CE=true;render();return}
+ if(t.dataset.sdset){OPEN.cash=true;CE=true;render();const f=$('ce-sd');if(f)f.scrollIntoView({block:'center'});return}
+ if(t.id==='ccancel'){CE=false;render();return}
+ if(t.id==='csave'){const n=num($('ce-cash').value);A.cash=isFinite(n)?n:0;A.start=$('ce-sd').value||today();CE=false;saveA();toast('已保存');render();return}
+ if(t.dataset.rfetch){fetchRates(true);return}
+ if(t.dataset.rtx){OPEN.rt=!OPEN.rt;render();return}
+ if(t.dataset.upc){Q=t.dataset.upm?{t:'',c:'',m:t.dataset.upm,k:'out',f:''}:{t:'',c:'',m:'',k:'out',f:'',cr:1};ym=t.dataset.upc;LV='list';location.hash='#list';return}
+ if(t.dataset.difnx){const x=D.find(z=>z.id===+t.dataset.difnx);if(x){const[y,mo]=bmOf(x).split('-').map(Number),d=new Date(y,mo,1);x.bm=d.getFullYear()+'-'+pad(d.getMonth()+1);save();toast('这笔改算到 '+(+x.bm.slice(5))+' 月的账单')}render();return}
+ if(t.dataset.difok){const x=D.find(z=>z.id===+t.dataset.difok);if(x){x.difok=1;save();toast('已标记,不再列出这笔')}render();return}
+ if(t.dataset.difx){OPEN[t.dataset.difx]=!OPEN[t.dataset.difx];render();return}
+ if(t.dataset.cssoff){delete A.cashSS;delete A.cashPP;delete A.cashW;saveA();try{autoSnap()}catch(e){}toast('已改回按收支推算');render();return}
+ if(t.dataset.rg){A.rg=t.dataset.rg;saveA();render();return}
+ if(t.dataset.chgx){OPEN.chg=!OPEN.chg;render();return}
+ if(t.dataset.axp){const k=t.dataset.axp;OPEN[k]=!OPEN[k];if(!OPEN.inv)AE=null;if(!OPEN.cash)CE=false;render();return}
+ if(t.dataset.adel){const id=+t.dataset.adel;if(ap===id){A.assets=A.assets.filter(x=>x.id!==id);ap=null;AE=null;saveA();toast('已删除')}else ap=id;render();return}
+ if(t.id==='iadd'){const amt=num($('ia').value);if(!(amt>0)){toast('请先输入收入金额');$('ia').focus();return}
+  const date=$('idt').value||today();A.inc.push({id:Date.now(),amt:Math.round(amt),note:$('inn').value.trim(),date});saveA();toast('已记录收入 '+yen(amt));render();return}
+ if(t.dataset.idel){const id=+t.dataset.idel,it=A.inc.find(x=>x.id===id);if(it){A.inc=A.inc.filter(x=>x.id!==id);ip=null;saveA();toast('已删除',()=>{A.inc.push(it);saveA();render()})}render()}
+});
+document.addEventListener('change',e=>{
+ const t=e.target;
+ if(t.dataset&&t.dataset.av){const x=A.assets.find(z=>z.id===+t.dataset.av),n=num(t.value);if(x&&n>=0){x.val=Math.round(n);saveA()}render();return}
+ if(t.id==='cash'){const n=num(t.value);A.cash=isFinite(n)?n:0;saveA();render()}
+ if(t.dataset&&t.dataset.rt){const n=num(t.value);if(n>0){A.rates[t.dataset.rt]=n;saveA()}render();return}
+ if(t.id==='sd'){A.start=t.value||today();saveA();render()}
+});
+const CK='kakeibo.cfg.v1';
+let B={total:0,cats:{}},R=[],Q={t:'',c:'',m:'',k:''},uid=Date.now(),rp=null,bkc=false;
+try{const o=JSON.parse(localStorage.getItem(CK)||'{}');if(o.B)B=Object.assign({total:0,cats:{}},o.B);if(Array.isArray(o.R))R=o.R}catch(e){}
+let UI={theme:'auto',accent:'orange',home:'add'},CC=[],CDP='';
+bindUI(()=>UI);
+const ACC={orange:['橙色',null,null],green:['青绿','#0e7a68','#3cc3a8'],blue:['蓝色','#2f6fed','#7aa2ff'],purple:['紫色','#7c4dff','#b39dff'],pink:['粉红','#d6336c','#ff7aa8']};
+const saveC=()=>{try{localStorage.setItem(CK,JSON.stringify({B,R,UI,CC,PM}))}catch(e){toast('保存失败:浏览器禁止了本地存储')}dirty()};
+try{const o=JSON.parse(localStorage.getItem(CK)||'{}');if(o.UI)UI=Object.assign(UI,o.UI);if(Array.isArray(o.CC))CC=o.CC;if(Array.isArray(o.PM)&&o.PM.length&&o.PM.every(m=>Array.isArray(m)&&m[0]&&m[1]))PM=o.PM}catch(e){}
+applyPM();
+if(!ACC[UI.accent])UI.accent='orange';
+if(!UI.lang&&FRESH)UI.lang='auto';
+function applyCats(){CATS.length=0;const a=[...BASE.slice(0,-1).filter(c=>!(UI.hc||[]).includes(c)),...CC.filter(c=>!BASE.includes(c))],o=UI.co||[],ix=c=>{const i=o.indexOf(c);return i<0?1e4+a.indexOf(c):i};CATS.push(...a.sort((p,q)=>ix(p)-ix(q)),BASE[BASE.length-1])}
+function applyUI(){
+ const r=document.documentElement;
+ if(UI.theme!=='auto'){r.setAttribute('data-theme',UI.theme);r.dataset.kk='1'}else if(r.dataset.kk){r.removeAttribute('data-theme');delete r.dataset.kk}
+ let st=document.getElementById('ui-css');if(!st){st=document.createElement('style');st.id='ui-css';document.head.appendChild(st)}
+ const a=ACC[UI.accent];
+ st.textContent=a&&a[1]?`:root{--ac:${a[1]};--on:#fff}@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ac:${a[2]};--on:#10151a}}:root[data-theme="dark"]{--ac:${a[2]};--on:#10151a}:root[data-theme="light"]{--ac:${a[1]};--on:#fff}`:'';
+}
+applyCats();applyUI();
+const nid=()=>++uid;
+const BKK='kakeibo.bk.v1';
+const bkGet=()=>{try{return JSON.parse(localStorage.getItem(BKK)||'{}')}catch(e){return {}}};
+const bkSet=p=>{try{localStorage.setItem(BKK,JSON.stringify(Object.assign(bkGet(),p)))}catch(e){}};
+(()=>{if(!bkGet().first)bkSet({first:today()})})();
+const dayDiff=(a,b)=>Math.floor((Date.parse(b)-Date.parse(a))/864e5);
+function bkDue(){const g=bkGet(),t=today();if(!(D.length||A.inc.length||A.assets.length))return false;if(g.snooze&&t<g.snooze)return false;const base=g.last||g.first||t;return dayDiff(base,t)>=(g.last?14:7)}
+async function saveFile(name,data,mime){
+ try{if(typeof claude!=='undefined'&&claude&&claude.use){const dl=await claude.use('downloads');if(dl){await dl.save({filename:name,data});return true}}}catch(err){if(err&&err.code==='declined')return false}
+ try{const f=new File([data],name,{type:mime||'text/plain'});if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:name});return true}}catch(err){if(err&&err.name==='AbortError')return false}
+ try{const u=URL.createObjectURL(new Blob([data],{type:mime||'text/plain'})),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),2000);return true}catch(e){toast('导出失败,请改用「复制备份内容」');return false}
+}
+const RK='kakeibo.rv.v1';
+let RV={items:[],ign:{},unc:[],dis:[]};
+try{RV=Object.assign(RV,JSON.parse(localStorage.getItem(RK)||'{}'))}catch(e){}
+const TRF=/送った|受け取った|送金|受け取り|受取|送る|わりかん|割り勘/;
+const saveRV=()=>{try{localStorage.setItem(RK,JSON.stringify(RV))}catch(e){}};
+const nextM=m=>{let[y,k]=m.split('-').map(Number);k++;if(k>12){k=1;y++}return y+'-'+String(k).padStart(2,'0')};
+const prevM=m=>{const[y,mo]=m.split('-').map(Number);const d=new Date(y,mo-2,1);return d.getFullYear()+'-'+pad(d.getMonth()+1)};
+function applyRec(){
+ let ch=false;const now=today(),cm=now.slice(0,7);
+ R.forEach(r=>{let[y,m]=(r.last||prevM(cm)).split('-').map(Number);
+  for(let k=0;k<24;k++){m++;if(m>12){m=1;y++}const mm=y+'-'+pad(m);if(mm>cm)break;
+   const d=mm+'-'+pad(Math.min(r.day,new Date(y,m,0).getDate()));if(d>now)break;
+   if(!manHit(r,mm))D.push({id:nid(),amt:r.amt,method:r.method,cat:r.cat,note:r.name,date:d,rid:r.id});r.last=mm;ch=true}});
+ if(ch){save();saveC()}
+}
+applyRec();
+/* 固定收入(可多项):到日子自动记一笔收入;day=31 表示每月最后一天 */
+function applyRi(){let ch=false;
+ if(A.sal){if(A.sal.amt>0&&!(A.ri&&A.ri.length))A.ri=[{id:nid(),name:'工资',amt:A.sal.amt,day:31,last:A.sal.last,rid:'sal'}];delete A.sal;ch=true}
+ const now=today(),cm=now.slice(0,7);
+ (A.ri||[]).forEach(S=>{let[y,m]=(S.last||prevM(cm)).split('-').map(Number);const rid=S.rid||'ri'+S.id;
+  for(let k=0;k<36;k++){m++;if(m>12){m=1;y++}const mm=y+'-'+pad(m);if(mm>cm)break;const d=mm+'-'+pad(Math.min(S.day,new Date(y,m,0).getDate()));if(d>now)break;
+   if(!A.inc.some(x=>x.rid===rid&&x.date.startsWith(mm)))A.inc.push({id:nid(),amt:S.amt,note:S.name,date:d,rid});S.last=mm;ch=true}});
+ if(ch)saveA();return ch}
+try{applyRi()}catch(e){}
+const parseCSV=t=>{const rows=[];let r=[],c='',q=false;for(let i=0;i<t.length;i++){const ch=t[i];if(q){if(ch==='"'){if(t[i+1]==='"'){c+='"';i++}else q=false}else c+=ch}else if(ch==='"')q=true;else if(ch===','){r.push(c);c=''}else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&t[i+1]==='\n')i++;r.push(c);c='';if(r.some(x=>x!==''))rows.push(r);r=[]}else c+=ch}r.push(c);if(r.some(x=>x!==''))rows.push(r);return rows};
+/* 导入时和手动记录对账:同日+同金额+同支付方式 → 自动合并;同日同金额(方式不同)或相差一天 → 让你确认 */
+const dd=(a,b)=>Math.abs((new Date(a)-new Date(b))/864e5);
+function matchManual(date,amt,method,claimed){const pool=D.filter(z=>(!z.ref||AUTOR.test(z.ref))&&!z.rid&&z.amt===amt&&!claimed.has(z.id));
+ const ex=pool.find(z=>z.date===date&&z.method===method);if(ex)return {auto:ex};
+ const nr=pool.find(z=>z.date===date)||pool.find(z=>z.method===method&&dd(z.date,date)<=1);return nr?{ask:nr}:null}
+function linkManual(z,ref,note){z.ref=ref;if(!z.note)z.note=note}
+const IMPM=['paypay','card','rakuten'];
+const AUTOR=/^(ap|ml|ss):/;
+/* 明细导入覆盖到的最后日期(只算真正从明细导入的,不算自动记的) */
+/* 截图记的那笔虽然带取引番号,但不算「明细已导入到这天」,否则同一天手动记的会被误标为明细里没有 */
+const stmtLast=m=>D.reduce((a,z)=>z.ref&&!AUTOR.test(z.ref)&&z.via!=='ss'&&z.method===m&&z.date>a?z.date:a,'');
+function reconTag(x){
+ if(x.ref&&AUTOR.test(x.ref)){const src=x.ref.startsWith('ml:')?'邮件':x.ref.startsWith('ss:')?'截图':'Apple Pay',last=stmtLast(x.method);
+  /* 明细已经导入到这笔之后,却没对上 → 可能被取消/退款,或明细里金额不同 */
+  return last&&x.date<last?'<span class="tg bad">'+src+' · CSV(至 '+(+last.slice(5,7))+'/'+(+last.slice(8))+')中无此笔</span>':'<span class="tg">'+src+'</span>'}
+ if(x.via==='ss')return '<span class="tg">截图</span>';
+ if(x.ref||x.rid||!IMPM.includes(x.method))return '';
+ const last=stmtLast(x.method);
+ return last&&x.date<=last?'<span class="tg bad">CSV(至 '+(+last.slice(5,7))+'/'+(+last.slice(8))+')中无此笔</span>':'<span class="tg">明细未到</span>'}
+/* ===== 疑似重复扣款:订阅服务 = 同一个月扣了多次;其他乐天卡消费 = 同一天同店同额多次(Suica 充值、麦当劳这种隔几天一次的不算) ===== */
+const SUBRE=/APPLE|ICLOUD|ITUNES|NETFLIX|SPOTIFY|AMAZON|PRIME|GOOGLE|YOUTUBE|DISNEY|HULU|U-NEXT|ADOBE|MICROSOFT|OPENAI|CHATGPT|ANTHROPIC|CLAUDE|DAZN|ABEMA|NINTENDO|PLAYSTATION|DROPBOX|楽天モバイル|DOCOMO|SOFTBANK|AHAMO|POVO/i;
+const mkey=n=>String(n||'').normalize('NFKC').toUpperCase().replace(/\s+/g,' ').trim();
+function dupCharges(m){
+ const ok=new Set(UI.dupok||[]),g={},seen={};
+ D.forEach(x=>{if(!x.ref||!x.note||!(x.method==='rakuten'||SUBRE.test(mkey(x.note))))return;const b=mkey(x.note)+'|'+x.amt;(seen[b]=seen[b]||new Set()).add(x.date.slice(0,7));
+  if(m&&!x.date.startsWith(m))return;const k=b+'|'+(SUBRE.test(mkey(x.note))?x.date.slice(0,7):x.date);(g[k]=g[k]||{k,b,n:x.note,amt:x.amt,mo:x.date.slice(0,7),xs:[]}).xs.push(x)});
+ return Object.values(g).filter(o=>o.xs.length>=2&&!ok.has(o.k)).sort((p,q)=>q.mo.localeCompare(p.mo)||q.amt-p.amt)}
+function dupCard(gs){if(!gs.length)return '';
+ return `<div class="box dupc"><h2><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>疑似重复扣款 · ${gs.length} 组</h2><p class="sub" style="margin:0 0 4px">同一商户、同一金额,同一个月被扣了不止一次。如果确实是重复扣款,可以联系商户(Apple 可在「设置 → Apple 账户 → 订阅 / 购买记录」里查看)或卡公司申请退款。</p>`
+ +gs.map(o=>`<div class="dupg"><div class="dupt"><b>${esc(o.n)}</b><span>${yen(o.amt)} × ${o.xs.length}</span></div><p class="sub" style="margin:2px 0 8px">${+o.mo.slice(5)} 月 · ${o.xs.map(x=>+x.date.slice(5,7)+'/'+(+x.date.slice(8))).sort().join('、')} · ${mname(o.xs[0].method)} · 多扣了 ${yen(o.amt*(o.xs.length-1))}</p><div class="btns"><button class="go alt" data-dupv="${esc(o.n)}" data-dupm="${o.mo}">查看这几笔</button><button class="go alt" data-dupok="${esc(o.k)}">不是重复</button></div></div>`).join('')+`</div>`}
+document.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)return;
+ if(t.dataset.dupv!==undefined){Q={t:t.dataset.dupv,c:'',m:'',k:'out'};ym=t.dataset.dupm;LV='list';if(hv()==='#list')render();else location.hash='#list';return}
+ if(t.dataset.dupok!==undefined){UI.dupok=[...(UI.dupok||[]),t.dataset.dupok];saveC();toast('已标记为正常扣款,不再提醒');render();return}});
+function importPay(t){
+ const rows=parseCSV(t.replace(/^﻿/,'')),hi=rows.findIndex(r=>r.some(x=>x.includes('取引日')));
+ if(hi<0){toast('没有找到「取引日」列,请确认是 PayPay 导出的 CSV');return}
+ const H=rows[hi],col=n=>H.findIndex(x=>x.includes(n)),di=col('取引日'),oi=col('出金金額'),ii=col('入金金額'),ci=col('取引内容'),mi=col('取引先'),ti=col('取引方法'),ni=col('取引番号');
+ if(oi<0){toast('没有找到「出金金額」列');return}
+ let add=0,dup=0,sus=0,rec=0,trf=0,inA=0,ptN=0;const claimed=new Set(),items=[],ign={},unc=[],yn=v=>num((v||'').replace(/[,円]/g,''));
+ rows.slice(hi+1).forEach(r=>{
+  const kind=ci>=0?(r[ci]||'').trim():'',out=yn(r[oi]),inn=ii>=0?yn(r[ii]):NaN;
+  const m=(r[di]||'').match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);if(!m)return;
+  const date=m[1]+'-'+pad(+m[2])+'-'+pad(+m[3]),note=((mi>=0&&r[mi]?r[mi]:kind)).normalize('NFKC').replace(/\*+$/,'').trim();
+  const amt=out>0?out:inn>0?inn:0,ref='pp:'+(ni>=0&&r[ni]?r[ni]:date+amt+note);
+  /* 给别人转账记为支出,收到别人的钱记为收入(直接入账,不用再确认) */
+   if(TRF.test(kind)&&(out>0||inn>0)){
+    if(D.some(x=>x.ref===ref)||A.inc.some(x=>x.ref===ref)){dup++;return}
+    const pt=pplOf(note);
+    if(out>0){const ra=Math.round(out),id=nid(),cat=pt==='aa'?'餐饮':pt==='px'?PX_CAT:(guess(note)||'其他');D.push({id,amt:ra,method:vm('paypay'),cat,note:note||'转账',date,ref});add++;trf++;if(cat==='其他')unc.push(id)}
+    else if(pt==='aa'){const ra=Math.round(inn);if(D.some(z=>z.amt===-ra&&z.date===date&&pkey(z.note)===pkey(note)))dup++;else{D.push({id:nid(),amt:-ra,method:vm('paypay'),cat:'餐饮',note:note||'还款',date,ref,aa:1});add++;trf++}}
+    else{const ex=incDup(Math.round(inn),date,note||'收款');if(ex){if(!(ex.ref||'').startsWith('pp:'))ex.ref=ref;dup++}else{A.inc.push({id:nid(),amt:Math.round(inn),note:note||'收款',date,ref,...(pt==='px'?{px:1}:{})});inA++;trf++}}
+    return}
+   if(/支払い/.test(kind)&&out>0){
+   {const z=D.find(x=>x.ref===ref);if(z){if(!z.pt&&ti>=0&&/ポイント/.test(r[ti]||'')){z.ptu=1;ptN++}dup++;return}}
+   const pm=ti>=0?r[ti]||'':'',cat=guess(note)||'其他',method=vm(/クレジット|カード/.test(pm)?'card':'paypay'),ra=Math.round(out),ptu=/ポイント/.test(pm)?{ptu:1}:{};
+   const mm=matchManual(date,ra,method,claimed);
+   if(mm&&mm.auto){claimed.add(mm.auto.id);linkManual(mm.auto,ref,note);rec++;return}
+   if(mm){const cand=mm.ask;claimed.add(cand.id);items.push({ref,date,amt:ra,dir:'out',kind:'疑似重复',note,dupOf:cand.id,method,cat});sus++;return}
+   const id=nid();D.push({id,amt:ra,method,cat,note,date,ref,...ptu,...(fixOf(note)?{fix:true}:{})});add++;if(cat==='其他')unc.push(id);return}
+  if(/チャージ|投資|ポイント/.test(kind)||!(amt>0)){const k=kind||'其他';ign[k]=(ign[k]||0)+1;return}
+  if(D.some(x=>x.ref===ref)||A.inc.some(x=>x.ref===ref)||RV.dis.includes(ref)||items.some(x=>x.ref===ref))return;
+  items.push({ref,date,amt:Math.round(amt),dir:out>0?'out':'in',kind,note})});
+ RV.items=[...RV.items.filter(x=>!items.some(y=>y.ref===x.ref)),...items];
+ RV.ign=ign;
+ RV.unc=[...RV.unc.filter(id=>D.some(x=>x.id===id&&x.cat==='其他')),...unc];
+ saveRV();save();if(inA)saveA();
+ const dg=dupCharges().length;toast(`${ptN?'标出 '+ptN+' 笔用了积分的,':''}导入 ${add} 笔${inA?',收入 '+inA+' 笔':''}${trf?'(含转账/收款 '+trf+' 笔)':''},重复 ${dup} 笔${rec?',自动对账 '+rec+' 笔':''}${sus?',疑似重复 '+sus+' 笔待确认':''}${dg?',发现 '+dg+' 组疑似重复扣款,首页顶部可查看':''}。需确认的项目见下方`);render();
+}
+/* ===== 乐天卡 PDF 明细导入 ===== */
+const PDFJS='https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/';
+let pdfjsP=null;
+const loadPdfjs=()=>pdfjsP||(pdfjsP=import(/* @vite-ignore */ PDFJS+'legacy/build/pdf.min.mjs').then(m=>{m.GlobalWorkerOptions.workerSrc=PDFJS+'legacy/build/pdf.worker.min.mjs';return m}).catch(e=>{pdfjsP=null;throw e}));
+function rkParse(pages){
+ let card='',rows=[];
+ pages.forEach(items=>{
+  const L=[];
+  items.forEach(it=>{const s=(it.s||'').trim();if(!s)return;let l=L.find(l=>Math.abs(l.y-it.y)<2.5);if(!l){l={y:it.y,a:[]};L.push(l)}l.a.push({s,x:it.x})});
+  L.forEach(l=>{l.a.sort((p,q)=>p.x-q.x);const a=l.a;
+   const cm=a.map(x=>x.s).join(' ').match(/(\S*カード\S*)\s*[\*\-]+(\d{4})/);if(cm&&!card)card=cm[2];
+   const dm=a[0].s.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);if(!dm)return;
+   const nums=a.filter(x=>/^[-−△▲]?[\d,]+$/.test(x.s));if(nums.length<3)return;
+   const shop=a.filter(x=>x.x>a[0].x+20&&x.x<nums[0].x&&!/^(本人|家族)|払い$|^リボ|^分割/.test(x.s)).map(x=>x.s).join(' ');
+   const v=nums[0].s,amt=parseInt(v.replace(/[^\d]/g,''),10);if(!(amt>0))return;
+   rows.push({date:dm[1]+'-'+pad(+dm[2])+'-'+pad(+dm[3]),note:shop.normalize('NFKC').replace(/利用国[A-Z]{2}$/,'').replace(/\s+/g,' ').trim(),amt,neg:/^[-−△▲]/.test(v)});
+  });
+ });
+ return {card,rows};
+}
+async function importRakuten(files){
+ toast('正在读取 PDF…');
+ let m;try{m=await loadPdfjs()}catch(e){toast('PDF 解析组件加载失败,请联网后再试');return}
+ let add=0,dup=0,sus=0,nf=0,rec=0;const claimed=new Set(),items=[],ign={},unc=[],ums=new Set();
+ for(const f of files){
+  let r;
+  try{const doc=await m.getDocument({data:new Uint8Array(await f.arrayBuffer()),cMapUrl:PDFJS+'cmaps/',cMapPacked:true}).promise;const pages=[];
+   for(let p=1;p<=doc.numPages;p++){const tc=await (await doc.getPage(p)).getTextContent();pages.push(tc.items.map(i=>({s:i.str,x:i.transform[4],y:i.transform[5]})))}
+   r=rkParse(pages)}catch(e){r={rows:[]}}
+  if(!r.rows.length){nf++;continue}
+  const seen={},mc={};r.rows.forEach(x=>{const k=x.date.slice(0,7);mc[k]=(mc[k]||0)+1});const sm=Object.keys(mc).sort((p,q)=>mc[q]-mc[p])[0];
+  r.rows.forEach(x=>{ums.add(x.date.slice(0,7));
+   const k=x.date+':'+x.amt+':'+x.note;seen[k]=(seen[k]||0)+1;const ref='rk:'+(r.card||'')+':'+k+':'+seen[k];
+   if(/PAYPAY|ペイペイ/i.test(x.note)){ign['PayPay 充值']=(ign['PayPay 充值']||0)+1;return}
+   {const z=D.find(z=>z.ref===ref);if(z){if(sm&&z.date.slice(0,7)<sm&&!z.bm)z.bm=sm;dup++;return}}
+   if(x.neg){if(!A.inc.some(z=>z.ref===ref)&&!RV.dis.includes(ref))items.push({ref,date:x.date,amt:x.amt,dir:'in',kind:'退款',note:x.note,method:vm('rakuten')});return}
+   /* 店名带「1回」的行是 PDF 排版错位读出来的,大多是已有消费的重复:找得到同店同额的就跳过,找不到的交给你确认 */
+   if(/\s1回$/.test(x.note)){const nm=x.note.replace(/\s*1回$/,''),k0=mkey(nm).slice(0,10),t0=new Date(x.date).getTime();
+    if(D.some(z=>z.method===vm('rakuten')&&z.amt===x.amt&&mkey(z.note).startsWith(k0)&&Math.abs(new Date(z.date).getTime()-t0)<40*864e5)){dup++;return}
+    if(!RV.dis.includes(ref))items.push({ref,date:x.date,amt:x.amt,dir:'out',kind:'明细里可能没有',note:nm,method:vm('rakuten')});return}
+   const cat=guess(x.note)||'其他',method=vm('rakuten');
+   const mm=matchManual(x.date,x.amt,method,claimed);
+   if(mm&&mm.auto){claimed.add(mm.auto.id);linkManual(mm.auto,ref,x.note);rec++;return}
+   const cand=mm&&mm.ask;
+   if(cand){if(!RV.dis.includes(ref)){claimed.add(cand.id);items.push({ref,date:x.date,amt:x.amt,dir:'out',kind:'疑似重复',note:x.note,dupOf:cand.id,method,cat});sus++}return}
+   const id=nid();D.push({id,amt:x.amt,method,cat,note:x.note,date:x.date,ref,...(sm&&x.date.slice(0,7)<sm?{bm:sm}:{}),...(fixOf(x.note)?{fix:true}:{})});add++;if(cat==='其他')unc.push(id)});
+ }
+ if(nf===files.length){toast('没有识别到明细,请确认是乐天卡 e-NAVI 的请款明细 PDF');return}
+ RV.items=[...RV.items.filter(x=>!items.some(y=>y.ref===x.ref)),...items];
+ if(Object.keys(ign).length)RV.ign=ign;
+ RV.unc=[...RV.unc.filter(id=>D.some(x=>x.id===id&&x.cat==='其他')),...unc];
+ saveRV();save();
+ toast(`${[...ums].sort().map(m=>+m.slice(5)+'月').join('、')}消费(按刷卡日期记账):导入 ${add} 笔,重复 ${dup} 笔${rec?',自动对账 '+rec+' 笔':''}${sus?',疑似重复 '+sus+' 笔待确认':''}${nf?','+nf+' 个文件无法识别':''}${(n=>n?',发现 '+n+' 组疑似重复扣款,首页顶部可查看':'')(dupCharges().length)}${items.length||unc.length||dupCharges().length?'。需确认的项目见下方':''}`);render();
+}
+document.addEventListener('click',e=>{const t=e.target.closest('button[data-uck]');if(!t)return;RV.unc=[];saveRV();toast('好的,不再询问');render()});
+document.addEventListener('click',e=>{const t=e.target.closest('button[data-ack]');if(!t)return;RV.ac=[];saveRV();toast('好的,都保持「其他」');render()});
+/* 自动记账(邮件 / Apple Pay / 截图)里第一次出现、认不出分类的店 */
+function acCard(){const un=(RV.ac||[]).map(id=>D.find(x=>x.id===id)).filter(x=>x&&x.cat==='其他');if(!un.length)return '';
+ return `<div class='box' style='margin-top:10px'><div style='display:flex;justify-content:space-between;align-items:center;gap:8px'><h2 style='margin:0'>新的店 · 选一下分类</h2><button class='lk' data-ack='1' style='font-size:13px;flex:none'>都保持「其他」</button></div><p class='sub' style='margin:4px 0 0'>选一次就行,以后同一家店会自动归类。</p>`
+ +un.map(x=>`<div class='row'><div class='rm'><div>${esc(x.note)}</div><span>${x.date.slice(5)} · ${yen(x.amt)}</span></div><select class='f' style='width:96px;padding:8px' data-uc='${x.id}' aria-label='分类'>${CATS.map(c=>`<option${c==='其他'?' selected':''}>${c}</option>`).join('')}</select></div>`).join('')+`</div>`}
+/* 一次性:导入时因为认不出而记成「其他」的,用改进后的规则重新分类 */
+/* 一次性:按你的分类把剩下的「其他」分好 */
+function catFix1(){if(UI.cf1)return;const has=c=>CATS.includes(c),M=[[/AGODA|ZHI XIN OTA|TRIP\.COM|GRAB|ISLAND SOUVENIR|NOMAD EXPRESS|CHINA RAILWAY|ナリタ.*クウコウ|ナリタコクサイ/i,'旅游','交通'],[/HIGHWAYBUS/i,'交通'],[/エモツト/,'交通'],[/ワンコイングリ|ソウルメイトカンコクゴ|HELLOTALK/i,'学习','其他'],[/JINGDONG/i,'购物'],[/ドン・?キホ/,'日用品','购物']];let k=0;
+ D.forEach(x=>{if(x.cat!=='其他')return;const n=(x.note||'').normalize('NFKC');for(const [re,c,fb] of M)if(re.test(n)){const v=has(c)?c:fb&&has(fb)?fb:null;if(v&&v!=='其他'){x.cat=v;k++}break}});
+ UI.cf1=1;saveC();if(k){save();setTimeout(()=>toast('已帮你分好 '+k+' 笔「其他」'),1200)}}
+/* 一次性:同一家店分类不一致的统一一下 */
+function catFix2(){if(UI.cf2)return;let k=0;const has=c=>CATS.includes(c);
+ D.forEach(x=>{const n=(x.note||'').normalize('NFKC');let v=null;
+  if(/AMAP TAXI/i.test(n)&&x.cat!=='旅游'&&has('旅游'))v='旅游';
+  else if(/^カラオケ館/.test(n)&&x.cat==='交通')v='娱乐';
+  else if(/^麺尊RAGE/.test(n)&&x.cat==='旅游')v='餐饮';
+  if(v){x.cat=v;k++}});UI.cf2=1;saveC();if(k)save()}
+function reguessOnce(){try{if(!UI.cf10){UI.cf10=1;let k=0;D.forEach(x=>{if(x.cat==='其他'&&/^(リクリヤタカダノババテン|ルシ-ダ)$/.test((x.note||'').normalize('NFKC'))){x.cat='餐饮';k++}});if(k)save();saveC()}}catch(e){}try{if(!UI.cf9){UI.cf9=1;const n0=D.length;D=D.filter(x=>!(x.method==='rakuten'&&/\s1回$/.test((x.note||'').normalize('NFKC'))));if(D.length!==n0){save();setTimeout(()=>toast('删掉了 '+(n0-D.length)+' 笔乐天 PDF 读错的记录'),1500)}saveC()}}catch(e){}try{if(!UI.cf8){UI.cf8=1;const z=D.find(x=>x.method==='rakuten'&&x.date==='2026-10-04'&&x.amt===21790&&/トリップ/.test(x.note||''));if(z&&!z.bm){z.bm='2026-11';delete z.difok;save()}saveC()}}catch(e){}try{if(!UI.cf7){UI.cf7=1;let k=0;D.forEach(x=>{const n=(x.note||'').normalize('NFKC');if(x.fix||x.rid)return;if(/フイツトイ-ジ-|フィットイージー|ソウルメイト|楽天モバイル通信料|ネットフリックス|NETFLIX|ICLOUD|アマゾンプライムカイヒ/i.test(n)||(/APPLE COM BILL/i.test(n)&&x.amt<=3000)){x.fix=true;k++}});if(k)save();saveC()}}catch(e){}try{if(!UI.cf6){UI.cf6=1;if(!A.sal){A.sal={amt:370000,last:'2026-10'};['2026-05','2026-06','2026-07','2026-08','2026-09','2026-10'].forEach(m=>{const[y,mo]=m.split('-').map(Number);if(!A.inc.some(x=>x.rid==='sal'&&x.date.startsWith(m)))A.inc.push({id:nid(),amt:370000,note:'工资',date:m+'-'+pad(new Date(y,mo,0).getDate()),rid:'sal'})});saveA()}saveC()}}catch(e){}try{if(!UI.cf5){UI.cf5=1;const r=R.find(r=>r.name==='房租'&&r.cat==='居住');if(r)['2026-05','2026-06','2026-07','2026-08','2026-09','2026-10'].forEach(m=>{const d=m+'-'+pad(Math.min(r.day,28));if(!D.some(x=>x.rid===r.id&&x.date.startsWith(m)))D.push({id:nid(),amt:r.amt,method:r.method,cat:r.cat,note:r.name,date:d,rid:r.id})});save();saveC()}}catch(e){}try{if(!UI.cf4){UI.cf4=1;if(!A.inc.some(x=>x.ref==='yc:lucas:20261024')){A.inc.push({id:nid(),amt:240000,note:'LucasW(ゆうちょ)',date:'2026-10-24',ref:'yc:lucas:20261024',px:1});saveA()}saveC()}}catch(e){}try{if(!UI.cf3){UI.cf3=1;let k=0;D.forEach(x=>{if(/AMAZON/i.test(x.note||'')&&((x.date==='2026-10-15'&&x.amt===159964)||(x.date==='2026-10-19'&&x.amt===79982))&&x.cat!==PX_CAT){x.cat=PX_CAT;k++}});saveC();if(k)save()}}catch(e){}try{catFix1()}catch(e){}if(!UI.dk1){UI.dk1=1;UI.dupok=[...new Set([...(UI.dupok||[]),'APPLE COM BILL|1350|2026-10'])];saveC()}try{catFix2()}catch(e){}if(UI.rg4)return;let k=0;D.forEach(x=>{if(x.ref&&x.cat==='其他'){const c=guess(x.note);if(c&&c!=='其他'){x.cat=c;k++}}});UI.rg4=1;saveC();if(k){save();setTimeout(()=>toast('已自动给 '+k+' 笔「其他」重新分类'),800)}}
+const UCS=new Set();
+document.addEventListener('change',e=>{const t=e.target;if(!t.dataset)return;
+ if(t.dataset.ucs){const id=+t.dataset.ucs;if(t.checked)UCS.add(id);else UCS.delete(id);render();return}
+ if(t.dataset.ucall){const un=RV.unc.map(id=>D.find(x=>x.id===id)).filter(x=>x&&x.cat==='其他');if(t.checked)un.forEach(x=>UCS.add(x.id));else UCS.clear();render();return}
+ if(t.dataset.ucb&&t.value){const v=t.value,ids=[...UCS];if(!ids.length){toast('先勾选要改的记录');t.value='';return}
+  const names=new Set(ids.map(id=>(D.find(x=>x.id===id)||{}).note).filter(Boolean).map(mkey));let k=0;
+  D.forEach(z=>{if(ids.includes(z.id)||(z.cat==='其他'&&names.has(mkey(z.note)))){z.cat=v;k++}});save();
+  const keep=i=>{const z=D.find(y=>y.id===i);return z&&z.cat==='其他'};RV.unc=RV.unc.filter(keep);RV.ac=(RV.ac||[]).filter(keep);saveRV();UCS.clear();toast('已改为「'+v+'」· '+k+' 笔');render();return}});
+function rvPanel(){
+ /* 在 PayPay / 乐天各自的导入页,只显示那边导入的 */
+ const rkM=vm('rakuten'),mine=m=>MESUB==='rk'?m===rkM:MESUB==='pp'?m!==rkM:true,igOK=MESUB!=='rk'||Object.keys(RV.ign).some(k=>/PayPay 充值/.test(k));
+ const un=RV.unc.map(id=>D.find(x=>x.id===id)).filter(x=>x&&x.cat==='其他'&&mine(x.method)),ig=igOK?Object.entries(RV.ign):[],it=RV.items.map((x,i)=>({...x,_i:i})).filter(x=>mine(x.method||''));
+ if(!it.length&&!un.length&&!ig.length)return '';
+ const n=it.length+un.length;
+ let h=`<div class='box rvb'><div class='rvt'><h2 style='margin:0'>导入后确认</h2>${n?`<span class='rvn2'>${n} 项待处理</span>`:`<span class='rvok'>✓ 都处理完了</span>`}</div>`;
+ if(it.length)h+=`<p class='rvh'>没有自动导入的转账 · ${it.length}</p><p class='sub' style='margin:0 0 4px'>转给自己账户或投资的选「忽略」。</p>`+it.map(x=>{const i=x._i,dup=x.dupOf!==undefined;return `<div class='rvc'><div class='rvl'><div class='rvn'>${esc(x.note)}</div><div class='rvm'>${x.date.slice(5).replace('-','/')} · ${esc(x.kind)}${dup?' · 和手动记的「'+esc((D.find(z=>z.id===x.dupOf)||{}).note||'无备注')+'」同日同额':''}</div></div><div class='rva' style='color:${x.dir==='in'?'var(--in)':'var(--tx)'}'>${x.dir==='in'?'+':'−'}${yen(x.amt)}</div><div class='rvbt'>${dup?`<button class='pill' data-rv='${i}' data-act='same'>是同一笔</button><button class='pill pri' data-rv='${i}' data-act='new'>不是,导入</button>`:`<button class='pill' data-rv='${i}' data-act='ig'>忽略</button><button class='pill pri' data-rv='${i}' data-act='${x.dir}'>${x.dir==='in'?'记为收入':'记为支出'}</button>`}</div></div>`}).join('');
+ if(un.length){const ns=[...UCS].filter(id=>un.some(x=>x.id===id)).length;
+  h+=`<div class='rvh' style='display:flex;justify-content:space-between;align-items:center'><span>分类不确定 · ${un.length}</span><button class='lk' data-uck='1' style='font-size:13px'>都保持「其他」</button></div><p class='sub' style='margin:0 0 4px'>选好后同名商户会一起改。</p>`
+  +(un.length>1?`<div class='rvbar'><label><input type='checkbox' data-ucall='1' ${un.every(x=>UCS.has(x.id))?'checked':''}>全选</label><select class='pill sel${ns?' pri':''}' data-ucb='1' aria-label='把选中的改为'><option value=''>${ns?'把选中的 '+ns+' 笔改为…':'勾选后批量改分类'}</option>${CATS.map(c=>`<option value='${esc(c)}'>${esc(c)}</option>`).join('')}</select></div>`:'')
+  +un.map(x=>`<div class='rvc rvu'>${un.length>1?`<input type='checkbox' class='rvck' data-ucs='${x.id}' ${UCS.has(x.id)?'checked':''} aria-label='选择'>`:''}<div class='rvl'><div class='rvn'>${esc(x.note)}</div><div class='rvm'>${x.date.slice(5).replace('-','/')} · ${yen(x.amt)}</div></div><select class='pill sel' data-uc='${x.id}' aria-label='分类'>${CATS.map(c=>`<option value='${esc(c)}'${c==='其他'?' selected':''}>${esc(c)}</option>`).join('')}</select></div>`).join('')}
+ if(ig.length)h+=`<p class='rvh'>已自动跳过(不算消费)</p><div class='rvig'>${ig.map(([k,v])=>`<span>${esc(k)} <b>${v}</b></span>`).join('')}</div>`;
+ return h+`</div>`;
+}
+function moreView(){if(MP==='s')MP='i';return tabBar('mp',MP,[['i','导入'],['x','导出'],['d','清空']])+moreRaw()}
+function moreRaw(){
+ const opt=(a,v)=>a.map(x=>`<option value='${x[0]}'${x[0]===v?' selected':''}>${x[1]}</option>`).join('');
+ let h='';
+ const TH={auto:'跟随系统',light:'浅色',dark:'深色'},HM={list:'明细',stats:'统计',assets:'资产'};
+ h+=`<div class='box' data-k='ui' data-g='s'><h2 class='sh'>自定义界面</h2><p class='sub' style='margin:0'>主题 ${TH[UI.theme]} · 强调色 ${ACC[UI.accent][0]} · 打开时进入「${HM[homeV()]}」${CC.length?' · 自定义分类 '+CC.length+' 个':''}</p>`
+ +(OPEN.ui?`<label>主题</label><div class='chips'>${Object.entries(TH).map(([k,v])=>`<button class='chip' data-th='${k}' aria-pressed='${UI.theme===k}'>${v}</button>`).join('')}</div><label>强调色</label><div class='chips'>${Object.entries(ACC).map(([k,v])=>`<button class='chip' data-ac='${k}' aria-pressed='${UI.accent===k}' style='display:inline-flex;align-items:center;gap:6px'><i class='dot' style='background:${v[1]||"#df8540"}'></i>${v[0]}</button>`).join('')}</div><label>打开时进入的页面</label><div class='chips'>${Object.entries(HM).map(([k,v])=>`<button class='chip' data-hm='${k}' aria-pressed='${UI.home===k}'>${v}</button>`).join('')}</div><label>语言 / Language</label><div class='chips'>${[['auto','跟随系统'],['zh','中文'],['en','English'],['ja','日本語']].map(([k,v])=>`<button class='chip' data-lg='${k}' aria-pressed='${(UI.lang==='en'||UI.lang==='ja'||UI.lang==='auto'?UI.lang:'zh')===k}'>${v}</button>`).join('')}</div>`+`<button class='go alt' data-open='ui' style='margin-top:12px'>收起</button>`:`<button class='go alt' data-open='ui'>自定义界面</button>`)+`</div>`;
+ const bks=Object.keys(B.cats),bleft=CATS.filter(c=>!B.cats[c]);
+ const bud=!!OPEN.bud,fix=!!OPEN.fix;
+ h+=`<div class='box' data-k='bud' data-g='s'><h2 class='sh'>预算</h2><p class='sub' style='margin:0'>${B.total>0?'每月总预算 '+yen(B.total):'未设置总预算'}${bks.length?' · 分类预算 '+bks.length+' 项':''}</p>`
+ +(bud?`<label for='bt'>每月总预算(日元)</label><input id='bt' class='f' inputmode='numeric' value='${B.total||''}' placeholder='不设'><p class='sub' style='margin:14px 0 0'>分类预算(按需添加,会显示在统计页)</p>`+(bks.length?bks.map(c=>`<div class='row'><div class='rm'><div>${esc(c)}</div></div><input class='f hin' style='width:120px;flex:none' data-bc='${esc(c)}' inputmode='numeric' value='${B.cats[c]}' aria-label='${esc(c)}预算'><button class='del' data-bdel='${esc(c)}'>删除</button></div>`).join(''):`<p class='sub' style='margin:6px 0 0'>还没有分类预算。</p>`)+(bleft.length?`<label for='bcs'>添加分类预算</label><div style='display:flex;gap:8px'><select id='bcs' class='f' style='flex:1;min-width:0'>${bleft.map(c=>`<option>${c}</option>`).join('')}</select><input id='bca' class='f' style='flex:1;min-width:0' inputmode='numeric' placeholder='金额'></div><button class='go alt' id='badd'>添加</button>`:'')+`<button class='go alt' data-open='bud'>收起</button>`
+ :bks.map(c=>`<div class='row'><div class='rm'><div>${esc(c)}</div></div><div class='amt'>${yen(B.cats[c])}</div></div>`).join('')+`<button class='go alt' data-open='bud'>${B.total>0||bks.length?'修改预算':'设置预算'}</button>`)+`</div>`;
+ const re=RE?R.find(x=>x.id===RE):null;
+ h+=`<div class='box' data-k='fix' data-g='s'><h2 class='sh'>固定支出</h2><p class='sub' style='margin:0'>${R.length?'共 '+R.length+' 项,每月自动记账 · 每月合计 '+yen(R.reduce((q,r)=>q+r.amt,0)):'每月自动记一笔,如房租、手机费、订阅。'}</p>`+R.map(r=>`<div class='row'><div class='rm'><div>${esc(r.name)}</div><span>每月 ${r.day} 日 · ${esc(r.cat)} · ${mname(r.method)}</span></div><div class='amt'>${yen(r.amt)}</div><button class='del' data-redit='${r.id}'>编辑</button><button class='del${rp===r.id?' on':''}' data-rdel='${r.id}'>${rp===r.id?'确认删除':'删除'}</button></div>`).join('')
+ +((fix||re)?`<label for='rn'>名称</label><input id='rn' class='f' placeholder='例如 家賃' autocomplete='off' value='${esc(re?re.name:'')}'><div style='display:flex;gap:8px'><div style='flex:1;min-width:0'><label for='ra'>金额</label><input id='ra' class='f' inputmode='numeric' value='${re?re.amt:''}'></div><div style='flex:1;min-width:0'><label for='rd'>每月几号</label><input id='rd' class='f' inputmode='numeric' value='${re?re.day:1}'></div></div><div style='display:flex;gap:8px'><div style='flex:1;min-width:0'><label for='rc'>分类</label><select id='rc' class='f'>${opt(CATS.map(c=>[c,c]),re?re.cat:'居住')}</select></div><div style='flex:1;min-width:0'><label for='rmt'>支付方式</label><select id='rmt' class='f'>${opt(MT.map(m=>[m[0],m[1]]),re?re.method:vm('card'))}</select></div></div>${re?`<p class='sub' style='margin:10px 0 0'>修改只影响之后自动记的账,已生成的记录不变。</p>`:''}<button class='go alt' id='radd'>${re?'保存修改':'添加固定支出'}</button><button class='go alt' ${re?`data-rcancel='1'`:`data-open='fix'`} style='margin-top:8px'>${re?'取消':'收起'}</button>`
+ :`<button class='go alt' data-open='fix'>＋ 添加固定支出</button>`)+`</div>`;
+ h+=`<div class='box' data-k='pp' data-g='i'><h2 class='sh'>导入 PayPay 记录</h2><label class='drop' for='ppf'><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg><b>选择 CSV 文件</b><span>PayPay → 取引履歴 → 右上角导出</span></label><input id='ppf' type='file' accept='.csv,.txt,text/csv' class='vh'><ul class='tips'><li>选完文件就会自动导入</li><li>充值自动跳过,重复的自动忽略</li><li>同一笔别既手动记又导入</li></ul>${OPEN.ppt?`<textarea id='ppt' class='f' placeholder='把 CSV 内容粘贴到这里' style='margin-top:10px'></textarea><button class='go alt' id='pp-imp'>导入</button>`:`<button class='lk' data-open='ppt' style='font-size:13px;margin-top:8px'>或者粘贴 CSV 内容</button>`}</div>`;
+ h+=`<div class='box' data-k='rk' data-g='i'><h2 class='sh'>导入乐天卡明细</h2><label class='drop' for='rkf'><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg><b>选择 PDF 明细</b><span>e-NAVI → ご利用代金請求明細書(可多选)</span></label><input id='rkf' type='file' accept='.pdf,application/pdf' multiple class='vh'><ul class='tips'><li>按利用日记账,支付方式为乐天卡</li><li>退款需要确认;PayPay 充值自动跳过</li><li>同一份明细重复导入会自动忽略</li></ul></div>`;
+ h+=`<div class='box' data-k='clr' data-g='d'><h2 class='sh'>清空消费记录</h2><p class='sub' style='margin:0'>删除全部消费记录(所有月份)。收入、资产、预算和固定支出不受影响。建议先导出备份。</p><button class='go alt' id='clr' style='color:var(--pp)'>${clrc?'确认清空 '+D.length+' 笔消费':'清空所有消费记录'}</button></div>`;
+ h+=`<div class='box' data-k='wipe' data-g='d'><h2 class='sh'>清空全部数据</h2><p class='sub' style='margin:0'>删除所有消费、收入、资产、预算和固定支出,不能撤销。主题、语言、自定义分类和支付方式会保留。请先导出备份。</p><button class='go alt' id='wipe-bk'>导出备份文件</button><input id='wipein' class='f' style='margin-top:10px' placeholder='输入「${LG()==='en'?'DELETE':LG()==='ja'?'消去':'清空'}」确认' autocomplete='off' autocapitalize='off'><button class='go alt' id='wipe' style='color:var(--pp)'>清空全部数据</button></div>`;
+ h+='<div data-k="rv" data-g="i">'+rvPanel()+'</div>';
+ h+=`<div class='box' data-k='bk' data-g='x'><h2 class='sh'>备份</h2><p class='sub' style='margin:0 0 6px'>${bkGet().last?'上次备份:'+bkGet().last:'还没有备份过'}</p><p class='sub' style='margin:0'>导出时选「存储到“文件”」→ iCloud Drive,即可同步到云端。</p><button class='go alt' id='bk-exp'>导出备份文件</button><button class='go alt' id='bk-copy'>复制备份内容(换设备用)</button></div>`;
+ h+=`<details class='box' data-k='rs' data-g='x' id='rsd'${RSO?' open':''}><summary style='font-weight:700;cursor:pointer'>恢复备份</summary><p class='sub' style='margin:6px 0 0'>恢复会覆盖现有数据。</p><label for='bkf'>选择备份文件</label><input id='bkf' type='file' accept='.json,.txt,application/json' class='f'><label for='bkt'>或粘贴备份内容</label><textarea id='bkt' class='f'></textarea><button class='go alt' id='bk-imp'>导入备份</button></details>`;
+ h+=`<div class='box' data-k='csv' data-g='x'><h2 class='sh'>导出表格(CSV)</h2><p class='sub' style='margin:4px 0 0'>把消费记录导出成 CSV 表格,可以用 Excel 或 Numbers 打开。</p><div style='display:flex;gap:8px;margin-top:10px'><button class='go alt' id='expm' style='flex:1;padding:10px 4px;font-size:14px;margin:0'>导出本月(CSV)</button><button class='go alt' id='exp' style='flex:1;padding:10px 4px;font-size:14px;margin:0'>导出全部(CSV)</button></div></div>`;
+ return h;
+}
+async function readF(f,ta='ppt'){const buf=await f.arrayBuffer();let t=new TextDecoder('utf-8').decode(buf);if(ta==='ppt'&&!t.includes('取引')){try{t=new TextDecoder('shift_jis').decode(buf)}catch(e){}}t=t.replace(/^\uFEFF/,'');if($(ta))$(ta).value=t;return t}
+document.addEventListener('click',async e=>{
+ const t=e.target.closest('button');if(!t)return;
+ if(t.dataset.rv!==undefined){const i=+t.dataset.rv,x=RV.items[i];if(x){const act=t.dataset.act;
+  if(act==='in'){A.inc.push({id:nid(),amt:x.amt,note:x.note||x.kind,date:x.date,ref:x.ref});saveA();toast('已记为收入')}
+  else if(act==='out'){D.push({id:nid(),amt:x.amt,method:x.method||vm('paypay'),cat:guess(x.note)||'其他',note:x.note,date:x.date,ref:x.ref});save();toast('已记为支出')}
+  if(act==='same'){const m=D.find(z=>z.id===x.dupOf);if(m){m.ref=x.ref;m.method=x.method;save()}toast('已关联为同一笔,不会重复记账')}
+  else if(act==='new'){D.push({id:nid(),amt:x.amt,method:x.method,cat:x.cat,note:x.note,date:x.date,ref:x.ref});save();toast('已导入')}
+  RV.dis.push(x.ref);RV.items.splice(i,1);saveRV();render()}return}
+ if(t.dataset.redit){RE=+t.dataset.redit;OPEN.fix=true;render();setTimeout(()=>{const e=$('rn');if(e&&e.scrollIntoView)e.scrollIntoView({block:'center'})},60);return}
+ if(t.dataset.rcancel){RE=null;OPEN.fix=false;render();return}
+ if(t.id==='radd'){const name=$('rn').value.trim(),amt=num($('ra').value),day=Math.min(31,Math.max(1,parseInt($('rd').value,10)||1));
+  if(!name||!(amt>0)){toast('请填写名称和金额');return}
+  if(RE){const r=R.find(x=>x.id===RE);if(r){r.name=name;r.amt=Math.round(amt);r.day=day;r.cat=$('rc').value;r.method=$('rmt').value;saveC();applyRec();toast('已修改固定支出')}RE=null;OPEN.fix=false;render();return}
+  const st=($('rs')&&$('rs').value)||today().slice(0,7),n0=D.length;
+  R.push({id:nid(),name,amt:Math.round(amt),day,cat:$('rc').value,method:$('rmt').value,last:prevM(st)});saveC();applyRec();const n=D.length-n0;toast('已添加固定支出'+(n?',已生成 '+n+' 笔记录':',每月 '+day+' 日自动记'));OPEN.fix=false;render();return}
+ if(t.dataset.riedit){RIE=+t.dataset.riedit;OPEN.fixin=true;render();setTimeout(()=>{const e=$('in-n');if(e&&e.scrollIntoView)e.scrollIntoView({block:'center'})},60);return}
+ if(t.dataset.ricancel){RIE=null;OPEN.fixin=false;render();return}
+ if(t.id==='riadd'){const name=$('in-n').value.trim(),amt=num($('in-a').value),day=Math.min(31,Math.max(1,parseInt($('in-d').value,10)||31));
+  if(!name||!(amt>0)){toast('请填写名称和金额');return}
+  if(RIE){const r=(A.ri||[]).find(x=>x.id===RIE);if(r){r.name=name;r.amt=Math.round(amt);r.day=day;saveA();toast('已修改固定收入')}RIE=null;OPEN.fixin=false;render();return}
+  const st=($('in-s')&&$('in-s').value)||today().slice(0,7),n0=A.inc.length;
+  (A.ri=A.ri||[]).push({id:nid(),name,amt:Math.round(amt),day,last:prevM(st)});applyRi();saveA();const n=A.inc.length-n0;toast('已添加固定收入'+(n?',已生成 '+n+' 笔记录':',每月'+(day>=31?'月末':day+' 日')+'自动记'));OPEN.fixin=false;render();return}
+ if(t.dataset.ridel){const id=+t.dataset.ridel;if(rp===id){A.ri=(A.ri||[]).filter(x=>x.id!==id);rp=null;if(RIE===id){RIE=null;OPEN.fixin=false}saveA();toast('已删除(已生成的记录会保留)')}else rp=id;render();return}
+ if(t.dataset.rdel){const id=+t.dataset.rdel;if(rp===id){R=R.filter(x=>x.id!==id);rp=null;if(RE===id){RE=null;OPEN.fix=false}saveC();toast('已删除(已生成的记录会保留)')}else rp=id;render();return}
+ if(t.id==='pp-imp'){const v=$('ppt').value.trim();if(!v){toast('请先选择文件或粘贴内容');return}importPay(v);return}
+ if(t.id==='bk-exp'){if(await saveFile('kakeibo-backup-'+today()+'.json',JSON.stringify({v:1,D,A,B,R,UI,CC,PM}),'application/json')!==false){bkSet({last:today()});render()}return}
+ if(t.id==='bk-copy'){const txt=JSON.stringify({v:1,D,A,B,R,UI,CC,PM});$('bkt').value=txt;try{await navigator.clipboard.writeText(txt);bkSet({last:today()});toast('已复制备份内容')}catch(e){$('bkt').focus();$('bkt').select();toast('已填入下方文本框,请长按全选后复制')}return}
+ if(t.id==='bk-imp'){const v=$('bkt').value.trim();if(!v){toast('请先选择文件或粘贴内容');return}
+  if(!bkc){bkc=true;t.textContent='确认覆盖现有数据';return}
+  try{const o=JSON.parse(v);if(!Array.isArray(o.D))throw 0;D=o.D;A=Object.assign({rate:150,cash:0,stock:0,cur:'JPY',inc:[],start:today(),snaps:[],assets:[],disp:'JPY'},o.A||{});migA();B=Object.assign({total:0,cats:{}},o.B||{});R=Array.isArray(o.R)?o.R:[];UI=Object.assign({theme:'auto',accent:'orange',home:'add'},o.UI||{});if(!ACC[UI.accent])UI.accent='orange';CC=Array.isArray(o.CC)?o.CC:[];PM=(Array.isArray(o.PM)&&o.PM.length&&o.PM.every(m=>Array.isArray(m)&&m[0]&&m[1]))?o.PM:null;applyPM();applyCats();applyUI();save();saveA();saveC();bkc=false;toast('已恢复备份');render()}catch(err){bkc=false;t.textContent='导入备份';toast('备份内容无法识别')}}
+});
+document.addEventListener('click',e=>{
+ const t=e.target.closest('button');if(!t)return;
+ if(t.dataset.s){const k=t.dataset.s,a=listItems();
+  if(k==='on'){SEL={on:true,ids:[],cf:false};pending=null}
+  else if(k==='off')SEL={on:false,ids:[],cf:false};
+  else if(k==='all'){SEL.ids=SEL.ids.length===a.length?[]:a.map(x=>x.key);SEL.cf=false}
+  else if(k==='fix'){const xs=SEL.ids.map(k=>D.find(x=>x.id===k)).filter(x=>x&&!x.rid),on=xs.every(x=>x.fix);xs.forEach(x=>{if(on)delete x.fix;else x.fix=true});save();toast(on?'已取消固定支出标签':'已标为固定支出 '+xs.length+' 笔');SEL.cf=false}
+  else if(k==='del'){const ids=SEL.ids.filter(k=>a.some(x=>x.key===k));if(!ids.length)return;
+   if(!SEL.cf){SEL.cf=true}else{D=D.filter(x=>!ids.includes(x.id));A.inc=A.inc.filter(x=>!ids.includes('i'+x.id));RV.unc=RV.unc.filter(id=>!ids.includes(id));save();saveA();saveRV();SEL={on:false,ids:[],cf:false};toast('已删除 '+ids.length+' 笔')}}
+  updList();return}
+ if(t.dataset.open){const k=t.dataset.open;OPEN[k]=!OPEN[k];render();return}
+ if(t.dataset.th){UI.theme=t.dataset.th;saveC();applyUI();render();return}
+ if(t.dataset.ac){UI.accent=t.dataset.ac;saveC();applyUI();render();return}
+ if(t.dataset.hm){UI.home=t.dataset.hm;saveC();render();return}
+ if(t.dataset.wan!==undefined){UI.wan=t.dataset.wan==='1';saveC();render();return}
+ if(t.dataset.hide!==undefined){UI.hide=t.dataset.hide==='1';REV=false;saveC();render();return}
+ if(t.dataset.lg){UI.lang=t.dataset.lg;saveC();render();i18nRun();return}
+ if(t.id==='ccadd'){const n=$('ccn').value.trim();if(!n){toast('请输入分类名称');return}if(CATS.includes(n)){toast('已有同名分类');return}if(BASE.includes(n))UI.hc=(UI.hc||[]).filter(x=>x!==n);else CC.push(n);applyCats();saveC();toast('已添加分类 '+n);if($('amt'))PF={amt:$('amt').value,note:$('note').value};render();return}
+ if(t.dataset.ccdel){const c=t.dataset.ccdel;if(c==='其他')return;const n=D.filter(x=>x.cat===c).length+R.filter(r=>r.cat===c).length;if(n&&CDP!==c){CDP=c;toast(n+' 笔记录在使用「'+c+'」,再点一次删除,这些记录会改为「其他」');if($('amt'))PF={amt:$('amt').value,note:$('note').value};render();return}CDP='';D.forEach(x=>{if(x.cat===c)x.cat='其他'});R.forEach(r=>{if(r.cat===c)r.cat='其他'});if(n)save();if(CC.includes(c))CC=CC.filter(x=>x!==c);else UI.hc=[...(UI.hc||[]),c];if(F.cat===c)F.cat='其他';delete B.cats[c];applyCats();saveC();toast('已删除分类');if($('amt'))PF={amt:$('amt').value,note:$('note').value};render();return}
+ if(t.id==='badd'){const c=$('bcs').value,n=num($('bca').value);if(!(n>0)){toast('请输入预算金额');$('bca').focus();return}B.cats[c]=Math.round(n);saveC();toast('已添加 '+c+' 预算');render();return}
+ if(t.dataset.bdel){delete B.cats[t.dataset.bdel];saveC();toast('已删除预算');render();return}
+ if(t.id==='wipe-bk'){saveFile('kakeibo-backup-'+today()+'.json',JSON.stringify({v:1,D,A,B,R,UI,CC,PM}),'application/json').then(ok=>{if(ok!==false)bkSet({last:today()})});return}
+ if(t.id==='wipe'){const w=LG()==='en'?'DELETE':LG()==='ja'?'消去':'清空',v=($('wipein').value||'').trim();if(LG()==='en'?v.toUpperCase()!==w:v!==w){toast('请输入「'+w+'」确认');return}
+  D=[];A={rate:150,cash:0,stock:0,cur:'JPY',inc:[],start:'',snaps:[],assets:[],disp:'JPY'};migA();B={total:0,cats:{}};R=[];RV={items:[],ign:{},unc:[],dis:[]};save();saveA();saveC();saveRV();toast('已清空全部数据');render();return}
+ if(t.id==='clr'){if(!clrc){clrc=true}else{const n=D.length;D=[];RV.unc=[];save();saveRV();clrc=false;toast('已清空 '+n+' 笔消费')}render()}
+});
+document.addEventListener('input',e=>{if(e.target.id==='ce-sd'){const l=$('ce-sdl');if(l)l.textContent=fmtD(e.target.value)}});
+document.addEventListener('input',e=>{if(e.target.id==='qs'){Q.t=e.target.value;updList()}});
+document.addEventListener('change',e=>{
+ const t=e.target;
+ if(t.dataset&&t.dataset.uc){const x=D.find(z=>z.id===+t.dataset.uc);if(x){const n=mkey(x.note);let k=0;D.forEach(z=>{if(z===x||(z.cat==='其他'&&mkey(z.note)===n)){z.cat=t.value;k++}});save();if(t.value!=='其他'){const keep=i=>{const z=D.find(y=>y.id===i);return z&&z.cat==='其他'};RV.unc=RV.unc.filter(keep);RV.ac=(RV.ac||[]).filter(keep);saveRV()}if(k>1)toast('同名的 '+k+' 笔都改成了 '+t.value);render()}return}
+ if(t.dataset&&t.dataset.sel){const id=t.dataset.sel[0]==='i'?t.dataset.sel:+t.dataset.sel;SEL.ids=t.checked?[...SEL.ids,id]:SEL.ids.filter(z=>z!==id);SEL.cf=false;updList();return}
+ if(t.dataset.pmn){const k=t.dataset.pmn,n=t.value.trim();if(!n||pmSrc().some(m=>m[0]!==k&&m[1]===n)){toast(n?'已有同名支付方式':'请输入支付方式名称');if($('amt'))PF={amt:$('amt').value,note:$('note').value};render();return}
+  if(!PM)PM=DEF_PM.map(m=>m.slice());const m=PM.find(z=>z[0]===k);if(m&&m[1]!==n&&!((LG()==='en'&&ZH2EN[m[1]]===n)||(LG()==='ja'&&ZH2JA[m[1]]===n))){m[1]=n;applyPM();saveC()}if($('amt'))PF={amt:$('amt').value,note:$('note').value};render();return}
+ if(t.id==='qsrc'){Q.t=t.value;render();return}
+ if(t.id==='qc'||t.id==='qm'){Q[t.id==='qc'?'c':'m']=t.value;if(Q.k==='in')Q.k='';render();return}
+ if(t.id==='bt'){const n=num(t.value);B.total=n>0?n:0;saveC();toast('已保存预算');return}
+ if(t.dataset&&t.dataset.bc){const n=num(t.value);if(n>0)B.cats[t.dataset.bc]=n;else delete B.cats[t.dataset.bc];saveC();toast('已保存预算');if(!(n>0))render();return}
+ if(t.id==='ppf'&&t.files[0]){const f=t.files[0];t.value='';readF(f).then(v=>{if(v.trim())importPay(v);else toast('文件是空的')})}
+ if(t.id==='rkf'&&t.files.length){const fs=[...t.files];t.value='';importRakuten(fs)}
+ if(t.id==='bkf'&&t.files[0])readF(t.files[0],'bkt');
+});
+
+
+/* ===== 账号与云同步(Supabase) ===== */
+var SUPA_URL='https://vnaedljaafxqakrzxarn.supabase.co',SUPA_KEY='sb_publishable_6tSRBZ_fuchtB4LHFZYSyw_uJzaGQdD',SUPA_JS='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2/+esm';
+var CPW=false,SB=null,SESS=null,SBP=null,MUTE=false,SYT=null,SYNCING=false,SYAGAIN=false,SYNC={st:'off',at:0,err:''},RECOV=false,AUTHM='in';
+var SYK='kakeibo.sync.v1',AUK='kakeibo.auth';
+function dirty(){if(MUTE||!SB||!SESS)return;clearTimeout(SYT);SYT=setTimeout(syncNow,1200)}
+const syGet=()=>{try{return JSON.parse(localStorage.getItem(SYK)||'{}')}catch(e){return {}}};
+const sySet=o=>{try{localStorage.setItem(SYK,JSON.stringify(o))}catch(e){}};
+function sbBoot(){if(SBP)return SBP;SBP=import(/* @vite-ignore */ SUPA_JS).then(m=>{
+  SB=m.createClient(SUPA_URL,SUPA_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'implicit',storageKey:AUK}});
+  SB.auth.onAuthStateChange((ev,s)=>{const was=SESS&&SESS.user.id;SESS=s||null;if((SESS&&SESS.user.id)!==was)APT=undefined;
+   if(ev==='PASSWORD_RECOVERY'){RECOV=true;location.hash='#me/acct'}
+   if(SESS&&SESS.user.id!==was)setTimeout(syncNow,0);
+   if(!SESS)SYNC={st:'off',at:0,err:''};
+   setTimeout(paintMe,0)});
+  return SB}).catch(e=>{SBP=null;throw e});return SBP}
+function paintMe(){const a=document.querySelector('#band .avb');if(a)a.innerHTML=avHTML();if(hv().startsWith('#me')&&!(document.activeElement&&document.activeElement.matches('#app input,#app textarea')))render()}
+function avHTML(){if(UI.avatar)return `<span class="av" style="background-image:url('${UI.avatar}')"></span>`;
+ const n=(UI.nick||(SESS&&SESS.user.email)||'').trim();
+ return n?`<span class="av">${esc(n[0].toUpperCase())}</span>`:`<span class="av"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></span>`}
+/* --- 合并:以上次同步的内容为基准做三方合并,两台设备离线各记的账都不会丢 --- */
+const J=JSON.stringify;
+const keyD=x=>x.ref?'f:'+x.ref:x.rid?'r:'+x.rid+'@'+x.date:'i:'+x.id;
+function mergeArr(l,r,b,kf){
+ const M=a=>new Map((a||[]).filter(Boolean).map(x=>[kf(x),x])),L=M(l),R=M(r),B=b?M(b):null,out=[];
+ for(const k of new Set([...L.keys(),...R.keys()])){const lx=L.get(k),rx=R.get(k),bx=B&&B.get(k);
+  if(lx&&rx){out.push(bx&&J(lx)===J(bx)?rx:lx);continue}
+  const x=lx||rx;if(bx){if(J(x)!==J(bx))out.push(x);continue}
+  out.push(x)}
+ return out}
+const mergeVal=(l,r,b,hasB,lw)=>hasB?(J(l)!==J(b)?l:r):lw?(l!==undefined?l:r):(r!==undefined?r:l);
+/* 首次同步(没有基准)时,记录更多的一方的设置优先;只有一方有的设置项(比如另一台设备上设的头像)也保留 */
+const docN=d=>(d.D||[]).length+((d.A||{}).inc||[]).length+((d.A||{}).assets||[]).length+((d.A||{}).snaps||[]).length;
+function mergeDoc(l,r,b){if(!r)return l;const hb=!!b,lw=!hb&&docN(l)>docN(r);b=b||{};const o=JSON.parse(J(r));
+ o.D=mergeArr(l.D,r.D,hb?b.D:null,keyD);o.R=mergeArr(l.R,r.R,hb?b.R:null,x=>'i:'+x.id);
+ ['B','CC','PM'].forEach(k=>o[k]=mergeVal(l[k],r[k],b[k],hb,lw));
+ {const lu=l.UI||{},ru=r.UI||{},bu=b.UI||{};o.UI={};new Set([...Object.keys(lu),...Object.keys(ru)]).forEach(k=>{const v=mergeVal(lu[k],ru[k],bu[k],hb,lw);if(v!==undefined)o.UI[k]=v})}
+ const la=l.A||{},ra=r.A||{},ba=b.A||{};o.A={};
+ new Set([...Object.keys(la),...Object.keys(ra)]).forEach(k=>{
+  if(k==='inc'||k==='assets')o.A[k]=mergeArr(la[k],ra[k],hb?ba[k]:null,x=>x.ref?'f:'+x.ref:'i:'+x.id);
+  else if(k==='snaps')o.A[k]=mergeArr(la[k],ra[k],hb?ba[k]:null,x=>'d:'+x.date);
+  else o.A[k]=mergeVal(la[k],ra[k],ba[k],hb,lw)});
+ return o}
+const localDoc=()=>JSON.parse(J({v:1,D,A,B,R,UI,CC,PM}));
+function applyDoc(o){
+ D=Array.isArray(o.D)?o.D:[];A=Object.assign({rate:150,cash:0,stock:0,cur:'JPY',inc:[],start:today(),snaps:[],assets:[],disp:'JPY'},o.A||{});migA();
+ B=Object.assign({total:0,cats:{}},o.B||{});R=Array.isArray(o.R)?o.R:[];UI=Object.assign({theme:'auto',accent:'orange',home:'add'},o.UI||{});if(!ACC[UI.accent])UI.accent='orange';
+ CC=Array.isArray(o.CC)?o.CC:[];PM=(Array.isArray(o.PM)&&o.PM.length&&o.PM.every(m=>Array.isArray(m)&&m[0]&&m[1]))?o.PM:null;
+ applyPM();applyCats();applyUI();MUTE=true;save();saveA();saveC();MUTE=false;
+ if(!(document.activeElement&&document.activeElement.matches('#app input,#app textarea')))render()}
+/* ===== 端对端加密:云端只存密文,解密钥匙只在用户自己的设备上 =====
+   加密密码 → PBKDF2(SHA-256, 31 万次) → AES-GCM 256。钥匙存在这台设备上,换设备时输入一次加密密码。 */
+const EKK='kakeibo.ek.v1';let EKEY=null,ESALT='',EENV=null,EDIS=false,EJUST=false;
+const b64e=u=>{let s='';for(let i=0;i<u.length;i+=8192)s+=String.fromCharCode.apply(null,u.subarray(i,i+8192));return btoa(s)};
+const b64d=t=>Uint8Array.from(atob(t),c=>c.charCodeAt(0));
+async function ekDerive(pw,salt){const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);
+ return crypto.subtle.deriveKey({name:'PBKDF2',salt:b64d(salt),iterations:310000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},true,['encrypt','decrypt'])}
+async function ekSave(uid){try{localStorage.setItem(EKK,J({uid,salt:ESALT,k:b64e(new Uint8Array(await crypto.subtle.exportKey('raw',EKEY)))}))}catch(e){}}
+async function ekLoad(uid){if(EKEY&&ESALT)return;try{const o=JSON.parse(localStorage.getItem(EKK)||'null');if(o&&o.uid===uid&&o.k){EKEY=await crypto.subtle.importKey('raw',b64d(o.k),'AES-GCM',true,['encrypt','decrypt']);ESALT=o.salt}}catch(e){}}
+function ekClear(){EKEY=null;ESALT='';try{localStorage.removeItem(EKK)}catch(e){}}
+async function encDoc(o){const iv=crypto.getRandomValues(new Uint8Array(12));
+ return {enc:1,salt:ESALT,iv:b64e(iv),ct:b64e(new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},EKEY,new TextEncoder().encode(J(o)))))}}
+async function decDoc(e,key){return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:b64d(e.iv)},key||EKEY,b64d(e.ct))))}
+async function syncNow(){
+ if(!SB||!SESS)return;if(SYNCING){SYAGAIN=true;return}
+ SYNCING=true;SYNC.st='ing';paintSync();const uid=SESS.user.id;
+ try{
+  const apIds=await pullInbox(),apN=apIds.n;
+  for(let t=0;t<4;t++){
+   const sv=syGet(),base=sv.uid===uid?sv.base:null;
+   const {data:row,error}=await SB.from('kakeibo_state').select('data,updated_at').eq('user_id',uid).maybeSingle();if(error)throw error;
+   await ekLoad(uid);
+   /* 云端是密文:这台设备没有钥匙(或钥匙不对)就停下,绝不拿本机数据覆盖云端 */
+   let rd=row?row.data:null;const isEnc=!!(rd&&rd.enc);
+   if(isEnc){EENV=rd;if(!EKEY||ESALT!==rd.salt)throw {needKey:1};try{rd=await decDoc(rd)}catch(e){throw {needKey:1}}}
+   const wantEnc=!!EKEY&&!EDIS;
+   const loc=localDoc(),m=row?mergeDoc(loc,rd,base):loc;
+   if(J(m)!==J(loc))applyDoc(m);
+   if(row&&J(m)===J(rd)&&isEnc===wantEnc){sySet({uid,base:m});break}
+   const now=new Date().toISOString(),pay=wantEnc?await encDoc(m):m;
+   const res=row?await SB.from('kakeibo_state').update({data:pay,updated_at:now}).eq('user_id',uid).eq('updated_at',row.updated_at).select('updated_at')
+                :await SB.from('kakeibo_state').insert({user_id:uid,data:pay,updated_at:now}).select('updated_at');
+   if(res.error){if(!row&&res.error.code==='23505')continue;throw res.error}
+   if(!res.data||!res.data.length)continue;
+   sySet({uid,base:m});break}
+  SYNC={st:'ok',at:Date.now(),err:''};
+  /* 刚开启加密:删掉云端备份里加密前的明文;刚关闭加密:清掉本机钥匙 */
+  if(EJUST&&EKEY&&!EDIS){EJUST=false;await SB.from('kakeibo_history').delete().eq('user_id',uid).is('data->enc',null)}
+  if(EDIS){EDIS=false;ekClear();toast('已关闭加密')}
+  if(apIds.ids.length){await SB.from('kakeibo_inbox').delete().in('id',apIds.ids);if(apN){const k=(RV.ac||[]).filter(i=>{const z=D.find(y=>y.id===i);return z&&z.cat==='其他'}).length;toast('自动记了 '+apN+' 笔'+(k?',有 '+k+' 家新店要选分类':''));render()}}
+ }catch(e){SYNC=e&&e.needKey?{st:'key',at:SYNC.at,err:'需要加密密码'}:{st:'err',at:SYNC.at,err:(e&&e.message)||String(e)};if(e&&e.needKey)setTimeout(paintMe,0)}
+ SYNCING=false;paintSync();if(SYAGAIN){SYAGAIN=false;syncNow()}}
+function syncLabel(){const t=SYNC.at?new Date(SYNC.at).toTimeString().slice(0,5):'';
+ return SYNC.st==='ing'?'<i class="syn ing"></i>同步中…':SYNC.st==='ok'?`<i class="syn ok"></i>已同步 · ${t}`:SYNC.st==='key'?`<i class="syn err"></i>需要输入加密密码`:SYNC.st==='err'?`<i class="syn err"></i>同步失败,联网后会自动重试`:'<i class="syn"></i>尚未同步'}
+function paintSync(){const e=$('synst');if(e)e.innerHTML=syncLabel()}
+const authErr=m=>/Invalid login/i.test(m)?'邮箱或密码不正确':/not confirmed/i.test(m)?'邮箱还没有确认,请先点邮件里的确认链接':/already registered|already exists/i.test(m)?'这个邮箱已经注册过,请直接登录':/at least|Password should/i.test(m)?'密码至少 6 位':/valid email|invalid format/i.test(m)?'邮箱格式不正确':/rate limit|too many/i.test(m)?'操作太频繁,请稍后再试':/fetch|network/i.test(m)?'网络连接失败,请检查网络':m;
+var MESUB='';
+const SI={ppl:['#d0873f','<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 010 7M18 14.8c2 .7 3.2 2.5 3.6 5.2"/>'],ui:['#8e6cf0','<path d="M12 3a9 9 0 100 18c1 0 1.5-.8 1.5-1.6 0-.9-.6-1.2-.6-2 0-.9.7-1.4 1.6-1.4H17a4 4 0 004-4c0-5-4-9-9-9z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10.5" cy="7.5" r="1"/><circle cx="15" cy="7.5" r="1"/>'],
+ bud:['#e8a33d','<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>'],
+ fix:['#3a9b6a','<path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 013-3h15M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 01-3 3H3"/>'],
+ pp:['#e2463f','<path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 21h16"/>'],
+ ap:['#1c1c1e','<rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19"/><path d="M15 15l1.5 1.5L19 14"/>'],
+ rk:['#b4364a','<rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19M6 15h4"/>'],
+ bk:['#3a7be0','<path d="M7 18a5 5 0 01-.5-10A6 6 0 0118 9a4.5 4.5 0 01-1 9z"/><path d="M12 11v6M9.5 13.5L12 11l2.5 2.5"/>'],
+ rs:['#5b8def','<path d="M3 12a9 9 0 109-9 9 9 0 00-6.4 2.6L3 8"/><path d="M3 3v5h5"/>'],
+ csv:['#2f9e8f','<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>'],
+ clr:['#d8444f','<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>'],
+ wipe:['#a8323b','<path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/>']};
+const SETL={ppl:'转账对象',dup:'疑似重复扣款',acct:'账号',ui:'自定义界面',bud:'预算',fix:'固定支出',ap:'自动记账',pp:'导入 PayPay 记录',rk:'导入乐天卡明细',bk:'备份',rs:'恢复备份',csv:'导出表格(CSV)',clr:'清空消费记录',wipe:'清空全部数据'};
+function srow(k,sub,val){const ic=SI[k];return `<button class='srow' data-sub='${k}'><span class='si' style='background:${ic[0]}'><svg viewBox='0 0 24 24'>${ic[1]}</svg></span><span class='sl'${k==='clr'||k==='wipe'?" style='color:var(--pp)'":''}>${SETL[k]}${sub?`<small>${sub}</small>`:''}</span>${val||''}<span class='chev'>›</span></button>`}
+var LEM='';
+const IC={mail:'<path d="M3 6.5A1.5 1.5 0 014.5 5h15A1.5 1.5 0 0121 6.5v11a1.5 1.5 0 01-1.5 1.5h-15A1.5 1.5 0 013 17.5z"/><path d="M3.5 6l8.5 7 8.5-7"/>',lock:'<rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 018 0v3"/>',eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',cloud:'<path d="M7 18a5 5 0 01-.5-10A6 6 0 0118 9a4.5 4.5 0 01-1 9z"/>',key:'<circle cx="8" cy="15" r="4"/><path d="M10.8 12.2L20 3M16 7l3 3"/>',out:'<path d="M15 4h3a2 2 0 012 2v12a2 2 0 01-2 2h-3M10 17l5-5-5-5M15 12H3"/>',sync:'<path d="M21 12a9 9 0 01-15.5 6.3L3 16M3 12A9 9 0 0118.5 5.7L21 8"/><path d="M21 3v5h-5M3 21v-5h5"/>'};
+const ic=k=>`<svg viewBox="0 0 24 24" aria-hidden="true">${IC[k]}</svg>`;
+function encBox(){
+ const pw=(id,ph)=>`<label class='fld'>${ic('lock')}<input id='${id}' type='password' placeholder='${ph}' autocomplete='new-password'><button type='button' class='eye' data-eye='${id}' aria-label='显示密码'>${ic('eye')}</button></label>`;
+ if(SYNC.st==='key')return `<div class='box auth'><h2 class='ah'>输入加密密码</h2><p class='sub' style='margin:0 0 8px'>你的云端数据已加密。在这台设备上输入一次加密密码就能同步(这不是登录密码)。</p>${pw('ekin','加密密码')}<button class='go' id='ekuse'>解锁</button></div>`;
+ if(EKEY)return `<div class='box'><div style='display:flex;align-items:center;justify-content:space-between;gap:8px'><span class='pill'>${ic('lock')} 云端数据已加密</span><button class='lk' id='ekoff' style='font-size:13px'>关闭加密</button></div><p class='sub' style='margin:8px 0 0'>云端只存密文,开发者也看不到你的账目。换设备时需要输入加密密码,忘了就无法找回云端数据。</p></div>`;
+ return `<div class='box auth'><h2 class='ah'>加密云端数据</h2><p class='sub' style='margin:0 0 8px'>开启后,数据在手机上加密再上传,云端只存密文,开发者也看不到。<b>加密密码忘了就无法找回云端数据</b>,请务必记好。</p>${pw('ekn1','设置加密密码(至少 8 位)')}${pw('ekn2','再输入一次')}<button class='go' id='ekon'>开启加密</button></div>`}
+function acctBox(){
+ if(!SB){sbBoot().then(paintMe,()=>{});return `<div class='box auth'><p class='sub' style='margin:0;text-align:center'>正在连接云端…</p></div>`}
+ const pw=(id,ph,ac)=>`<label class='fld'>${ic('lock')}<input id='${id}' type='password' placeholder='${ph}' autocomplete='${ac}'><button type='button' class='eye' data-eye='${id}' aria-label='显示密码'>${ic('eye')}</button></label>`;
+ if(RECOV)return `<div class='box auth'><h2 class='ah'>设置新密码</h2>${pw('npw','新密码(至少 6 位)','new-password')}<button class='go' id='setpw'>保存新密码</button></div>`;
+ if(!SESS){const up=AUTHM==='up';
+  return `<div class='box auth'><div class='seg2'><button data-authm='in' aria-pressed='${!up}'>登录</button><button data-authm='up' aria-pressed='${up}'>注册</button></div>`
+  +`<label class='fld'>${ic('mail')}<input id='lem' type='email' inputmode='email' autocomplete='email' autocapitalize='off' spellcheck='false' placeholder='邮箱' value='${esc(LEM)}'></label>`
+  +pw('lpw',up?'设置密码(至少 6 位)':'密码',up?'new-password':'current-password')
+  +(up?'':`<div style='text-align:right;margin:-2px 2px 0'><button class='lk' id='forgot' style='font-size:13px'>忘记密码?</button></div>`)
+  +`<button class='go' id='${up?'signup':'login'}'>${up?'注册并登录':'登录'}</button>`
+  +`<p class='anote'>${ic('cloud')}<span>登录后数据自动同步到云端,换手机也能找回。首次登录会和这台手机上的记录合并。</span></p></div>`}
+ return `<div class='box'><div style='display:flex;align-items:center;justify-content:space-between'><span class='pill' id='synst'>${syncLabel()}</span><button class='lk' id='syncnow' style='font-size:14px'>立即同步</button></div><p class='sub' style='margin:10px 0 0'>记账、资产、预算和设置都会自动同步。没网时照常记账,联网后自动补传。</p></div>`
+  +encBox()
+  +(CPW?`<div class='box auth'><h2 class='ah'>修改密码</h2>${pw('npw','新密码(至少 6 位)','new-password')}<div style='display:flex;gap:8px'><button class='go' id='setpw' style='flex:1'>保存</button><button class='go alt' data-cpw='0' style='flex:1'>取消</button></div></div>`:'')
+  +`<div class='sgrp'><button class='srow' data-cpw='1'><span class='si' style='background:#8f887e'>${ic('key')}</span><span class='sl'>修改密码</span><span class='chev'>›</span></button><button class='srow' id='logout'><span class='si' style='background:var(--pp)'>${ic('out')}</span><span class='sl' style='color:var(--pp)'>退出登录</span></button></div>`}
+function meView(){
+ const em=SESS?SESS.user.email:'';
+ if(MESUB==='ui')return uiPage();
+ if(MESUB==='acct')return `<div class='acc'><label class='avl acav' for='avf' aria-label='更换头像'>${avHTML()}</label><input id='avf' type='file' accept='image/*' style='display:none'><input id='nick' class='nick' maxlength='16' placeholder='设置昵称' value='${esc(UI.nick||'')}' autocomplete='off'><p class='sub' style='margin:2px 0 0'>${em?esc(em):'点头像更换照片'}</p></div>`+acctBox();
+ if(MESUB==='dup'){const gs=dupCharges();return gs.length?dupCard(gs):`<div class='box' style='text-align:center;padding:28px 16px'><p style='font-size:17px;font-weight:700;margin:0 0 6px'>没有疑似重复扣款</p><p class='sub' style='margin:0'>只检查乐天卡和订阅服务(Apple、Netflix、Amazon 等)。</p></div>`}
+ if(MESUB==='ppl')return pplPage();
+ if(MESUB==='bud')return budPage();
+ if(MESUB==='fix')return fixPage();
+ if(MESUB==='ap')return apPage();
+ if(MESUB&&SETL[MESUB]){const ks=MESUB==='pp'||MESUB==='rk'?`:not([data-k="${MESUB}"]):not([data-k="rv"])`:`:not([data-k="${MESUB}"])`;
+  return `<div id='mesub'><style>#mesub [data-k]${ks}{display:none}</style>${moreRaw()}</div>`}
+ if(!SB&&(()=>{try{return localStorage.getItem(AUK)}catch(e){}})())sbBoot().then(paintMe,()=>{});
+ const TH={auto:'跟随系统',light:'浅色',dark:'深色'},bk=bkGet().last,rv=RV.items.length+RV.unc.filter(id=>D.some(x=>x.id===id&&x.cat==='其他')).length;
+ const st=SESS?(SYNC.st==='err'?'同步失败':SYNC.st==='ing'?'同步中…':'云同步已开启'):'未登录 · 点这里登录或注册';
+ let h=`<button class='prow' data-sub='acct'><span class='avl'>${avHTML()}</span><span style='flex:1;min-width:0'><b style='font-size:18px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>${esc(UI.nick||(em?em.split('@')[0]:'我的记账本'))}</b><span class='sub' style='margin:0;font-size:13px'>${em?esc(em)+'<br>':''}${st}</span></span><span class='chev' style='color:var(--mu);font-size:20px'>›</span></button>`;
+ h+=`<p class='sgt'>设置</p><div class='sgrp'>`+srow('ui',TH[UI.theme]+' · '+ACC[UI.accent][0]+' · 打开进「'+({list:'明细',stats:'统计',assets:'资产'}[homeV()])+'」')+srow('bud',B.total>0?'每月 '+yen(B.total):'未设置')+srow('fix',R.length?R.length+' 项 · 每月 '+yen(R.reduce((q,r)=>q+r.amt,0)):'房租、话费、订阅')+srow('ppl',Object.keys(UI.ppl||{}).length?Object.keys(UI.ppl).length+' 人':'代购、AA 吃饭')+`</div>`;
+ {const n=dupCharges().length;if(n)h+=`<p class='sgt'>需要留意</p><div class='sgrp'><button class='srow' data-sub='dup'><span class='si' style='background:var(--pp)'><svg viewBox='0 0 24 24'><path d='M12 9v4M12 17h.01'/><path d='M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z'/></svg></span><span class='sl'>疑似重复扣款</span><span class='bdg'>${n}</span><span class='chev'>›</span></button></div>`}
+ h+=`<p class='sgt'>导入</p><div class='sgrp'>`+srow('ap',SESS?'Apple Pay / PayPay 卡邮件':'需要先登录')+srow('pp','',rv?`<span class='bdg'>${rv}</span>`:'')+srow('rk','',rv?`<span class='bdg'>${rv}</span>`:'')+`</div>`;
+ h+=`<p class='sgt'>备份与导出</p><div class='sgrp'>`+srow('bk',bk?'上次备份 '+bk:'还没有备份过')+srow('rs','从备份文件恢复')+srow('csv','用 Excel、Numbers 打开')+`</div>`;
+ h+=`<p class='sgt'>清空数据</p><div class='sgrp'>`+srow('clr')+srow('wipe')+`</div>`;
+ return h}
+function shrinkImg(f){return new Promise((ok,no)=>{const u=URL.createObjectURL(f),im=new Image();im.onload=()=>{const S=160,c=document.createElement('canvas');c.width=c.height=S;const k=Math.min(im.width,im.height),g=c.getContext('2d');
+ g.drawImage(im,(im.width-k)/2,(im.height-k)/2,k,k,0,0,S,S);URL.revokeObjectURL(u);ok(c.toDataURL('image/jpeg',.82))};im.onerror=no;im.src=u})}
+document.addEventListener('click',async e=>{const t=e.target.closest('button');if(!t)return;
+ if(t.dataset.me){location.hash='#me';return}
+ if(t.dataset.back){location.hash=MESUB&&MESUB!=='dup'?'#me':'#'+(window.__back||'add');return}
+ if(t.dataset.sub){location.hash='#me/'+t.dataset.sub;return}
+ if(t.dataset.authm){const e=$('lem');if(e)LEM=e.value;AUTHM=t.dataset.authm;render();return}
+ if(t.dataset.eye){const i=$(t.dataset.eye);if(i){i.type=i.type==='password'?'text':'password';t.classList.toggle('on',i.type==='text')}return}
+ if(t.id==='login'||t.id==='signup'){const em=$('lem').value.trim(),pw=$('lpw').value,lb=t.textContent;if(!em||!pw){toast('请输入邮箱和密码');return}
+  t.disabled=true;t.textContent='请稍候…';
+  try{const r=t.id==='login'?await SB.auth.signInWithPassword({email:em,password:pw}):await SB.auth.signUp({email:em,password:pw,options:{emailRedirectTo:location.origin+location.pathname}});
+   if(r.error)throw r.error;
+   if(t.id==='signup'&&!r.data.session){toast('已发送确认邮件,点邮件里的链接后回来登录');AUTHM='in';render();return}
+   LEM='';toast('已登录,正在同步…')}catch(err){toast(authErr(err.message||String(err)));t.disabled=false;t.textContent=lb}return}
+ if(t.id==='forgot'){const em=$('lem').value.trim();if(!em){toast('请先填写邮箱');$('lem').focus();return}
+  const r=await SB.auth.resetPasswordForEmail(em,{redirectTo:location.origin+location.pathname});toast(r.error?authErr(r.error.message):'重设密码的邮件已发送');return}
+ if(t.id==='setpw'){const pw=$('npw').value;if(pw.length<6){toast('密码至少 6 位');return}const r=await SB.auth.updateUser({password:pw});if(r.error){toast(authErr(r.error.message));return}RECOV=false;CPW=false;toast('密码已更新');render();return}
+ if(t.dataset.cpw){CPW=t.dataset.cpw==='1';render();if(CPW){const e=$('npw');if(e)e.focus()}return}
+ if(t.id==='syncnow'){syncNow();return}
+ if(t.id==='ekon'){const a=$('ekn1').value,b=$('ekn2').value;if(a.length<8){toast('加密密码至少 8 位');return}if(a!==b){toast('两次输入的不一样');return}
+  t.disabled=true;t.textContent='正在加密…';ESALT=b64e(crypto.getRandomValues(new Uint8Array(16)));EKEY=await ekDerive(a,ESALT);EJUST=true;await ekSave(SESS.user.id);await syncNow();
+  toast(SYNC.st==='ok'?'已开启加密':'加密已开启,联网后会自动上传');render();return}
+ if(t.id==='ekuse'){const a=$('ekin').value;if(!a||!EENV){toast('请输入加密密码');return}t.disabled=true;t.textContent='正在解锁…';
+  try{const k=await ekDerive(a,EENV.salt);await decDoc(EENV,k);EKEY=k;ESALT=EENV.salt;await ekSave(SESS.user.id);SYNC={st:'off',at:0,err:''};await syncNow();toast('已解锁');render()}
+  catch(e){t.disabled=false;t.textContent='解锁';toast('加密密码不对')}return}
+ if(t.id==='ekoff'){if(t.dataset.cf!=='1'){t.dataset.cf='1';t.textContent='确认关闭(云端改回明文)';return}EDIS=true;await syncNow();render();return}
+ if(t.id==='logout'){if(t.dataset.cf!=='1'){t.dataset.cf='1';t.textContent='确认退出';return}
+  clearTimeout(SYT);await syncNow();await SB.auth.signOut();sySet({});ekClear();EENV=null;toast('已退出登录,这台手机上的记录会保留');render();return}
+});
+document.addEventListener('change',async e=>{const t=e.target;
+ if(t.id==='nick'){UI.nick=t.value.trim();saveC();paintMe();return}
+ if(t.id==='avf'&&t.files[0]){try{UI.avatar=await shrinkImg(t.files[0]);saveC();t.value='';render()}catch(err){toast('这张图片无法读取')}return}
+});
+/* ===== Apple Pay 自动记账:快捷指令「交易」自动化 → Supabase 收件箱 → 同步时入账 ===== */
+var APT;
+const ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+function apMethod(c){const s=mkey(c);
+ if(/残高/.test(s))return vm('paypay');
+ if(/楽天|乐天|RAKUTEN/.test(s))return vm('rakuten');
+ if(/PAYPAY/.test(s))return vm('card');
+ const h=s&&pmSrc().find(m=>{const n=mkey(m[1]);return m[0]!=='cash'&&m[0]!=='paypay'&&n&&(s.includes(n)||n.includes(s))});
+ return h?h[0]:vm('card')}
+/* 自动记的那笔,如果已经有从明细导入的同一笔(同金额、同支付方式、日期差 ≤1 天)→ 以导入的为准,不重复记 */
+const stmtOf=(amt,date,method,claimed)=>D.find(z=>z.ref&&!AUTOR.test(z.ref)&&z.amt===amt&&z.method===method&&dd(z.date,date)<=1&&!claimed.has(z.id));
+function dedupAuto(){const claimed=new Set(),rm=new Set();
+ D.filter(x=>x.ref&&AUTOR.test(x.ref)).forEach(x=>{const z=stmtOf(x.amt,x.date,x.method,claimed);if(z){claimed.add(z.id);rm.add(x.id)}});
+ if(rm.size){D=D.filter(x=>!rm.has(x.id));save()}return rm.size}
+/* 资产截图:已关联的直接更新市值;第一次出现的来源先放进待确认,让你选更新哪一项 */
+/* 收入查重:同一天、同金额、同一个人(备注)就算同一笔(截图没读到取引番号时也能认出来) */
+const nkey=n=>String(n||'').normalize('NFKC').replace(/\s+/g,'').toLowerCase();
+function incDup(amt,date,note){const k=nkey(note);return A.inc.find(x=>x.amt===amt&&x.date===date&&nkey(x.note)===k)}
+/* 已有的加密货币 / 证券入金记录归到「投资」(不算消费) */
+(function(){try{let k=0;D.forEach(x=>{if(x.cat!==INV_CAT&&INVRE.test(String(x.note||'').normalize('NFKC'))){x.cat=INV_CAT;k++}});
+ if(D.some(x=>x.cat===INV_CAT)&&!CATS.includes(INV_CAT)){CC.push(INV_CAT);applyCats();saveC()}if(k)save()}catch(e){}})();
+/* 一次性:清掉之前截图重复记进来的收入 */
+(function(){try{const seen=new Map(),rm=new Set();A.inc.forEach(x=>{if(!x.ref||!/^(pp|pi):/.test(x.ref))return;const k=x.date+'|'+x.amt+'|'+nkey(x.note);const o=seen.get(k);
+ if(o){const keep=(o.ref||'').startsWith('pp:')?o:x,drop=keep===o?x:o;rm.add(drop.id);seen.set(k,keep)}else seen.set(k,x)});
+ if(rm.size){A.inc=A.inc.filter(x=>!rm.has(x.id));saveA();setTimeout(()=>toast('合并了 '+rm.size+' 笔重复的收入'),1500)}}catch(e){}})();
+function asIn(r,asu){if(r.ext==='ppc'||r.ext==='rkc'){A.bills=Object.assign({},A.bills,{[r.ext]:{val:r.amt,pay:r.card||'',upd:ymd(new Date(r.at))}});asu.push(r.ext==='ppc'?'PayPay卡账单':'乐天卡账单');return}
+ if(r.ext==='jpb'){A.cashSS={val:r.amt,upd:ymd(new Date(r.at))};asu.push('现金(ゆうちょ)');return}
+ if(r.ext==='ppb'){A.cashPP={val:r.amt,upd:ymd(new Date(r.at))};asu.push('现金(PayPay残高)');return}
+ const x=A.assets.find(z=>z.src===r.ext);
+ if(x){x.val=r.amt;x.upd=ymd(new Date(r.at));asu.push(x.name)}
+ else{RV.asn=[...(RV.asn||[]).filter(p=>p.key!==r.ext),{key:r.ext,name:r.merchant||'投资',val:r.amt}];saveRV();asu.push(null)}}
+function asnCard(){const ps=RV.asn||[];if(!ps.length)return '';
+ return ps.map(p=>`<div class='box'><p class='sub' style='margin:0'>截图识别到</p><p style='font-size:18px;font-weight:700;margin:2px 0 6px'>${esc(p.name)} ${yen(p.val)}</p><p class='sub' style='margin:0 0 8px'>要更新哪一项?选一次就行,以后同一个 App 的截图会自动更新它。</p><div class='chips' style='margin:0'>${A.assets.filter(x=>!x.src).map(x=>`<button class='chip' data-asl='${esc(p.key)}' data-to='${x.id}'>更新「${esc(x.name)}」</button>`).join('')}<button class='chip' data-asl='${esc(p.key)}' data-to='new'>新建「${esc(p.name)}」</button><button class='chip' data-asl='${esc(p.key)}' data-to='x'>忽略</button></div></div>`).join('')}
+document.addEventListener('click',e=>{const t=e.target.closest('button[data-asl]');if(!t)return;const p=(RV.asn||[]).find(z=>z.key===t.dataset.asl);if(!p)return;const to=t.dataset.to;
+ let nm=p.name;
+ if(to==='new')A.assets.push({id:Date.now(),name:p.name,val:p.val,src:p.key,upd:today()});
+ else if(to!=='x'){const x=A.assets.find(z=>z.id===+to);if(x){x.src=p.key;x.val=p.val;x.upd=today();nm=x.name}}
+ RV.asn=RV.asn.filter(z=>z!==p);saveRV();saveA();try{autoSnap()}catch(err){}toast(to==='x'?'已忽略':'已更新「'+nm+'」'+yen(p.val));render()});
+const rnum=x=>String(x||'').replace(/^[a-z]+:/,'').replace(/\s/g,'').replace(/^0+/,'');
+const ptFix=(z,amt)=>{z.pt=(z.pt||0)+z.amt-amt;z.amt=amt;delete z.ptu};
+const ptTwin=(amt,date,note)=>{const k=mkey((note||'').normalize('NFKC'));return D.find(z=>z.ptu&&z.ref&&z.ref.startsWith('pp:')&&z.date===date&&z.amt>amt&&(!k||mkey(z.note)===k||mkey(z.note).includes(k)||k.includes(mkey(z.note))))};
+/* 之前没读到取引番号的积分截图被另记成了一笔 → 合并回原来那笔 */
+function ptMerge(){let k=0;D.filter(e=>e.ref&&e.ref.startsWith('ss:')).forEach(e=>{const z=ptTwin(e.amt,e.date,e.note)||D.find(z=>z.pt&&z.ref&&z.ref.startsWith('pp:')&&z.date===e.date&&z.amt===e.amt&&z!==e&&mkey(z.note)===mkey(e.note));if(!z)return;if(z.ptu)ptFix(z,e.amt);D.splice(D.indexOf(e),1);k++});if(k)save();return k}
+async function pullInbox(){
+ try{const k=ptMerge();if(k)setTimeout(()=>{toast('积分截图已合并到原记录 '+k+' 笔');render()},0)}catch(e){}
+ const rmN=dedupAuto();if(rmN)setTimeout(()=>{toast('合并了 '+rmN+' 笔重复记录');render()},0);
+ const {data,error}=await SB.from('kakeibo_inbox').select('id,amt,merchant,card,at,src,ext').order('id');
+ if(error||!data||!data.length)return {ids:[],n:0};
+ let n=0;const claimed=new Set();
+ const asu=[];
+ let inN=0;
+ data.forEach(r=>{if(r.src==='as'){asIn(r,asu);return}
+  /* 截图读到「用了积分」后的实付金额比已有的那笔少 → 改成实付(CSV 里是含积分的总额) */
+  if(r.src==='pp'&&r.ext){const z=D.find(x=>x.ref&&rnum(x.ref)===rnum(r.ext));if(z){if(r.amt>0&&r.amt<z.amt){ptFix(z,r.amt);n++}return}}
+  /* 没读到取引番号:同一天、同店名、含积分的那笔 → 当作同一笔 */
+  if(r.src==='pp'&&!r.ext){const z=ptTwin(r.amt,ymd(new Date(r.at)),r.merchant);if(z){ptFix(z,r.amt);n++;return}}
+  /* 朋友转给我的钱(截图)→ 收入;取引番号和 CSV 一致,月底导入不会重复 */
+  if(r.src==='pi'){const ref=r.ext?'pp:'+r.ext:'pi:'+r.id,note=(r.merchant||'收款').normalize('NFKC').trim(),date=ymd(new Date(r.at));if(A.inc.some(x=>x.ref===ref))return;
+   const pt=pplOf(note);
+   if(pt==='aa'){if(!D.some(z=>z.ref===ref||(z.amt===-r.amt&&z.date===date&&pkey(z.note)===pkey(note))))D.push({id:nid(),amt:-r.amt,method:vm('paypay'),cat:'餐饮',note,date,ref,aa:1});n++;return}
+   const ex=incDup(r.amt,date,note);if(ex){if(r.ext&&!(ex.ref||'').startsWith('pp:'))ex.ref=ref;return}
+   A.inc.push({id:nid(),amt:r.amt,note,date,ref,...(pt==='px'?{px:1}:{})});inN++;return}const ref=r.src==='ml'&&r.ext?'ml:'+r.ext:r.src==='pp'?(r.ext?'pp:'+r.ext:'ss:'+r.id):'ap:'+r.id;if(D.some(x=>x.ref===ref))return;
+  const date=ymd(new Date(r.at)),method=apMethod(r.card),note=(r.merchant||'').normalize('NFKC').trim();
+  const sm=stmtOf(r.amt,date,method,claimed);if(sm){claimed.add(sm.id);return}
+  const ex=D.find(z=>!z.ref&&!z.rid&&z.amt===r.amt&&z.date===date&&z.method===method&&!claimed.has(z.id));
+  if(ex){claimed.add(ex.id);linkManual(ex,ref,note);if(ref.startsWith('pp:'))ex.via='ss';return}
+  /* 同一笔被 Apple Pay 和邮件各报了一次(比如钱包里也勾了 PayPay 卡)→ 只记一次 */
+  const au=D.find(z=>z.ref&&AUTOR.test(z.ref)&&z.ref.slice(0,3)!==ref.slice(0,3)&&z.amt===r.amt&&z.date===date&&z.method===method&&!claimed.has(z.id));
+  /* PayPay 截图带取引番号,和 CSV 的记录一致 → 把邮件 / Apple Pay 自动记的那笔换成这个编号,月底导入时直接对上 */
+  if(au){if(ref.startsWith('pp:')){claimed.add(au.id);au.ref=ref;au.via='ss';if(note)au.note=note}return}
+  const pt=pplOf(note),cat=pt==='aa'?'餐饮':pt==='px'?PX_CAT:(guess(note)||'其他'),id=nid();D.push({id,amt:r.amt,method,cat,note,date,ref,...(r.src==='pp'&&ref.startsWith('pp:')?{via:'ss'}:{}),...(fixOf(note)?{fix:true}:{})});n++;
+  /* 第一次出现的店认不出分类 → 首页让你选一次,之后同名的店自动沿用 */
+  if(cat==='其他'&&note){RV.ac=[...(RV.ac||[]),id];saveRV()}});
+ if(inN){saveA();setTimeout(()=>{toast('记了 '+inN+' 笔收入');render()},200)}
+ if(asu.length){saveA();try{autoSnap()}catch(e){}const ok=asu.filter(Boolean),nw=asu.length-ok.length;setTimeout(()=>{toast((ok.length?'已更新资产:'+ok.join('、'):'')+(nw?(ok.length?',':'')+'有 '+nw+' 项新资产待确认,在资产页选一下':''));render()},300)}
+ save();if(n)setTimeout(()=>{if(!(document.activeElement&&document.activeElement.matches('#app input,#app textarea')))render()},0);
+ return {ids:data.map(r=>r.id),n}}
+const qa=v=>String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const cpr=(k,v,show)=>`<div class='fr'><span>${k}</span><code style='flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;font-size:13px;color:var(--mu)'>${esc(show||v)}</code><button class='lk' data-cp="${qa(v)}" style='flex:none;font-size:14px'>复制</button></div>`;
+function apPage(){
+ if(!SESS)return `<div class='box' style='text-align:center;padding:24px 16px'><p style='font-size:17px;font-weight:700;margin:0 0 6px'>需要先登录</p><p class='sub'>Apple Pay 刷卡记录会先存到你的云端账号,再同步到记账本。</p><button class='go' data-sub='acct'>去登录</button></div>`;
+ if(APT===undefined){SB.from('kakeibo_tokens').select('token').maybeSingle().then(({data})=>{APT=data?data.token:null;render()},()=>{});return `<div class='box'><p class='sub' style='margin:0;text-align:center'>正在读取…</p></div>`}
+ const intro=`<div class='box'><h2>自动记账</h2><p class='sub' style='margin:4px 0 0'><b>乐天卡</b>:用 iPhone「快捷指令」的「交易」自动化,刷 Apple Pay 时自动记。<br><b>PayPay 卡</b>(Apple Pay 和 PayPay App 都算):收到「利用速報」邮件时自动记。<br><b>没收到邮件的</b>(包括 PayPay 余额付款):在 PayPay 付款详情页双击手机背面就能记。<br><b>投资市值</b>:在 PayPay ウォレット、证券 App 的総合サマリー、Binance 首页双击手机背面,自动更新资产。<br>打开记账本时入账;月底导入 PayPay / 乐天明细时会自动对上,不会重复。</p></div>`;
+ if(!APT)return intro+`<button class='go' id='apgen'>生成我的专属密钥</button>`;
+ const n=D.filter(x=>x.ref&&x.ref.startsWith('ap:')).length,nm=D.filter(x=>x.ref&&x.ref.startsWith('ml:')).length,MAN="{\n  \"timeZone\": \"Asia/Tokyo\",\n  \"runtimeVersion\": \"V8\",\n  \"exceptionLogging\": \"STACKDRIVER\",\n  \"dependencies\": {\n    \"enabledAdvancedServices\": [\n      {\n        \"userSymbol\": \"Gmail\",\n        \"serviceId\": \"gmail\",\n        \"version\": \"v1\"\n      }\n    ]\n  },\n  \"oauthScopes\": [\n    \"https://www.googleapis.com/auth/gmail.readonly\",\n    \"https://www.googleapis.com/auth/script.external_request\",\n    \"https://www.googleapis.com/auth/script.scriptapp\"\n  ]\n}",GAS="// 记账本:PayPay卡「利用速報」邮件 → 自动记账。每 5 分钟运行一次。只读 Gmail,不会修改或删除邮件。\nconst TOK='__TOK__';\nconst API='__URL__/rest/v1/rpc/ap_push',KEY='__KEY__';\nfunction setup(){ScriptApp.getProjectTriggers().forEach(t=>ScriptApp.deleteTrigger(t));ScriptApp.newTrigger('run').timeBased().everyMinutes(5).create();run()}\nfunction dec(d){return Utilities.newBlob(typeof d==='string'?Utilities.base64DecodeWebSafe(d):d).getDataAsString('UTF-8')}\nfunction bodyOf(p,mt){if(p.mimeType===mt&&p.body&&p.body.data)return dec(p.body.data);for(const c of (p.parts||[])){const r=bodyOf(c,mt);if(r)return r}return ''}\nfunction parse(plain,html){\n  let s=plain||'';\n  if(!/円/.test(s))s=(html||'').replace(/<br\\s*\\/?>|<\\/(p|div|td|tr|th|h\\d|li)>/gi,'\\n').replace(/<[^>]+>/g,'').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&');\n  const L=s.split(/\\r?\\n/).map(x=>x.replace(/\\s+/g,' ').trim()).filter(Boolean);\n  const DR=/(\\d{4})年\\s*(\\d{1,2})月\\s*(\\d{1,2})日\\s*(\\d{1,2}):(\\d{2})/;\n  const di=L.findIndex(x=>DR.test(x));if(di<0)return null;\n  const d=L[di].match(DR),p=n=>('0'+n).slice(-2);\n  let amt=null;\n  for(let i=di;i<Math.min(L.length,di+4);i++){const a=L[i].replace(DR,'').match(/([\\d,]+)\\s*円/);if(a){amt=a[1].replace(/,/g,'');break}}\n  if(!amt)return null;\n  let shop=L[di].replace(DR,'').replace(/([\\d,]+)\\s*円.*/,'').trim();\n  if(!shop&&di>0)shop=L[di-1];\n  if(/利用速報|PayPayカード/.test(shop))shop='';\n  return {amt,shop,at:d[1]+'-'+p(d[2])+'-'+p(d[3])+'T'+p(d[4])+':'+d[5]+':00+09:00'};\n}\nfunction run(){\n  const P=PropertiesService.getScriptProperties(),done=JSON.parse(P.getProperty('done')||'[]');\n  (Gmail.Users.Messages.list('me',{q:'subject:(PayPayカード 利用速報) newer_than:3d',maxResults:50}).messages||[]).forEach(({id})=>{\n    if(done.includes(id))return;\n    const m=Gmail.Users.Messages.get('me',id,{format:'full'}),subj=((m.payload.headers||[]).find(h=>/^subject$/i.test(h.name))||{}).value||'';\n    if(!/利用速報/.test(subj)){done.push(id);return}\n    const r=parse(bodyOf(m.payload,'text/plain'),bodyOf(m.payload,'text/html'));if(!r){done.push(id);return}\n    const res=UrlFetchApp.fetch(API,{method:'post',contentType:'application/json',headers:{apikey:KEY},muteHttpExceptions:true,\n      payload:JSON.stringify({tok:TOK,amount:r.amt,merchant:r.shop,card:'PayPayカード',at:r.at,src:'ml',ext:id})});\n    let ok=false;try{ok=res.getResponseCode()<300&&JSON.parse(res.getContentText()).ok}catch(e){}\n    if(ok)done.push(id);else console.log('失败',id,res.getContentText());\n  });\n  P.setProperty('done',JSON.stringify(done.slice(-500)));\n}\n".replace('__TOK__',APT).replace('__URL__',SUPA_URL).replace('__KEY__',SUPA_KEY);
+ const st=(i,t)=>`<div style='display:flex;gap:10px;padding:8px 0;border-top:1px solid var(--ln)'><b style='flex:none;width:22px;height:22px;border-radius:50%;background:var(--ac);color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center'>${i}</b><span style='font-size:14.5px'>${t}</span></div>`;
+ return intro
+ +`<p class='sgt'>要填的内容(点「复制」)</p><div class='sgrp'>`+cpr('URL',SUPA_URL+'/rest/v1/rpc/ap_push')+cpr('apikey',SUPA_KEY)+cpr('tok',APT,APT.slice(0,6)+'••••••')+`</div>`
+ +`<p class='sgt'>乐天卡 · Apple Pay(只需设置一次)</p><div class='box' style='padding:6px 16px'>`
+ +st(1,'打开「快捷指令」→ 底部「自动化」→ 右上「+」→ 选「交易」(Transaction)。')
+ +st(2,'只勾选<b>乐天卡</b>(PayPay 卡交给下面的邮件,不要勾),选「立即运行」。下一步 →「新建空白自动化」。')
+ +st(3,'添加操作「获取 URL 内容」(Get Contents of URL),URL 粘贴上面的 <b>URL</b>。')
+ +st(4,'展开操作:方法选 <b>POST</b>;「头部」加一项,键填 <b>apikey</b>,值粘贴上面的 apikey。')
+ +st(5,'「请求体」选 <b>JSON</b>,加 4 个文本字段:<br><b>tok</b> = 粘贴上面的 tok<br><b>amount</b> = 变量「快捷指令输入」→ 点它选「金额」<br><b>merchant</b> = 「快捷指令输入」→「商户」<br><b>card</b> = 「快捷指令输入」→「卡」')
+ +st(6,'完成。下次刷 Apple Pay 后打开记账本,这笔就自动出现了(带「Apple Pay」标签)。')
+ +`</div><p class='sgt'>PayPay 卡 · Gmail 邮件(只需设置一次)</p><div class='box' style='padding:6px 16px'>`
+ +st(1,'用电脑或 Safari 打开 <b>script.google.com</b>,用收「利用速報」邮件的那个 Google 账号登录,点「新しいプロジェクト」。')
+ +st(2,'删掉「コード.gs」里原有的代码,粘贴下面复制的<b>脚本</b>(已经填好你的密钥)。')
+ +st(3,'左侧齿轮「プロジェクトの設定」→ 勾选「「appsscript.json」マニフェスト ファイルをエディタで表示する」。回到编辑器,打开 <b>appsscript.json</b>,全部替换成下面复制的<b>权限设置</b>。按 Ctrl+S 保存。(这一步把 Gmail 权限限制为只读)')
+ +st(4,'上方函数选 <b>setup</b>,点「実行」。第一次会要求授权:选你的账号 →「詳細」→「(安全ではないページ)に移動」→ 允许。这是你自己写的脚本,只有你能用。')
+ +st(5,'完成。之后每 5 分钟检查一次新邮件,最近 3 天内的「利用速報」会自动记账(带「邮件」标签)。')
+ +`<div class='btns' style='margin:8px 0 6px'><button class='go alt' data-cp="${qa(GAS)}">复制脚本</button><button class='go alt' data-cp="${qa(MAN)}">复制权限设置</button></div><p class='sub' style='margin:0 0 6px;font-size:12.5px'>已经按旧版设置过的:按第 2、3 步替换两处内容,再运行一次 setup,重新授权(这次只会要求「查看邮件」)。</p></div>`
+ +`<p class='sgt'>PayPay 截图记账(只需设置一次)</p><div class='box' style='padding:6px 16px'>`
+ +st(1,'打开「ショートカット」App →「ショートカット」页右上「+」新建,名字改成「PayPay记账」。')
+ +st(2,'添加操作「スクリーンショットを撮る」,再添加「画像からテキストを抽出」,图像选上一步的「スクリーンショット」。')
+ +st(3,'添加「URLの内容を取得」,URL 粘贴下面的<b>截图记账 URL</b>;展开后方法选 <b>POST</b>;「ヘッダ」加 <b>apikey</b>(值同上);「本文を要求」选 <b>JSON</b>,加 2 个「テキスト」字段:<b>tok</b> = 上面的 tok,<b>txt</b> = 上一步的变量「画像から抽出されたテキスト」。')
+ +st(4,'添加「辞書の値を取得」,键填 <b>msg</b>;再添加「通知を表示」,内容选变量「辞書の値」。')
+ +st(5,'打开 iPhone「設定」→「アクセシビリティ」→「タッチ」→「背面タップ」→「ダブルタップ」,选「PayPay记账」。')
+ +st(6,'用法:在 PayPay 打开那笔付款,<b>点「詳細を開く」展开</b>,然后<b>双击手机背面</b>。会弹出「已记账:店名 金额」。不用另外截图,也不会存进相册。')
+ +`</div><div class='sgrp'>`+cpr('截图记账 URL',SUPA_URL+'/rest/v1/rpc/ss_push')+`</div>`
+ +`<p class='sub' style='margin:10px 4px'>已自动记账:Apple Pay ${n} 笔,邮件 ${nm} 笔,截图 ${D.filter(x=>x.via==='ss'||(x.ref&&x.ref.startsWith('ss:'))).length} 笔。没截图的,月底导入 PayPay CSV 时也会补上。</p>`
+ +`<button class='go alt danger' id='apgen' data-re='1'>重新生成密钥(旧的会失效)</button>`}
+document.addEventListener('click',async e=>{const t=e.target.closest('button');if(!t)return;
+ if(t.dataset.cp!==undefined){try{await navigator.clipboard.writeText(t.dataset.cp);toast('已复制')}catch(err){toast('复制失败,请长按选择')}return}
+ if(t.id==='apgen'){if(t.dataset.re&&t.dataset.cf!=='1'){t.dataset.cf='1';t.textContent='再点一次确认(需要更新快捷指令里的 tok)';return}
+  const tok=[...crypto.getRandomValues(new Uint8Array(18))].map(b=>b.toString(16).padStart(2,'0')).join('');
+  t.disabled=true;const r=await SB.from('kakeibo_tokens').upsert({user_id:SESS.user.id,token:tok},{onConflict:'user_id'});
+  if(r.error){toast('生成失败:'+r.error.message);t.disabled=false;return}APT=tok;toast('密钥已生成');render();return}});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')syncNow()});
+window.addEventListener('online',()=>syncNow());
+/* ===== 图标库 + 预算 / 固定支出页面 ===== */
+var BE=null,BCS=null,CIP=null;
+const ICONS={food:'<path d="M7 3v8M5 3v5a2 2 0 004 0V3M7 11v10M17 21V3c-2 1.5-3 4.5-3 9h3"/>',daily:'<path d="M4 9h16l-1.5 10.5A1.8 1.8 0 0116.7 21H7.3a1.8 1.8 0 01-1.8-1.5z"/><path d="M8.5 9L12 3.5 15.5 9"/>',train:'<rect x="6" y="3" width="12" height="13" rx="3"/><path d="M6 10h12M9 19l-2 2.5M15 19l2 2.5M9.5 13h.01M14.5 13h.01"/>',bag:'<path d="M5 8h14l-1 13H6z"/><path d="M9 8V6.5a3 3 0 016 0V8"/>',film:'<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.2l4.8 2.8-4.8 2.8z"/>',home:'<path d="M3 11l9-7 9 7"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5h4v5"/>',med:'<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8.5v7M8.5 12h7"/>',dots:'<circle cx="6.5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="17.5" cy="12" r="1.2"/>',
+ coffee:'<path d="M4 9h13v5a5 5 0 01-5 5H9a5 5 0 01-5-5z"/><path d="M17 11h1.5a2.5 2.5 0 010 5H17M8 3v3M12 3v3"/>',beer:'<path d="M6 7h10v12a2 2 0 01-2 2H8a2 2 0 01-2-2z"/><path d="M16 10h2a2 2 0 012 2v3a2 2 0 01-2 2h-2M6 7a3 3 0 013-3 3 3 0 015 0 3 3 0 012 3"/>',gift:'<rect x="3.5" y="8" width="17" height="5" rx="1"/><path d="M5 13v8h14v-8M12 8v13M12 8S10.5 3.5 8 4.5 9 8 12 8zM12 8s1.5-4.5 4-3.5S15 8 12 8z"/>',phone:'<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/>',wifi:'<path d="M2.5 9a14 14 0 0119 0M5.5 12.5a9.5 9.5 0 0113 0M8.7 16a5 5 0 016.6 0"/><circle cx="12" cy="19.5" r=".8"/>',plane:'<path d="M10.5 13.5L3 11l1.5-1.5 8 .5 4-4.5a2.1 2.1 0 013 3l-4.5 4 .5 8L14 21l-2.5-7.5"/>',car:'<path d="M5 16V11l2-5h10l2 5v5M3.5 16h17v3h-17z"/><circle cx="7.5" cy="13.5" r=".8"/><circle cx="16.5" cy="13.5" r=".8"/>',bike:'<circle cx="6" cy="16" r="3.5"/><circle cx="18" cy="16" r="3.5"/><path d="M6 16l4-8h5l3 8M9 8h3M12 16l3-8"/>',fuel:'<path d="M5 21V5a2 2 0 012-2h6a2 2 0 012 2v16M3.5 21h13M5 10h10M15 8l3 3v7a1.5 1.5 0 003 0v-8l-3-3"/>',book:'<path d="M4 4.5A1.5 1.5 0 015.5 3H19v15H5.5A1.5 1.5 0 004 19.5zM4 19.5A1.5 1.5 0 005.5 21H19"/>',school:'<path d="M2.5 9L12 4.5 21.5 9 12 13.5z"/><path d="M6.5 11v5c3 2.5 8 2.5 11 0v-5M21.5 9v5"/>',pet:'<circle cx="7" cy="9" r="1.8"/><circle cx="17" cy="9" r="1.8"/><circle cx="10" cy="5.5" r="1.6"/><circle cx="14" cy="5.5" r="1.6"/><path d="M8 17c0-3 2-5 4-5s4 2 4 5c0 2-2 2.5-4 2.5S8 19 8 17z"/>',baby:'<circle cx="12" cy="13" r="7.5"/><path d="M9.5 15.5a3.5 3.5 0 005 0M9.5 11.5h.01M14.5 11.5h.01M12 5.5c0-1.5 1-2.5 2.5-2.5"/>',shirt:'<path d="M8 3.5L3.5 6.5l2 4L7.5 9.5V21h9V9.5l2 1 2-4L16 3.5a4 4 0 01-8 0z"/>',gym:'<path d="M6.5 6.5v11M17.5 6.5v11M3.5 9.5v5M20.5 9.5v5M6.5 12h11"/>',heart:'<path d="M12 20s-7.5-4.5-7.5-10A4.5 4.5 0 0112 7a4.5 4.5 0 017.5 3c0 5.5-7.5 10-7.5 10z"/>',game:'<path d="M7 8h10a4 4 0 014 4v2.5a2.5 2.5 0 01-4.6 1.4L15 14H9l-1.4 1.9A2.5 2.5 0 013 14.5V12a4 4 0 014-4z"/><path d="M8 10.5v3M6.5 12h3M15.5 11h.01M17.5 13h.01"/>',music:'<path d="M9 18V5l11-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>',beauty:'<circle cx="6.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/><path d="M8.5 15.8L18 4M15.5 15.8L6 4"/>',tool:'<path d="M14.5 6.5a4 4 0 005 5L13 18a2.1 2.1 0 01-3-3l6.5-6.5a4 4 0 01-2-2zM4 20l5-5"/>',bolt:'<path d="M13 2.5L4.5 13.5H12l-1 8 8.5-11H12z"/>',water:'<path d="M12 3s6.5 7 6.5 11.5a6.5 6.5 0 01-13 0C5.5 10 12 3 12 3z"/>',card:'<rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19M6 15h4"/>',cash:'<rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 9.5v.01M18 14.5v.01"/>',chart:'<path d="M4 20V10M10 20V4M16 20v-7M2.5 20.5h19"/>',leaf:'<path d="M5 19c0-8 5-14 15-15 0 10-6 15-14 15M5 19l7-7"/>',star:'<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.8l-5.2 2.8 1-5.8-4.3-4.1 5.9-.9z"/>'};
+const DEFI={'餐饮':'food','日用品':'daily','交通':'train','购物':'bag','娱乐':'film','居住':'home','医疗':'med','其他':'dots'};
+function catIcon(c){const col=CCOL[Math.max(0,CATS.indexOf(c))%CCOL.length],k=(UI.cico||{})[c]||DEFI[c];
+ return `<i class="ci" style="--cc:var(${col})">${k&&ICONS[k]?`<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[k]}</svg>`:esc([...c][0]||'')}</i>`}
+function iconPicker(c){const cur=(UI.cico||{})[c]||DEFI[c]||'';
+ return `<div class="icp"><div class="sech"><span>为「${esc(c)}」选择图标</span><button data-pick="">${(UI.cico||{})[c]?'恢复默认':'关闭'}</button></div><div class="icg">${Object.keys(ICONS).map(k=>`<button class="icb" data-pick="${k}" aria-pressed="${cur===k}"><svg viewBox="0 0 24 24">${ICONS[k]}</svg></button>`).join('')}</div></div>`}
+const pbar=(u,l)=>`<div class="pb"><i style="width:${Math.min(100,l?u/l*100:0)}%;background:var(${u>l?'--pp':'--ac'})"></i></div>`;
+function budPage(){
+ const m=today().slice(0,7),a=D.filter(x=>x.date.startsWith(m)&&own(x)),uf=upFix(m),spent=sum(a)+uf.amt,bc={};a.forEach(x=>bc[x.cat]=(bc[x.cat]||0)+x.amt);
+ const bks=Object.keys(B.cats).filter(c=>CATS.includes(c)),left=CATS.filter(c=>!B.cats[c]);
+ let h=`<div class="box hero"><div class="hl"><span>每月总预算</span>${BE==='total'?'':`<button class="lk" data-be="total">${B.total>0?'修改':'设置'}</button>`}</div>`;
+ if(BE==='total')h+=`<div class="fr inl"><span class="yen">¥</span><input id="bt2" inputmode="numeric" placeholder="不设置" value="${B.total||''}" autocomplete="off"></div><div class="btns"><button class="go" id="bsave" data-k="total">保存</button><button class="go alt" data-be="">取消</button></div>`;
+ else if(B.total>0){const rest=B.total-spent;h+=`<p class="hv">${yen(B.total)}</p>${pbar(spent,B.total)}<p class="sub" style="margin:8px 0 0">本月已花 ${yen(spent-uf.amt)}${uf.amt?' + 预留 '+esc(uf.txt):''} · ${rest>=0?'剩余 '+yen(rest):'<b style="color:var(--pp)">已超出 '+yen(-rest)+'</b>'}</p>${todayBud().replace('class="tbud"','class="tbud" style="margin:4px 0 0"')}`}
+ else h+=`<p class="hv mu">未设置</p><p class="sub" style="margin:4px 0 0">设置后,记一笔页会显示「今天还能花多少」。</p>`;
+ h+=`</div><p class="sgt">分类预算</p><div class="sgrp">`;
+ bks.forEach(c=>{const u=bc[c]||0,l=B.cats[c];
+  h+=BE===c?`<div class="frm-in">${catIcon(c)}<span class="nm">${esc(c)}</span><span class="yen">¥</span><input id="bc2" inputmode="numeric" value="${l}" autocomplete="off"><button class="lk" id="bsave" data-k="${esc(c)}">保存</button><button class="lk" data-bdel="${esc(c)}" style="color:var(--pp)">删除</button></div>`
+  :`<button class="srow" data-be="${esc(c)}">${catIcon(c)}<span class="sl">${esc(c)}${pbar(u,l)}</span><span class="sv" style="color:var(${u>l?'--pp':'--tx'})">${yen(u)}<small> / ${yen(l)}</small></span></button>`});
+ if(BE==='new'){const sel=left.includes(BCS)?BCS:left[0];
+  h+=`<div class="frm-new"><div class="cchips">${left.map(c=>`<button class="cchip" data-bcs="${esc(c)}" aria-pressed="${c===sel}">${catIcon(c)}<span>${esc(c)}</span></button>`).join('')}</div><div class="fr inl"><span class="yen">¥</span><input id="bca2" inputmode="numeric" placeholder="「${esc(sel)}」每月预算" autocomplete="off"></div><div class="btns"><button class="go" id="badd2" data-c="${esc(sel)}">添加</button><button class="go alt" data-be="">取消</button></div></div>`}
+ else if(left.length)h+=`<button class="srow add" data-be="new"><span class="si" style="background:var(--ac)"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span><span class="sl" style="color:var(--ac)">添加分类预算</span></button>`;
+ if(!bks.length&&BE!=='new'&&!left.length)h+=`<p class="sub" style="padding:12px 14px;margin:0">所有分类都设好预算了。</p>`;
+ return h+`</div><p class="sub" style="margin:8px 6px 0;font-size:12.5px">分类预算会显示在「统计 → 概览」里。</p>`}
+document.addEventListener('click',e=>{if(e.target.closest('[data-eye2]')){REV=!REV;render()}});
+const SHK=[['px','代购收益'],['cmp','和上月比'],['day','每日支出'],['rk','消费排行'],['fx','固定支出'],['pts','积分抵扣'],['pm','支付方式']];
+function uiPage(){
+ const TH={auto:['跟随系统','<circle cx="12" cy="12" r="9"/><path d="M12 3v18"/><path d="M12 3a9 9 0 010 18z" fill="currentColor"/>'],light:['浅色','<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'],dark:['深色','<path d="M20 14.5A8.5 8.5 0 119.5 4a7 7 0 0010.5 10.5z"/>']};
+ const HM={list:['明细','<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>'],stats:['统计','<path d="M21.2 15.9A10 10 0 118 2.8"/><path d="M22 12A10 10 0 0012 2v10z"/>'],assets:['资产','<circle cx="12" cy="12" r="9"/><path d="M9 8l3 4 3-4M12 12v5M9.5 13h5M9.5 15h5"/>']};
+ const lg=UI.lang==='en'||UI.lang==='ja'||UI.lang==='auto'?UI.lang:'zh',hm=homeV();
+ const tile=(a,v,on,svg,lb)=>`<button class="tile" ${a}="${v}" aria-pressed="${on}">${svg?`<svg viewBox="0 0 24 24" aria-hidden="true">${svg}</svg>`:''}${lb}</button>`;
+ const sec=(t,inner)=>`<p class="sgt">${t}</p><div class="box" style="padding:14px">${inner}</div>`;
+ return sec('主题',`<div class="tiles" style="grid-template-columns:repeat(3,1fr)">${Object.entries(TH).map(([k,v])=>tile('data-th',k,UI.theme===k,v[1],v[0])).join('')}</div>`)
+ +sec('强调色',`<div class="swr">${Object.entries(ACC).map(([k,v])=>`<button class="swb" data-ac="${k}" aria-pressed="${UI.accent===k}" aria-label="${v[0]}"><i style="--c:${v[1]||'#df8540'}"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></i>${v[0]}</button>`).join('')}</div>`)
+ +sec('打开时进入的页面',`<div class="tiles" style="grid-template-columns:repeat(3,1fr)">${Object.entries(HM).map(([k,v])=>tile('data-hm',k,hm===k,v[1],v[0])).join('')}</div>`)
+ +sec('语言 / Language',`<div class="tiles" style="grid-template-columns:repeat(2,1fr)">${[['auto','跟随系统'],['zh','中文'],['en','English'],['ja','日本語']].map(([k,v])=>tile('data-lg',k,lg===k,'',v)).join('')}</div>`)
+ +sec('金额显示',`<div class="tiles" style="grid-template-columns:repeat(2,1fr)">${tile('data-wan','0',!UI.wan,'','完整数字 ¥1,234,567')}${tile('data-wan','1',!!UI.wan,'','万为单位 ¥123.5万')}</div><div class="tiles" style="grid-template-columns:repeat(2,1fr);margin-top:8px">${tile('data-hide','0',!UI.hide,'','直接显示')}${tile('data-hide','1',!!UI.hide,'','默认隐藏')}</div><p class="sub" style="margin:10px 2px 0;font-size:12.5px">选「默认隐藏」后,页面右上角会出现眼睛按钮,点一下临时显示金额。</p>`)
+ +(CC.length?`<p class="sub" style="margin:14px 6px 0">自定义分类 ${CC.length} 个,在「记一笔」页的分类区点「添加/编辑」管理。</p>`:'')}
+function monthOpts(){const o=[];let mm=today().slice(0,7);for(let i=0;i<12;i++){o.push(`<option value="${mm}">${i?(mm.slice(0,4)!==today().slice(0,4)?mm.slice(0,4)+'年':'')+ +mm.slice(5)+'月':'本月'}</option>`);mm=prevM(mm)}return o.join('')}
+function fixPage(){
+ const re=RE?R.find(x=>x.id===RE):null,tot=R.reduce((q,r)=>q+r.amt,0),ri=RIE?(A.ri||[]).find(x=>x.id===RIE):null,RI=A.ri||[],itot=RI.reduce((q,r)=>q+r.amt,0);
+ const dlab=d=>d>=31?'月末':d+' 日',plus='<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>';
+ let h=`<div class="box hero"><div class="hl"><span>每月固定支出</span><span>每月固定收入</span></div><div style="display:flex;justify-content:space-between;align-items:baseline"><p class="hv${R.length?'':' mu'}">${R.length?yen(tot):'¥0'}</p><p class="hv${RI.length?'':' mu'}" style="color:${RI.length?'var(--in)':'var(--mu)'}">${RI.length?'+'+yen(itot):'¥0'}</p></div><p class="sub" style="margin:4px 0 0">到日子自动记账;填写时可以一次补出过去几个月的记录。</p></div>`;
+ h+=`<p class="sgt">固定支出</p>`;
+ if(R.length)h+=`<div class="sgrp">`+R.slice().sort((p,q)=>p.day-q.day).map(r=>`<button class="srow" data-redit="${r.id}">${catIcon(r.cat)}<span class="sl">${esc(r.name)}<small>每月 ${r.day} 日 · ${esc(r.cat)} · ${mname(r.method)}</small></span><span class="sv" style="color:var(--tx);font-weight:600">${yen(r.amt)}</span><span class="chev">›</span></button>`).join('')+`</div>`;
+ if(re||OPEN.fix){const dopt=Array.from({length:31},(_,i)=>`<option value="${i+1}"${(re?re.day:1)===i+1?' selected':''}>${i+1} 日</option>`).join('');
+  h+=`<p class="sgt">${re?'编辑「'+esc(re.name)+'」':'添加固定支出'}</p><div class="sgrp frm">`
+   +`<label class="fr"><span>名称</span><input id="rn" placeholder="例如 家賃" autocomplete="off" value="${esc(re?re.name:'')}"></label>`
+   +`<label class="fr"><span>金额</span><input id="ra" inputmode="numeric" placeholder="0" value="${re?re.amt:''}"></label>`
+   +`<label class="fr"><span>每月</span><select id="rd">${dopt}</select></label>`
+   +`<label class="fr"><span>分类</span><select id="rc">${CATS.map(c=>`<option${(re?re.cat:'居住')===c?' selected':''}>${esc(c)}</option>`).join('')}</select></label>`
+   +`<label class="fr"><span>支付方式</span><select id="rmt">${MT.map(m=>`<option value="${m[0]}"${(re?re.method:vm('card'))===m[0]?' selected':''}>${m[1]}</option>`).join('')}</select></label>`
+   +(re?'':`<label class="fr"><span>从哪个月开始</span><select id="rs">${monthOpts()}</select></label>`)+`</div>`
+   +`<p class="sub" style="margin:8px 6px 0;font-size:12.5px">${re?'修改只影响之后自动记的账,已生成的记录不变。':'选更早的月份,会马上补出之前每个月的记录。'}</p>`
+   +`<div class="btns" style="margin-top:12px"><button class="go" id="radd">${re?'保存':'添加'}</button><button class="go alt" ${re?'data-rcancel="1"':'data-open="fix"'}>取消</button></div>`
+   +(re?`<button class="go alt danger" data-rdel="${re.id}">${rp===re.id?'确认删除「'+esc(re.name)+'」':'删除这项固定支出'}</button>`:'')}
+ else h+=`<button class="go" data-open="fix" style="margin-top:4px">＋ 添加固定支出</button>`;
+ h+=`<p class="sgt" style="margin-top:22px">固定收入</p>`;
+ if(RI.length)h+=`<div class="sgrp">`+RI.slice().sort((p,q)=>p.day-q.day).map(r=>`<button class="srow" data-riedit="${r.id}"><span class="si" style="background:var(--in)">${plus}</span><span class="sl">${esc(r.name)}<small>每月${dlab(r.day)}</small></span><span class="sv" style="color:var(--in);font-weight:600">+${yen(r.amt)}</span><span class="chev">›</span></button>`).join('')+`</div>`;
+ if(ri||OPEN.fixin){const dopt=Array.from({length:30},(_,i)=>`<option value="${i+1}"${(ri?ri.day:31)===i+1?' selected':''}>${i+1} 日</option>`).join('')+`<option value="31"${(ri?ri.day:31)>=31?' selected':''}>月末</option>`;
+  h+=`<p class="sgt">${ri?'编辑「'+esc(ri.name)+'」':'添加固定收入'}</p><div class="sgrp frm">`
+   +`<label class="fr"><span>名称</span><input id="in-n" placeholder="例如 工资" autocomplete="off" value="${esc(ri?ri.name:'')}"></label>`
+   +`<label class="fr"><span>金额</span><input id="in-a" inputmode="numeric" placeholder="0" value="${ri?ri.amt:''}"></label>`
+   +`<label class="fr"><span>每月</span><select id="in-d">${dopt}</select></label>`
+   +(ri?'':`<label class="fr"><span>从哪个月开始</span><select id="in-s">${monthOpts()}</select></label>`)+`</div>`
+   +`<p class="sub" style="margin:8px 6px 0;font-size:12.5px">${ri?'修改只影响之后自动记的收入,已生成的记录不变。':'选更早的月份,会马上补出之前每个月的收入。实际金额不一样时,在明细里改那一笔就行。'}</p>`
+   +`<div class="btns" style="margin-top:12px"><button class="go" id="riadd">${ri?'保存':'添加'}</button><button class="go alt" ${ri?'data-ricancel="1"':'data-open="fixin"'}>取消</button></div>`
+   +(ri?`<button class="go alt danger" data-ridel="${ri.id}">${rp===ri.id?'确认删除「'+esc(ri.name)+'」':'删除这项固定收入'}</button>`:'')}
+ else h+=`<button class="go alt" data-open="fixin" style="margin-top:4px">＋ 添加固定收入</button>`;
+ return h}
+document.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)return;
+ if(t.dataset.be!==undefined){BE=t.dataset.be||null;render();const i=$('bt2')||$('bc2')||$('bca2');if(i&&BE!=='new')i.focus();return}
+ if(t.dataset.bcs){BCS=t.dataset.bcs;render();return}
+ if(t.id==='bsave'){const k=t.dataset.k,v=num((($('bt2')||$('bc2'))||{}).value||'');
+  if(k==='total')B.total=v>0?Math.round(v):0;else if(v>0)B.cats[k]=Math.round(v);else delete B.cats[k];BE=null;saveC();toast('已保存预算');render();return}
+ if(t.id==='badd2'){const v=num($('bca2').value);if(!(v>0)){toast('请输入预算金额');$('bca2').focus();return}B.cats[t.dataset.c]=Math.round(v);BE=null;BCS=null;saveC();toast('已添加 '+t.dataset.c+' 预算');render();return}
+ if(t.dataset.cico!==undefined){CIP=CIP===t.dataset.cico?null:t.dataset.cico;render();return}
+ if(t.dataset.pick!==undefined&&CIP){UI.cico=Object.assign({},UI.cico);if(t.dataset.pick)UI.cico[CIP]=t.dataset.pick;else delete UI.cico[CIP];if(!t.dataset.pick||true)CIP=t.dataset.pick?CIP:null;saveC();render();return}
+});
+/* ===== 分类拖拽排序 ===== */
+(()=>{let d=null;
+ document.addEventListener('pointerdown',e=>{const h=e.target.closest&&e.target.closest('#cord .hd,#sord .hd,#pord .hd');if(!h)return;e.preventDefault();const li=h.parentElement,ul=li.parentElement;
+  d={li,ul,y0:e.clientY,top:li.offsetTop,h:li.offsetHeight+6,id:e.pointerId};li.classList.add('drg');try{h.setPointerCapture(e.pointerId)}catch(_){}});
+ document.addEventListener('pointermove',e=>{if(!d||e.pointerId!==d.id)return;e.preventDefault();
+  let dy=e.clientY-d.y0;const sib=dy>0?d.li.nextElementSibling:d.li.previousElementSibling;
+  if(sib&&Math.abs(dy)>d.h/2){if(dy>0)sib.after(d.li);else sib.before(d.li);d.y0+=dy>0?d.h:-d.h;dy=e.clientY-d.y0}
+  d.li.style.transform=`translateY(${dy}px)`},{passive:false});
+ const end=e=>{if(!d||e.pointerId!==d.id)return;const {li,ul}=d;d=null;li.classList.remove('drg');li.style.transform='';
+  if(ul.id==='pord'){const od=[...ul.children].map(x=>x.dataset.p);if(!PM)PM=DEF_PM.map(m=>m.slice());PM.sort((x,y)=>od.indexOf(x[0])-od.indexOf(y[0]));applyPM();saveC();const ms=$('ms');if(ms){const q=document.createElement('div');q.innerHTML=addView();const n=q.querySelector('#ms');if(n)ms.innerHTML=n.innerHTML}return}
+  if(ul.id==='sord'){UI.so=[...ul.children].map(x=>x.dataset.k);saveC();return}
+  UI.co=[...ul.children].map(x=>x.dataset.c);applyCats();saveC();
+  const cs=$('cs');if(cs){const p=document.createElement('div');p.innerHTML=addView();const n=p.querySelector('#cs');if(n)cs.innerHTML=n.innerHTML}};
+ document.addEventListener('pointerup',end);document.addEventListener('pointercancel',end);
+})();
+/* ===== 内容区左右滑动切换顶部标签;底部导航栏左右滑动切换页面 ===== */
+(()=>{let s=null;const VIEWS=['list','stats','assets'];
+ const curView=()=>{const v=hv().slice(1);return VIEWS.includes(v)?v:'list'};
+ const tabs=()=>{const h=document.querySelector('#app .fhead');if(!h)return null;const b=[...h.querySelectorAll('button.chip')].filter(x=>x.dataset.st||x.dataset.at||x.dataset.mp);return b.length>1?b:null};
+ const hscroll=el=>{for(;el&&el.id!=='sc';el=el.parentElement){if(el.scrollWidth>el.clientWidth+2){const o=getComputedStyle(el).overflowX;if(o==='auto'||o==='scroll')return true}}return false};
+ const target=(c,dir)=>{if(c.b){const ni=c.i+dir;if(ni>=0&&ni<c.b.length)return {tab:ni}}return null};
+ const slideIn=dir=>{const n=$('sc');if(!n)return;const w=n.clientWidth;n.scrollTop=0;n.style.transition='none';n.style.transform=`translateX(${dir*w*.35}px)`;n.style.opacity='0';n.offsetWidth;
+  n.style.transition='transform .2s ease-out,opacity .2s ease-out';n.style.transform='';n.style.opacity=''};
+ document.addEventListener('touchstart',e=>{s=null;if(e.touches.length!==1)return;const sc=$('sc'),ap=$('app');if(!sc||!ap.contains(e.target))return;if(E||EI||NEW||SEL.on)return;
+  if(e.target.closest('input,select,textarea,.hd,.cord')||hscroll(e.target))return;const t=e.touches[0],b=tabs();if(!b)return;
+  s={x:t.clientX,y:t.clientY,t:Date.now(),b,i:b?b.findIndex(x=>x.getAttribute('aria-pressed')==='true'):0,v:curView(),m:0,sc,dx:0}},{passive:true});
+ document.addEventListener('touchmove',e=>{if(!s)return;if(e.touches.length!==1){s.sc.style.transform='';s=null;return}const t=e.touches[0],dx=t.clientX-s.x,dy=t.clientY-s.y;
+  if(!s.m){if(Math.abs(dx)<8&&Math.abs(dy)<8)return;s.m=Math.abs(dx)>Math.abs(dy)*1.2?1:2;if(s.m===1)s.sc.style.transition='none'}
+  if(s.m!==1)return;e.preventDefault();const edge=!target(s,dx<0?1:-1);s.dx=dx;s.sc.style.transform=`translateX(${edge?dx/3:dx}px)`},{passive:false});
+ const fin=()=>{if(!s)return;const c=s;s=null;if(c.m!==1)return;const w=c.sc.clientWidth,v=Math.abs(c.dx)/Math.max(1,Date.now()-c.t);
+  const dir=(c.dx<-w*.25||(c.dx<-40&&v>.4))?1:(c.dx>w*.25||(c.dx>40&&v>.4))?-1:0,tg=dir&&target(c,dir);
+  if(!tg){c.sc.style.transition='transform .2s ease';c.sc.style.transform='';return}
+  c.sc.style.transition='transform .16s ease-in';c.sc.style.transform=`translateX(${-dir*w}px)`;
+  setTimeout(()=>{
+   if(tg.tab!==undefined){c.b[tg.tab].click();slideIn(dir);return}
+   window.addEventListener('hashchange',()=>{if(dir<0){const b=tabs();if(b)b[b.length-1].click()}slideIn(dir)},{once:true});
+   location.hash='#'+tg.view},150)};
+ document.addEventListener('touchend',fin);document.addEventListener('touchcancel',fin);
+ let n=null;const nav=document.querySelector('nav');
+ nav.addEventListener('touchstart',e=>{const sc=$('sc');n=(e.touches.length===1&&sc)?{x:e.touches[0].clientX,y:e.touches[0].clientY,t:Date.now(),dx:0,m:0,sc,vi:VIEWS.indexOf(curView())}:null},{passive:true});
+ nav.addEventListener('touchmove',e=>{if(!n)return;const dx=e.touches[0].clientX-n.x,dy=e.touches[0].clientY-n.y;
+  if(!n.m){if(Math.abs(dx)<6&&Math.abs(dy)<6)return;n.m=Math.abs(dx)>=Math.abs(dy)?1:2;if(n.m===1)n.sc.style.transition='none'}
+  if(n.m!==1)return;e.preventDefault();n.dx=dx;const edge=n.vi<0||(dx>0&&n.vi===0)||(dx<0&&n.vi===VIEWS.length-1);n.sc.style.transform=`translateX(${edge?dx/3:dx}px)`},{passive:false});
+ const nfin=e=>{if(!n)return;const c=n;n=null;if(c.m!==1)return;e.preventDefault&&e.cancelable&&e.preventDefault();const w=c.sc.clientWidth,v=Math.abs(c.dx)/Math.max(1,Date.now()-c.t);
+  const dir=(c.dx<-w*.25||(c.dx<-30&&v>.35))?1:(c.dx>w*.25||(c.dx>30&&v>.35))?-1:0,vi=c.vi+dir;
+  if(!dir||c.vi<0||vi<0||vi>=VIEWS.length){c.sc.style.transition='transform .2s ease';c.sc.style.transform='';return}
+  c.sc.style.transition='transform .16s ease-in';c.sc.style.transform=`translateX(${-dir*w}px)`;
+  setTimeout(()=>{window.addEventListener('hashchange',()=>slideIn(dir),{once:true});location.hash='#'+VIEWS[vi]},150)};
+ nav.addEventListener('touchend',nfin);nav.addEventListener('touchcancel',nfin);
+})();
+/* ===== iOS:弹出面板里点文字输入框有时不弹键盘(刚从数字键盘切过来、或点的瞬间面板重绘)→ 在手指抬起时主动聚焦 ===== */
+let LCALC=0;document.addEventListener('focusin',e=>{if(e.target&&e.target.dataset&&e.target.dataset.calc!==undefined)LCALC=Date.now()},true);
+document.addEventListener('touchend',e=>{const t=e.target;if(!t||!t.closest)return;const i=t.closest('input,textarea');if(!i||i.readOnly||i.dataset.calc!==undefined||/^(checkbox|radio|file|date|range)$/.test(i.type))return;
+ const el=(i.isConnected?i:(i.id&&$(i.id)))||null;if(!el)return;
+ /* 刚从自定义数字键盘(只读框)切过来时,iOS 会认为已经聚焦、不再弹键盘:先 blur 再在这次点击里重新 focus */
+ try{if(document.activeElement===el&&Date.now()-LCALC<4000){el.blur()}if(document.activeElement!==el)el.focus({preventScroll:true})}catch(_){}},{passive:true});
+/* ===== 禁止双指缩放 / 双击缩放 ===== */
+['gesturestart','gesturechange','gestureend'].forEach(t=>document.addEventListener(t,e=>e.preventDefault(),{passive:false}));
+document.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault()},{passive:false});
+(function(){try{const q=location.hash.split('?')[1]||location.search.slice(1),p=new URLSearchParams(q);
+ if(p.get('a')||p.get('n')){PF={amt:(p.get('a')||'').replace(/[^0-9]/g,''),note:p.get('n')||''};const m=p.get('m');if(MT.some(x=>x[0]===m))F.method=m;if(p.get('t')==='in')F.type='in';const c=guess(PF.note);if(c)F.cat=c}}catch(e){}})();
+/* 邮件链接失效时(比如点了旧的重设密码邮件),Supabase 会带着错误跳回来:提示原因并打开账号页 */
+try{const hq=new URLSearchParams(location.hash.slice(1)),ec=hq.get('error_code')||hq.get('error');
+ if(ec){history.replaceState(null,'',location.pathname+'#me/acct');setTimeout(()=>toast(/expired|otp/.test(ec)?'这个邮件链接已失效或已被用过。请在 App 里重新点「忘记密码」,并打开最新的那封邮件':'邮件链接无法使用:'+(hq.get('error_description')||ec)),300)}}catch(e){}
+try{reguessOnce()}catch(e){}
+try{dedupAuto()}catch(e){}
+render();
+i18nStart();i18nRun();
+try{if(localStorage.getItem(AUK)||/access_token=|type=recovery/.test(location.hash))sbBoot().catch(()=>{})}catch(e){}
+setTimeout(()=>{try{autoSnap()}catch(e){}},2000);
+
+if('serviceWorker' in navigator&&location.protocol==='https:'){window.addEventListener('load',()=>{
+ /* 有新版本时:后台装好新的 service worker → 接管后自动刷新一次,不用手动关掉重开 */
+ const had=!!navigator.serviceWorker.controller;let done=false;
+ navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!had||done)return;done=true;const busy=document.activeElement&&document.activeElement.matches('input,textarea,select');if(!busy&&!E&&!EI&&!NEW)location.reload();else toast('新版本已就绪,下次打开生效')});
+ navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(reg=>{const up=()=>reg.update().catch(()=>{});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')up()});setInterval(up,30*60*1000)}).catch(()=>{})})}
