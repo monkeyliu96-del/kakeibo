@@ -1,6 +1,7 @@
 // @ts-nocheck  (逐步迁移:拆分完成的模块会移出这个文件并加上类型)
 import {LG,ZH2EN,ZH2JA,trs,bindUI} from './i18n/translate';
 import {J,mergeDoc} from './sync/merge';
+import {sum,prevM,CARD_DAY,isCredit,CARDS,bmOf,flowOf,stockOf,unpaidCardOf,cashSSmOf,afterSSOf,walletNowOf,ppMOf,cashNowOf,totalOf} from './core/ledger';
 import {b64e,b64d,deriveKey,encryptDoc,decryptDoc} from './sync/crypto';
 const FRESH=(()=>{try{return !localStorage.getItem('kakeibo.v1')&&!localStorage.getItem('kakeibo.cfg.v1')}catch(e){return true}})();
 const HK='kakeibo.hint.v1';
@@ -516,13 +517,13 @@ function migA(){A.rates=Object.assign({USD:A.rate||150,CNY:21},A.rates||{});if(!
 migA();
 if(!A.start){A.start=today()}
 saveA();
-const sum=a=>a.reduce((s,x)=>s+x.amt,0);
 const inM=m=>sum(A.inc.filter(x=>x.date.startsWith(m)&&ownI(x)));
-const flow=()=>({i:sum(A.inc.filter(x=>x.date>=A.start)),o:sum(D.filter(x=>x.date>=A.start))});
-const stockJ=()=>A.assets.reduce((s,x)=>s+x.val,0);
+/* 现金/总资产的计算在 src/core/ledger.ts(纯函数),这里只是把当前的 D、A 传进去 */
+const LD=()=>({D,A});
+const flow=()=>flowOf(LD());
+const stockJ=()=>stockOf(LD());
 /* 现金:有ゆうちょ截图时直接用截图余额,否则按「起算余额 + 收入 − 支出」推算 */
 /* 截图当天还没从银行扣走的信用卡账单:每月 27 日扣上个月的,所以 27 日之前截的图要减去上个月的信用卡消费 */
-const CARD_DAY=27,isCredit=m=>m!=='paypay'&&m!=='cash';
 /* 每张卡:扣的是按记账算出的上个月刷卡合计(和导入的明细一致,方便核对);
    截过账单页(PayPay ウォレット、乐天卡 App)的话,旁边列出实际账单做对照,不一致就标红 */
 /* 账单和记账对不上时:列出最可能出问题的几笔 */
@@ -537,27 +538,17 @@ function difBlock(u){const k='dif'+u.mth,op=OPEN[k],sus=op?difSuspects(u.m,u.mth
  +(op?`<div style='padding:0 0 10px'><p class='sub' style='margin:4px 0 6px'>记账 ${yen(u.v)} − 账单 ${yen(u.bill)} = ${u.df>0?'多记了':'少记了'} ${yen(Math.abs(u.df))}。${u.df>0?'先看有没有重复或已取消的。':'可能有漏记的,导入这张卡的明细就能补上。'}</p>`
   +(sus.length?sus.map(({x,why})=>`<div class='row' style='gap:8px'><button class='arow' data-edit='${x.id}' style='flex:1;min-width:0;display:flex;align-items:center;gap:8px;border:0;padding:0'><div class='rm'><div>${esc(x.note||x.cat)}</div><span>${+x.date.slice(5,7)}/${+x.date.slice(8)} · ${esc(why)}</span></div><div class='amt'>${yen(x.amt)}</div></button><div style='display:flex;flex-direction:column;align-items:flex-end;flex:none'><button class='lk' data-difnx='${x.id}' style='font-size:13px'>算下月账单</button><button class='lk' data-difok='${x.id}' style='font-size:13px;color:var(--mu)'>没问题</button></div></div>`).join(''):`<p class='sub' style='margin:0'>没找到明显可疑的记录。</p>`)
   +`<button class='lk' data-upc='${u.m}' data-upm='${u.mth}' style='margin-top:6px'>查看 ${+u.m.slice(5)}月全部 ${esc(u.nm)} 记录 ›</button></div>`:'')}
-const CARDS=[['card','ppc','PayPay卡'],['rakuten','rkc','乐天卡']];
 /* 账单所属月份:利用日在上个月、但晚入账进了下个月账单的,记 bm */
-const bmOf=x=>x.bm||x.date.slice(0,7);
-const unpaidCard=d=>{const items=[];if(!d)return {items,v:0};const B=A.bills||{},pm=prevM(d.slice(0,7));
- if(+d.slice(8)<CARD_DAY)CARDS.forEach(([mth,key,nm])=>{const v=sum(D.filter(x=>bmOf(x)===pm&&x.method===mth)),b=B[key],bill=b&&b.pay&&b.pay.slice(0,7)===d.slice(0,7)?b:null;
-  if(!v&&!bill)return;const df=bill?v-bill.val:0;
-  items.push({nm,v,m:pm,mth,df,bill:bill?bill.val:null,lbl:nm+' '+(+pm.slice(5))+'月消费',sub:bill?('账单 '+yen(bill.val)+(df?' · 差 '+(df>0?'+':'−')+yen(Math.abs(df)):' · 一致')):'本月'+CARD_DAY+'日扣款',bad:!!(bill&&df)})});
- if(+d.slice(8)<CARD_DAY){const v=sum(D.filter(x=>x.date.startsWith(pm)&&isCredit(x.method)&&!CARDS.some(c=>c[0]===x.method)));if(v)items.push({nm:'其他卡',v,m:pm,lbl:'其他信用卡 '+(+pm.slice(5))+'月消费',sub:'本月'+CARD_DAY+'日扣款'})}
- /* 截图时已刷、还没扣的本月信用卡 + 截图之后刷的信用卡:都还没从ゆうちょ扣走,要从现金里减掉 */
- {const cm=d.slice(0,7),v=sum(D.filter(x=>isCredit(x.method)&&(x.date>d||(bmOf(x)===cm&&x.date<=d))));if(v)items.push({nm:'本月信用卡',v,lbl:'本月信用卡消费(还没扣款)',sub:'下月'+CARD_DAY+'日起扣款'})}
- return {items,v:items.reduce((a,x)=>a+x.v,0)}};
+const unpaidCard=d=>unpaidCardOf(LD(),d,yen);
 /* 现金 = ゆうちょ(减去还没扣的上月信用卡)+ PayPay残高;两者都没截过图时才按收支推算 */
-const cashSSm=()=>!!(A.cashSS||A.cashPP);
+const cashSSm=()=>cashSSmOf(LD());
 /* 截图之后记的现金 / PayPay余额消费、截图之后入账的收入,也要算进来(信用卡部分已在 unpaidCard 里) */
-const afterSS=(d,ms)=>d?sum(D.filter(x=>x.date>d&&ms.includes(x.method))):0;
+const afterSS=(d,ms)=>afterSSOf(LD(),d,ms);
 /* 钱包现金:手动填一次实际金额,之后用「现金」支付的消费自动减(设了它,「现金」就不再从ゆうちょ里扣) */
-const walletNow=()=>{const w=A.cashW;if(!w)return 0;return w.val-sum(D.filter(x=>x.method==='cash'&&(x.date>w.upd||(x.date===w.upd&&!(w.ex||[]).includes(x.id)))))};
-const ppM=()=>(A.cashSS||A.cashW)?['paypay']:['paypay','cash'];
-const cashNow=()=>{if(cashSSm()){const s=A.cashSS?A.cashSS.upd:null,p=A.cashPP?A.cashPP.upd:null;
- return (A.cashSS?A.cashSS.val-unpaidCard(s).v-(A.cashW?0:afterSS(s,['cash']))+sum(A.inc.filter(x=>x.date>s)):0)+(A.cashPP?A.cashPP.val-afterSS(p,ppM()):0)+walletNow()}const f=flow();return A.cash+f.i-f.o};
-const totalA=()=>stockJ()+cashNow();
+const walletNow=()=>walletNowOf(LD());
+const ppM=()=>ppMOf(LD());
+const cashNow=()=>cashNowOf(LD(),yen);
+const totalA=()=>totalOf(LD(),yen);
 /* 每天自动记录一次总资产(打开 App / 资产页时),当天内数值变了就更新当天这条 */
 function autoSnap(){if(!(A.assets.length||A.cash||A.start))return;const td=today(),fl=flow(),sn={date:td,total:Math.round(totalA()),inv:Math.round(stockJ()),cash:Math.round(cashNow()),items:A.assets.map(x=>[x.name,Math.round(x.val)])};
  const cur=A.snaps.find(x=>x.date===td);if(cur&&JSON.stringify(cur)===JSON.stringify(sn))return;A.snaps=A.snaps.filter(x=>x.date!==td);A.snaps.push(sn);saveA()}
@@ -728,7 +719,6 @@ try{RV=Object.assign(RV,JSON.parse(localStorage.getItem(RK)||'{}'))}catch(e){}
 const TRF=/送った|受け取った|送金|受け取り|受取|送る|わりかん|割り勘/;
 const saveRV=()=>{try{localStorage.setItem(RK,JSON.stringify(RV))}catch(e){}};
 const nextM=m=>{let[y,k]=m.split('-').map(Number);k++;if(k>12){k=1;y++}return y+'-'+String(k).padStart(2,'0')};
-const prevM=m=>{const[y,mo]=m.split('-').map(Number);const d=new Date(y,mo-2,1);return d.getFullYear()+'-'+pad(d.getMonth()+1)};
 function applyRec(){
  let ch=false;const now=today(),cm=now.slice(0,7);
  R.forEach(r=>{let[y,m]=(r.last||prevM(cm)).split('-').map(Number);
