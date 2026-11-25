@@ -1,5 +1,7 @@
 // @ts-nocheck  (逐步迁移:拆分完成的模块会移出这个文件并加上类型)
 import {LG,ZH2EN,ZH2JA,trs,bindUI} from './i18n/translate';
+import {J,mergeDoc} from './sync/merge';
+import {b64e,b64d,deriveKey,encryptDoc,decryptDoc} from './sync/crypto';
 const FRESH=(()=>{try{return !localStorage.getItem('kakeibo.v1')&&!localStorage.getItem('kakeibo.cfg.v1')}catch(e){return true}})();
 const HK='kakeibo.hint.v1';
 const hintOn=()=>{try{return !localStorage.getItem(HK)}catch(e){return false}};
@@ -1031,29 +1033,7 @@ function paintMe(){const a=document.querySelector('#band .avb');if(a)a.innerHTML
 function avHTML(){if(UI.avatar)return `<span class="av" style="background-image:url('${UI.avatar}')"></span>`;
  const n=(UI.nick||(SESS&&SESS.user.email)||'').trim();
  return n?`<span class="av">${esc(n[0].toUpperCase())}</span>`:`<span class="av"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></span>`}
-/* --- 合并:以上次同步的内容为基准做三方合并,两台设备离线各记的账都不会丢 --- */
-const J=JSON.stringify;
-const keyD=x=>x.ref?'f:'+x.ref:x.rid?'r:'+x.rid+'@'+x.date:'i:'+x.id;
-function mergeArr(l,r,b,kf){
- const M=a=>new Map((a||[]).filter(Boolean).map(x=>[kf(x),x])),L=M(l),R=M(r),B=b?M(b):null,out=[];
- for(const k of new Set([...L.keys(),...R.keys()])){const lx=L.get(k),rx=R.get(k),bx=B&&B.get(k);
-  if(lx&&rx){out.push(bx&&J(lx)===J(bx)?rx:lx);continue}
-  const x=lx||rx;if(bx){if(J(x)!==J(bx))out.push(x);continue}
-  out.push(x)}
- return out}
-const mergeVal=(l,r,b,hasB,lw)=>hasB?(J(l)!==J(b)?l:r):lw?(l!==undefined?l:r):(r!==undefined?r:l);
-/* 首次同步(没有基准)时,记录更多的一方的设置优先;只有一方有的设置项(比如另一台设备上设的头像)也保留 */
-const docN=d=>(d.D||[]).length+((d.A||{}).inc||[]).length+((d.A||{}).assets||[]).length+((d.A||{}).snaps||[]).length;
-function mergeDoc(l,r,b){if(!r)return l;const hb=!!b,lw=!hb&&docN(l)>docN(r);b=b||{};const o=JSON.parse(J(r));
- o.D=mergeArr(l.D,r.D,hb?b.D:null,keyD);o.R=mergeArr(l.R,r.R,hb?b.R:null,x=>'i:'+x.id);
- ['B','CC','PM'].forEach(k=>o[k]=mergeVal(l[k],r[k],b[k],hb,lw));
- {const lu=l.UI||{},ru=r.UI||{},bu=b.UI||{};o.UI={};new Set([...Object.keys(lu),...Object.keys(ru)]).forEach(k=>{const v=mergeVal(lu[k],ru[k],bu[k],hb,lw);if(v!==undefined)o.UI[k]=v})}
- const la=l.A||{},ra=r.A||{},ba=b.A||{};o.A={};
- new Set([...Object.keys(la),...Object.keys(ra)]).forEach(k=>{
-  if(k==='inc'||k==='assets')o.A[k]=mergeArr(la[k],ra[k],hb?ba[k]:null,x=>x.ref?'f:'+x.ref:'i:'+x.id);
-  else if(k==='snaps')o.A[k]=mergeArr(la[k],ra[k],hb?ba[k]:null,x=>'d:'+x.date);
-  else o.A[k]=mergeVal(la[k],ra[k],ba[k],hb,lw)});
- return o}
+/* 三方合并见 src/sync/merge.ts */
 const localDoc=()=>JSON.parse(J({v:1,D,A,B,R,UI,CC,PM}));
 function applyDoc(o){
  D=Array.isArray(o.D)?o.D:[];A=Object.assign({rate:150,cash:0,stock:0,cur:'JPY',inc:[],start:today(),snaps:[],assets:[],disp:'JPY'},o.A||{});migA();
@@ -1064,16 +1044,12 @@ function applyDoc(o){
 /* ===== 端对端加密:云端只存密文,解密钥匙只在用户自己的设备上 =====
    加密密码 → PBKDF2(SHA-256, 31 万次) → AES-GCM 256。钥匙存在这台设备上,换设备时输入一次加密密码。 */
 const EKK='kakeibo.ek.v1';let EKEY=null,ESALT='',EENV=null,EDIS=false,EJUST=false;
-const b64e=u=>{let s='';for(let i=0;i<u.length;i+=8192)s+=String.fromCharCode.apply(null,u.subarray(i,i+8192));return btoa(s)};
-const b64d=t=>Uint8Array.from(atob(t),c=>c.charCodeAt(0));
-async function ekDerive(pw,salt){const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);
- return crypto.subtle.deriveKey({name:'PBKDF2',salt:b64d(salt),iterations:310000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},true,['encrypt','decrypt'])}
+const ekDerive=deriveKey;
 async function ekSave(uid){try{localStorage.setItem(EKK,J({uid,salt:ESALT,k:b64e(new Uint8Array(await crypto.subtle.exportKey('raw',EKEY)))}))}catch(e){}}
 async function ekLoad(uid){if(EKEY&&ESALT)return;try{const o=JSON.parse(localStorage.getItem(EKK)||'null');if(o&&o.uid===uid&&o.k){EKEY=await crypto.subtle.importKey('raw',b64d(o.k),'AES-GCM',true,['encrypt','decrypt']);ESALT=o.salt}}catch(e){}}
 function ekClear(){EKEY=null;ESALT='';try{localStorage.removeItem(EKK)}catch(e){}}
-async function encDoc(o){const iv=crypto.getRandomValues(new Uint8Array(12));
- return {enc:1,salt:ESALT,iv:b64e(iv),ct:b64e(new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},EKEY,new TextEncoder().encode(J(o)))))}}
-async function decDoc(e,key){return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:b64d(e.iv)},key||EKEY,b64d(e.ct))))}
+const encDoc=o=>encryptDoc(o,EKEY,ESALT);
+const decDoc=(e,key)=>decryptDoc(e,key||EKEY);
 async function syncNow(){
  if(!SB||!SESS)return;if(SYNCING){SYAGAIN=true;return}
  SYNCING=true;SYNC.st='ing';paintSync();const uid=SESS.user.id;
