@@ -1,6 +1,8 @@
 // @ts-nocheck  (逐步迁移:拆分完成的模块会移出这个文件并加上类型)
 import {LG,ZH2EN,ZH2JA,trs,bindUI} from './i18n/translate';
 import {J,mergeDoc} from './sync/merge';
+import {rkParse} from './core/rakuten';
+import {AUTOR,dd,mkey,nkey,SUBRE,matchManual as matchManualIn,stmtLast as stmtLastIn,stmtOf as stmtOfIn,dedupAutoIds,incDup as incDupIn,dupCharges as dupChargesIn} from './core/dedupe';
 import {sum,prevM,CARD_DAY,isCredit,CARDS,bmOf,flowOf,stockOf,unpaidCardOf,cashSSmOf,afterSSOf,walletNowOf,ppMOf,cashNowOf,totalOf} from './core/ledger';
 import {b64e,b64d,deriveKey,encryptDoc,decryptDoc} from './sync/crypto';
 const FRESH=(()=>{try{return !localStorage.getItem('kakeibo.v1')&&!localStorage.getItem('kakeibo.cfg.v1')}catch(e){return true}})();
@@ -739,16 +741,12 @@ function applyRi(){let ch=false;
 try{applyRi()}catch(e){}
 const parseCSV=t=>{const rows=[];let r=[],c='',q=false;for(let i=0;i<t.length;i++){const ch=t[i];if(q){if(ch==='"'){if(t[i+1]==='"'){c+='"';i++}else q=false}else c+=ch}else if(ch==='"')q=true;else if(ch===','){r.push(c);c=''}else if(ch==='\n'||ch==='\r'){if(ch==='\r'&&t[i+1]==='\n')i++;r.push(c);c='';if(r.some(x=>x!==''))rows.push(r);r=[]}else c+=ch}r.push(c);if(r.some(x=>x!==''))rows.push(r);return rows};
 /* 导入时和手动记录对账:同日+同金额+同支付方式 → 自动合并;同日同金额(方式不同)或相差一天 → 让你确认 */
-const dd=(a,b)=>Math.abs((new Date(a)-new Date(b))/864e5);
-function matchManual(date,amt,method,claimed){const pool=D.filter(z=>(!z.ref||AUTOR.test(z.ref))&&!z.rid&&z.amt===amt&&!claimed.has(z.id));
- const ex=pool.find(z=>z.date===date&&z.method===method);if(ex)return {auto:ex};
- const nr=pool.find(z=>z.date===date)||pool.find(z=>z.method===method&&dd(z.date,date)<=1);return nr?{ask:nr}:null}
+const matchManual=(date,amt,method,claimed)=>matchManualIn(D,date,amt,method,claimed);
 function linkManual(z,ref,note){z.ref=ref;if(!z.note)z.note=note}
 const IMPM=['paypay','card','rakuten'];
-const AUTOR=/^(ap|ml|ss):/;
 /* 明细导入覆盖到的最后日期(只算真正从明细导入的,不算自动记的) */
 /* 截图记的那笔虽然带取引番号,但不算「明细已导入到这天」,否则同一天手动记的会被误标为明细里没有 */
-const stmtLast=m=>D.reduce((a,z)=>z.ref&&!AUTOR.test(z.ref)&&z.via!=='ss'&&z.method===m&&z.date>a?z.date:a,'');
+const stmtLast=m=>stmtLastIn(D,m);
 function reconTag(x){
  if(x.ref&&AUTOR.test(x.ref)){const src=x.ref.startsWith('ml:')?'邮件':x.ref.startsWith('ss:')?'截图':'Apple Pay',last=stmtLast(x.method);
   /* 明细已经导入到这笔之后,却没对上 → 可能被取消/退款,或明细里金额不同 */
@@ -758,13 +756,7 @@ function reconTag(x){
  const last=stmtLast(x.method);
  return last&&x.date<=last?'<span class="tg bad">CSV(至 '+(+last.slice(5,7))+'/'+(+last.slice(8))+')中无此笔</span>':'<span class="tg">明细未到</span>'}
 /* ===== 疑似重复扣款:订阅服务 = 同一个月扣了多次;其他乐天卡消费 = 同一天同店同额多次(Suica 充值、麦当劳这种隔几天一次的不算) ===== */
-const SUBRE=/APPLE|ICLOUD|ITUNES|NETFLIX|SPOTIFY|AMAZON|PRIME|GOOGLE|YOUTUBE|DISNEY|HULU|U-NEXT|ADOBE|MICROSOFT|OPENAI|CHATGPT|ANTHROPIC|CLAUDE|DAZN|ABEMA|NINTENDO|PLAYSTATION|DROPBOX|楽天モバイル|DOCOMO|SOFTBANK|AHAMO|POVO/i;
-const mkey=n=>String(n||'').normalize('NFKC').toUpperCase().replace(/\s+/g,' ').trim();
-function dupCharges(m){
- const ok=new Set(UI.dupok||[]),g={},seen={};
- D.forEach(x=>{if(!x.ref||!x.note||!(x.method==='rakuten'||SUBRE.test(mkey(x.note))))return;const b=mkey(x.note)+'|'+x.amt;(seen[b]=seen[b]||new Set()).add(x.date.slice(0,7));
-  if(m&&!x.date.startsWith(m))return;const k=b+'|'+(SUBRE.test(mkey(x.note))?x.date.slice(0,7):x.date);(g[k]=g[k]||{k,b,n:x.note,amt:x.amt,mo:x.date.slice(0,7),xs:[]}).xs.push(x)});
- return Object.values(g).filter(o=>o.xs.length>=2&&!ok.has(o.k)).sort((p,q)=>q.mo.localeCompare(p.mo)||q.amt-p.amt)}
+const dupCharges=m=>dupChargesIn(D,UI.dupok,m);
 function dupCard(gs){if(!gs.length)return '';
  return `<div class="box dupc"><h2><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>疑似重复扣款 · ${gs.length} 组</h2><p class="sub" style="margin:0 0 4px">同一商户、同一金额,同一个月被扣了不止一次。如果确实是重复扣款,可以联系商户(Apple 可在「设置 → Apple 账户 → 订阅 / 购买记录」里查看)或卡公司申请退款。</p>`
  +gs.map(o=>`<div class="dupg"><div class="dupt"><b>${esc(o.n)}</b><span>${yen(o.amt)} × ${o.xs.length}</span></div><p class="sub" style="margin:2px 0 8px">${+o.mo.slice(5)} 月 · ${o.xs.map(x=>+x.date.slice(5,7)+'/'+(+x.date.slice(8))).sort().join('、')} · ${mname(o.xs[0].method)} · 多扣了 ${yen(o.amt*(o.xs.length-1))}</p><div class="btns"><button class="go alt" data-dupv="${esc(o.n)}" data-dupm="${o.mo}">查看这几笔</button><button class="go alt" data-dupok="${esc(o.k)}">不是重复</button></div></div>`).join('')+`</div>`}
@@ -810,22 +802,6 @@ function importPay(t){
 const PDFJS='https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/';
 let pdfjsP=null;
 const loadPdfjs=()=>pdfjsP||(pdfjsP=import(/* @vite-ignore */ PDFJS+'legacy/build/pdf.min.mjs').then(m=>{m.GlobalWorkerOptions.workerSrc=PDFJS+'legacy/build/pdf.worker.min.mjs';return m}).catch(e=>{pdfjsP=null;throw e}));
-function rkParse(pages){
- let card='',rows=[];
- pages.forEach(items=>{
-  const L=[];
-  items.forEach(it=>{const s=(it.s||'').trim();if(!s)return;let l=L.find(l=>Math.abs(l.y-it.y)<2.5);if(!l){l={y:it.y,a:[]};L.push(l)}l.a.push({s,x:it.x})});
-  L.forEach(l=>{l.a.sort((p,q)=>p.x-q.x);const a=l.a;
-   const cm=a.map(x=>x.s).join(' ').match(/(\S*カード\S*)\s*[\*\-]+(\d{4})/);if(cm&&!card)card=cm[2];
-   const dm=a[0].s.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);if(!dm)return;
-   const nums=a.filter(x=>/^[-−△▲]?[\d,]+$/.test(x.s));if(nums.length<3)return;
-   const shop=a.filter(x=>x.x>a[0].x+20&&x.x<nums[0].x&&!/^(本人|家族)|払い$|^リボ|^分割/.test(x.s)).map(x=>x.s).join(' ');
-   const v=nums[0].s,amt=parseInt(v.replace(/[^\d]/g,''),10);if(!(amt>0))return;
-   rows.push({date:dm[1]+'-'+pad(+dm[2])+'-'+pad(+dm[3]),note:shop.normalize('NFKC').replace(/利用国[A-Z]{2}$/,'').replace(/\s+/g,' ').trim(),amt,neg:/^[-−△▲]/.test(v)});
-  });
- });
- return {card,rows};
-}
 async function importRakuten(files){
  toast('正在读取 PDF…');
  let m;try{m=await loadPdfjs()}catch(e){toast('PDF 解析组件加载失败,请联网后再试');return}
@@ -1174,14 +1150,11 @@ function apMethod(c){const s=mkey(c);
  const h=s&&pmSrc().find(m=>{const n=mkey(m[1]);return m[0]!=='cash'&&m[0]!=='paypay'&&n&&(s.includes(n)||n.includes(s))});
  return h?h[0]:vm('card')}
 /* 自动记的那笔,如果已经有从明细导入的同一笔(同金额、同支付方式、日期差 ≤1 天)→ 以导入的为准,不重复记 */
-const stmtOf=(amt,date,method,claimed)=>D.find(z=>z.ref&&!AUTOR.test(z.ref)&&z.amt===amt&&z.method===method&&dd(z.date,date)<=1&&!claimed.has(z.id));
-function dedupAuto(){const claimed=new Set(),rm=new Set();
- D.filter(x=>x.ref&&AUTOR.test(x.ref)).forEach(x=>{const z=stmtOf(x.amt,x.date,x.method,claimed);if(z){claimed.add(z.id);rm.add(x.id)}});
- if(rm.size){D=D.filter(x=>!rm.has(x.id));save()}return rm.size}
+const stmtOf=(amt,date,method,claimed)=>stmtOfIn(D,amt,date,method,claimed);
+function dedupAuto(){const rm=dedupAutoIds(D);if(rm.size){D=D.filter(x=>!rm.has(x.id));save()}return rm.size}
 /* 资产截图:已关联的直接更新市值;第一次出现的来源先放进待确认,让你选更新哪一项 */
 /* 收入查重:同一天、同金额、同一个人(备注)就算同一笔(截图没读到取引番号时也能认出来) */
-const nkey=n=>String(n||'').normalize('NFKC').replace(/\s+/g,'').toLowerCase();
-function incDup(amt,date,note){const k=nkey(note);return A.inc.find(x=>x.amt===amt&&x.date===date&&nkey(x.note)===k)}
+const incDup=(amt,date,note)=>incDupIn(A.inc,amt,date,note);
 /* 已有的加密货币 / 证券入金记录归到「投资」(不算消费) */
 (function(){try{let k=0;D.forEach(x=>{if(x.cat!==INV_CAT&&INVRE.test(String(x.note||'').normalize('NFKC'))){x.cat=INV_CAT;k++}});
  if(D.some(x=>x.cat===INV_CAT)&&!CATS.includes(INV_CAT)){CC.push(INV_CAT);applyCats();saveC()}if(k)save()}catch(e){}})();
