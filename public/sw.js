@@ -1,5 +1,7 @@
-const CACHE='kakeibo-v113',LIB='kakeibo-lib-v1';
-const CORE=['./','index.html','manifest.webmanifest','icon-180.png','icon-192.png','icon-512.png'];
+/* 构建时(vite.config.ts 里的 swPrecache)会把带哈希的 js/css 文件名和构建号写进下面两处 */
+const BUILD=/*__BUILD__*/'dev',ASSETS=/*__ASSETS__*/[];
+const CACHE='kakeibo-'+BUILD,LIB='kakeibo-lib-v1';
+const CORE=['./','index.html','manifest.webmanifest','icon-180.png','icon-192.png','icon-512.png',...ASSETS];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE.map(u=>new Request(u,{cache:'reload'})))).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE&&k!==LIB).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{
